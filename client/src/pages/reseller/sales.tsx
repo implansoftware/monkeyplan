@@ -196,7 +196,7 @@ export default function ResellerSales() {
       
       toast({
         title: t("reports.exportCompleted"),
-        description: "Il file CSV è stato scaricato con successo",
+        description: t("sales.csvDownloadedSuccess"),
       });
     } catch (error) {
       toast({
@@ -212,7 +212,7 @@ export default function ResellerSales() {
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/reseller/sales"] });
     refetch();
-    toast({ title: "Dati aggiornati" });
+    toast({ title: t("sales.dataRefreshed") });
   };
 
   if (isLoading) {
@@ -244,7 +244,7 @@ export default function ResellerSales() {
             <div>
               <h1 className="text-2xl font-semibold text-white">{t("sidebar.items.salesOverview")}</h1>
               <p className="text-white/80">
-                Tutte le vendite dalla tua rete: e-commerce, POS, utility e B2B
+                {t("sales.allSalesDesc")}
               </p>
             </div>
           </div>
@@ -264,7 +264,7 @@ export default function ResellerSales() {
               data-testid="button-export-sales"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? "Esportando..." : "Esporta CSV"}
+              {isExporting ? t("sales.exporting") : t("sales.exportCsv")}
             </Button>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function ResellerSales() {
                 <p className="text-xl font-bold" data-testid="text-total-amount">
                   {formatCurrency(summary?.totalAmount || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground">{summary?.totalSales || 0} transazioni</p>
+                <p className="text-xs text-muted-foreground">{summary?.totalSales || 0} {t("sales.transactions")}</p>
               </div>
             </div>
           </CardContent>
@@ -299,7 +299,7 @@ export default function ResellerSales() {
                 <p className="text-xl font-bold text-blue-600" data-testid="text-ecommerce-amount">
                   {formatCurrency(summary?.bySource.ecommerce || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground">{summary?.countBySource.ecommerce || 0} ordini</p>
+                <p className="text-xs text-muted-foreground">{summary?.countBySource.ecommerce || 0} {t("common.orders")}</p>
               </div>
             </div>
           </CardContent>
@@ -316,7 +316,7 @@ export default function ResellerSales() {
                 <p className="text-xl font-bold text-green-600" data-testid="text-pos-amount">
                   {formatCurrency(summary?.bySource.pos || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground">{summary?.countBySource.pos || 0} vendite</p>
+                <p className="text-xs text-muted-foreground">{summary?.countBySource.pos || 0} {t("sales.salesCount")}</p>
               </div>
             </div>
           </CardContent>
@@ -333,7 +333,7 @@ export default function ResellerSales() {
                 <p className="text-xl font-bold text-yellow-600" data-testid="text-utility-amount">
                   {formatCurrency(summary?.bySource.utility || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground">{summary?.countBySource.utility || 0} pratiche</p>
+                <p className="text-xs text-muted-foreground">{summary?.countBySource.utility || 0} {t("sales.practices")}</p>
               </div>
             </div>
           </CardContent>
@@ -350,7 +350,7 @@ export default function ResellerSales() {
                 <p className="text-xl font-bold text-purple-600" data-testid="text-b2b-amount">
                   {formatCurrency(summary?.bySource.b2b || 0)}
                 </p>
-                <p className="text-xs text-muted-foreground">{summary?.countBySource.b2b || 0} ordini</p>
+                <p className="text-xs text-muted-foreground">{summary?.countBySource.b2b || 0} {t("common.orders")}</p>
               </div>
             </div>
           </CardContent>
@@ -362,13 +362,13 @@ export default function ResellerSales() {
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <div className="flex flex-wrap items-center gap-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Filtri:</span>
+              <span className="text-sm font-medium">{t("sales.filtersLabel")}</span>
             </div>
             
             <div className="relative flex-1 min-w-[200px] max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per riferimento, cliente..."
+                placeholder={t("sales.searchByRefClient")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -378,10 +378,10 @@ export default function ResellerSales() {
             
             <Select value={sourceFilter} onValueChange={setSourceFilter}>
               <SelectTrigger className="w-full sm:w-[140px]" data-testid="select-source-filter">
-                <SelectValue placeholder="Fonte" />
+                <SelectValue placeholder={t("sales.sourcePlaceholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tutte le fonti</SelectItem>
+                <SelectItem value="all">{t("sales.allSources")}</SelectItem>
                 <SelectItem value="ecommerce">{t("sidebar.sections.ecommerce")}</SelectItem>
                 <SelectItem value="pos">{t("sidebar.sections.posSection")}</SelectItem>
                 <SelectItem value="utility">{t("utility.title")}</SelectItem>

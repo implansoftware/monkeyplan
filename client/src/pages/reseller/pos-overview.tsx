@@ -183,7 +183,7 @@ export default function ResellerPosOverview() {
       cash: t("pos.cash"),
       card: t("pos.card"),
       pos_terminal: t("sidebar.sections.posSection"),
-      mixed: "Misto",
+      mixed: t("pos.mixed"),
     };
     return labels[method] || method;
   };

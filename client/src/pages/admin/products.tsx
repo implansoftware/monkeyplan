@@ -501,7 +501,7 @@ export default function AdminProducts() {
       queryClient.invalidateQueries({ queryKey: ["/api/device-brands"] });
       setNewBrandDialogOpen(false);
       setNewBrandName("");
-      toast({ title: t("products.brandCreated"), description: `"${newBrand.name}" aggiunto con successo` });
+      toast({ title: t("products.brandCreated"), description: t("products.addedSuccessfully", { name: newBrand.name }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -526,7 +526,7 @@ export default function AdminProducts() {
           return newSet;
         });
       }
-      toast({ title: t("products.modelCreated"), description: `"${newModel.modelName}" aggiunto con successo` });
+      toast({ title: t("products.modelCreated"), description: t("products.addedSuccessfully", { name: newModel.modelName }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -645,11 +645,11 @@ export default function AdminProducts() {
   const getWarehouseLabel = (wh: WarehouseForStock) => {
     const typeLabels: Record<string, string> = {
       admin: 'Admin',
-      reseller: 'Rivenditore',
-      sub_reseller: 'Sotto-Rivenditore',
-      repair_center: 'Centro Riparazione'
+      reseller: t("roles.reseller"),
+      sub_reseller: t("roles.subReseller"),
+      repair_center: t("roles.repairCenter"),
     };
-    const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
+    const ownerName = wh.owner?.fullName || wh.owner?.username || t("common.system");
     return `${wh.name} (${typeLabels[wh.ownerType]} - ${ownerName})`;
   };
 
@@ -672,9 +672,9 @@ export default function AdminProducts() {
       const stockData = data.stocks || [];
       setEditStock(stockData.map((s: any) => ({
         warehouseId: s.warehouseId,
-        warehouseName: s.warehouse?.name || 'Sconosciuto',
+        warehouseName: s.warehouse?.name || t("common.unknown"),
         ownerType: s.warehouse?.ownerType || 'admin',
-        ownerName: s.warehouse?.ownerName || 'Sistema',
+        ownerName: s.warehouse?.ownerName || t("common.system"),
         quantity: s.quantity,
         originalQuantity: s.quantity,
         location: s.location || '',
@@ -725,7 +725,7 @@ export default function AdminProducts() {
   const addEditStock = (warehouseId: string) => {
     const wh = warehouses.find(w => w.id === warehouseId);
     if (wh && !editStock.find(s => s.warehouseId === warehouseId)) {
-      const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
+      const ownerName = wh.owner?.fullName || wh.owner?.username || t("common.system");
       setEditStock([...editStock, { 
         warehouseId, 
         warehouseName: wh.name,
@@ -1837,7 +1837,7 @@ export default function AdminProducts() {
                           data-testid="button-add-product-supplier"
                         >
                           <Plus className="h-4 w-4 mr-2" />
-                          Aggiungi Fornitore
+                          {t("products.addSupplier")}
                         </Button>
                       </div>
 
@@ -1849,9 +1849,9 @@ export default function AdminProducts() {
                       ) : productSuppliers.length === 0 ? (
                         <div className="text-center py-8 border rounded-lg border-dashed">
                           <Building2 className="h-10 w-10 mx-auto mb-3 text-muted-foreground opacity-50" />
-                          <p className="text-muted-foreground">Nessun fornitore associato</p>
+                          <p className="text-muted-foreground">{t("products.noSupplierAssociated")}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Aggiungi almeno un fornitore per poter ordinare questo prodotto
+                            {t("products.addSupplierForOrdering")}
                           </p>
                         </div>
                       ) : (
@@ -1870,7 +1870,7 @@ export default function AdminProducts() {
                                   {ps.isPreferred && (
                                     <Badge variant="default" className="gap-1">
                                       <Star className="h-3 w-3" />
-                                      Preferito
+                                      {t("products.preferred")}
                                     </Badge>
                                   )}
                                   {!ps.isActive && (
@@ -1887,10 +1887,10 @@ export default function AdminProducts() {
                                     </span>
                                   )}
                                   {ps.leadTimeDays && (
-                                    <span>{ps.leadTimeDays}gg consegna</span>
+                                    <span>{t("products.deliveryDays", { days: ps.leadTimeDays })}</span>
                                   )}
                                   {ps.minOrderQty && ps.minOrderQty > 1 && (
-                                    <span>Min: {ps.minOrderQty} pz</span>
+                                    <span>{t("products.minPieces", { qty: ps.minOrderQty })}</span>
                                   )}
                                 </div>
                               </div>
@@ -2524,7 +2524,7 @@ export default function AdminProducts() {
               </div>
             ) : resellerPrices.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Nessun rivenditore trovato
+                {t("products.noResellersFound")}
               </div>
             ) : (
               <Table>
@@ -2626,7 +2626,7 @@ export default function AdminProducts() {
           <DialogHeader>
             <DialogTitle>{t("products.newDeviceBrand")}</DialogTitle>
             <DialogDescription>
-              Aggiungi un nuovo brand di dispositivo al catalogo
+              {t("products.addNewDeviceBrandDesc")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateBrand} className="space-y-4">

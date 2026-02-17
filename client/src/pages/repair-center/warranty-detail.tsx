@@ -49,9 +49,9 @@ type WarrantyDetail = {
 
 function getCoverageLabels(t: (key: string) => string): Record<string, string> {
   return {
-    basic: "Base",
+    basic: t("warranties.basic"),
     extended: t("warranties.extended"),
-    full: "Completa",
+    full: t("warranties.full"),
   };
 }
 
@@ -82,7 +82,7 @@ export default function RepairCenterWarrantyDetail() {
     queryKey: ["/api/repair-center/warranties", id],
     queryFn: async () => {
       const res = await fetch(`/api/repair-center/warranties/${id}`);
-      if (!res.ok) throw new Error("Errore caricamento garanzia");
+      if (!res.ok) throw new Error(t("warranties.errorLoading"));
       return res.json();
     },
     enabled: !!id,
@@ -97,10 +97,10 @@ export default function RepairCenterWarrantyDetail() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/warranties", id] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/warranties"] });
       setIsEditing(false);
-      toast({ title: "Garanzia aggiornata", description: "Le modifiche sono state salvate con successo." });
+      toast({ title: t("warranties.warrantyUpdated"), description: t("warranties.changesSaved") });
     },
     onError: (error: any) => {
-      toast({ title: t("auth.error"), description: error.message || "Impossibile aggiornare la garanzia", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("warranties.errorUpdating"), variant: "destructive" });
     },
   });
 
@@ -349,9 +349,9 @@ export default function RepairCenterWarrantyDetail() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="basic">Base</SelectItem>
-                          <SelectItem value="extended">Estesa</SelectItem>
-                          <SelectItem value="full">Completa</SelectItem>
+                          <SelectItem value="basic">{t("warranties.coverageBase")}</SelectItem>
+                          <SelectItem value="extended">{t("warranties.coverageEstesa")}</SelectItem>
+                          <SelectItem value="full">{t("warranties.coverageCompleta")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -148,11 +148,11 @@ export default function PosTransactionDetailPage() {
     cash: { label: t("pos.cash"), icon: Banknote },
     card: { label: t("pos.card"), icon: CreditCard },
     pos_terminal: { label: t("sidebar.sections.posSection"), icon: CreditCard },
-    mixed: { label: "Misto", icon: Calculator },
+    mixed: { label: t("pos.mixed"), icon: Calculator },
   };
   const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     completed: { label: t("pos.completata"), variant: "default" },
-    refunded: { label: "Rimborsata", variant: "destructive" },
+    refunded: { label: t("pos.refunded"), variant: "destructive" },
     partial_refund: { label: t("pos.partialRefund"), variant: "secondary" },
     voided: { label: t("common.cancelled"), variant: "destructive" },
   };
@@ -500,7 +500,7 @@ export default function PosTransactionDetailPage() {
         <CardFooter className="pt-4">
           <div className="w-full space-y-2">
             <div className="flex justify-between text-muted-foreground">
-              <span>Subtotale:</span>
+              <span>{t("pos.subtotale")}:</span>
               <span>{formatCurrency(transaction.subtotal)}</span>
             </div>
             {transaction.discountAmount > 0 && (
@@ -510,7 +510,7 @@ export default function PosTransactionDetailPage() {
               </div>
             )}
             <div className="flex justify-between text-muted-foreground">
-              <span>IVA ({transaction.taxRate}%):</span>
+              <span>{t("pos.iva")} ({transaction.taxRate}%):</span>
               <span>{formatCurrency(transaction.taxAmount)}</span>
             </div>
             <Separator />
@@ -527,16 +527,16 @@ export default function PosTransactionDetailPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2 text-destructive">
               <RotateCcw className="w-5 h-5" />
-              Rimborso
+              {t("pos.rimborso")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-lg font-semibold">
-              Importo rimborsato: {formatCurrency(transaction.refundedAmount || 0)}
+              {t("pos.importoRimborsato")}: {formatCurrency(transaction.refundedAmount || 0)}
             </div>
             {transaction.refundReason && (
               <div className="text-muted-foreground mt-2">
-                Motivo: {transaction.refundReason}
+                {t("pos.motivo")}: {transaction.refundReason}
               </div>
             )}
           </CardContent>
@@ -559,7 +559,7 @@ export default function PosTransactionDetailPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Ban className="w-5 h-5 text-destructive" />
-              Annulla vendita
+              {t("pos.annullaVendita")}
             </DialogTitle>
             <DialogDescription>
               Stai per annullare la vendita {transaction.transactionNumber}. 
@@ -568,7 +568,7 @@ export default function PosTransactionDetailPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="void-reason">Motivo dell'annullamento *</Label>
+              <Label htmlFor="void-reason">{t("pos.motivoAnnullamento")} *</Label>
               <Textarea
                 id="void-reason"
                 placeholder={t("pos.inserisciIlMotivoDellAnnullamento")}
@@ -584,7 +584,7 @@ export default function PosTransactionDetailPage() {
               onClick={() => setVoidDialogOpen(false)}
               data-testid="button-cancel-void"
             >
-              Annulla
+              {t("profile.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -603,7 +603,7 @@ export default function PosTransactionDetailPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <RotateCcw className="w-5 h-5" />
-              Effettua reso
+              {t("pos.effettuaReso")}
             </DialogTitle>
             <DialogDescription>
               Inserisci l'importo da rimborsare e il motivo del reso.
@@ -624,11 +624,11 @@ export default function PosTransactionDetailPage() {
                 data-testid="input-refund-amount"
               />
               <p className="text-sm text-muted-foreground">
-                Totale originale: {formatCurrency(transaction.total)}
+                {t("pos.totaleOriginale")}: {formatCurrency(transaction.total)}
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="refund-reason">Motivo del reso</Label>
+              <Label htmlFor="refund-reason">{t("pos.motivoReso")}</Label>
               <Textarea
                 id="refund-reason"
                 placeholder={t("pos.inserisciIlMotivoDelResoOpzionale")}

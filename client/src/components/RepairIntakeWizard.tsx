@@ -1041,7 +1041,7 @@ export function RepairIntakeWizard({
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="new-customer-name"
-                              placeholder="Mario Rossi"
+                              placeholder={t("placeholder.fullName")}
                               value={newCustomerForm.fullName}
                               onChange={(e) => setNewCustomerForm(prev => ({ ...prev, fullName: e.target.value }))}
                               className="pl-10"
@@ -1057,7 +1057,7 @@ export function RepairIntakeWizard({
                             <Input
                               id="new-customer-email"
                               type="email"
-                              placeholder="mario.rossi@email.com"
+                              placeholder={t("placeholder.email")}
                               value={newCustomerForm.email}
                               onChange={(e) => setNewCustomerForm(prev => ({ ...prev, email: e.target.value }))}
                               className="pl-10"
@@ -1073,7 +1073,7 @@ export function RepairIntakeWizard({
                             <Input
                               id="new-customer-phone"
                               type="tel"
-                              placeholder="+39 333 1234567"
+                              placeholder={t("placeholder.phone")}
                               value={newCustomerForm.phone}
                               onChange={(e) => setNewCustomerForm(prev => ({ ...prev, phone: e.target.value }))}
                               className="pl-10"
@@ -1146,7 +1146,7 @@ export function RepairIntakeWizard({
                                 <Label htmlFor="new-customer-codice-fiscale">{t("fiscal.fiscalCode")}</Label>
                                 <Input
                                   id="new-customer-codice-fiscale"
-                                  placeholder="RSSMRA80A01H501T"
+                                  placeholder={t("placeholder.fiscalCodeExample")}
                                   value={newCustomerForm.codiceFiscale}
                                   onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
                                   className="mt-1"
@@ -1161,7 +1161,7 @@ export function RepairIntakeWizard({
                                     <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                       id="new-customer-ragione-sociale"
-                                      placeholder="Azienda S.r.l."
+                                      placeholder={t("placeholder.companyNameExample")}
                                       value={newCustomerForm.ragioneSociale}
                                       onChange={(e) => setNewCustomerForm(prev => ({ ...prev, ragioneSociale: e.target.value }))}
                                       className="pl-10"
@@ -1174,7 +1174,7 @@ export function RepairIntakeWizard({
                                     <Label htmlFor="new-customer-partita-iva">{t("fiscal.vatNumber")} *</Label>
                                     <Input
                                       id="new-customer-partita-iva"
-                                      placeholder="IT12345678901"
+                                      placeholder={t("placeholder.vatNumberExample")}
                                       value={newCustomerForm.partitaIva}
                                       onChange={(e) => setNewCustomerForm(prev => ({ ...prev, partitaIva: e.target.value.toUpperCase() }))}
                                       className="mt-1"
@@ -1185,7 +1185,7 @@ export function RepairIntakeWizard({
                                     <Label htmlFor="new-customer-codice-fiscale">{t("fiscal.fiscalCode")}</Label>
                                     <Input
                                       id="new-customer-codice-fiscale"
-                                      placeholder="RSSMRA80A01H501T"
+                                      placeholder={t("placeholder.fiscalCodeExample")}
                                       value={newCustomerForm.codiceFiscale}
                                       onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceFiscale: e.target.value.toUpperCase() }))}
                                       className="mt-1"
@@ -1201,7 +1201,7 @@ export function RepairIntakeWizard({
                                       <Input
                                         id="new-customer-pec"
                                         type="email"
-                                        placeholder="azienda@pec.it"
+                                        placeholder={t("placeholder.pecExample")}
                                         value={newCustomerForm.pec}
                                         onChange={(e) => setNewCustomerForm(prev => ({ ...prev, pec: e.target.value.toLowerCase() }))}
                                         className="pl-10"
@@ -1213,7 +1213,7 @@ export function RepairIntakeWizard({
                                     <Label htmlFor="new-customer-codice-univoco">{t("fiscal.sdiCode")}</Label>
                                     <Input
                                       id="new-customer-codice-univoco"
-                                      placeholder="XXXXXXX"
+                                      placeholder={t("placeholder.sdiCodeExample")}
                                       value={newCustomerForm.codiceUnivoco}
                                       onChange={(e) => setNewCustomerForm(prev => ({ ...prev, codiceUnivoco: e.target.value.toUpperCase() }))}
                                       className="mt-1"
@@ -1230,7 +1230,7 @@ export function RepairIntakeWizard({
                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
                                   id="new-customer-indirizzo"
-                                  placeholder="Via Roma 1"
+                                  placeholder={t("placeholder.addressExample")}
                                   value={newCustomerForm.indirizzo}
                                   onChange={(e) => setNewCustomerForm(prev => ({ ...prev, indirizzo: e.target.value }))}
                                   className="pl-10"
@@ -1244,7 +1244,7 @@ export function RepairIntakeWizard({
                                 <Label htmlFor="new-customer-cap">{t("common.zipCode")}</Label>
                                 <Input
                                   id="new-customer-cap"
-                                  placeholder="00100"
+                                  placeholder={t("placeholder.zipCodeExample")}
                                   value={newCustomerForm.cap}
                                   onChange={(e) => setNewCustomerForm(prev => ({ ...prev, cap: e.target.value }))}
                                   className="mt-1"
@@ -1255,7 +1255,7 @@ export function RepairIntakeWizard({
                                 <Label htmlFor="new-customer-citta">{t("common.city")}</Label>
                                 <Input
                                   id="new-customer-citta"
-                                  placeholder="Roma"
+                                  placeholder={t("placeholder.cityExample")}
                                   value={newCustomerForm.citta}
                                   onChange={(e) => setNewCustomerForm(prev => ({ ...prev, citta: e.target.value }))}
                                   className="mt-1"
@@ -1266,7 +1266,7 @@ export function RepairIntakeWizard({
                                 <Label htmlFor="new-customer-provincia">{t("common.province")}</Label>
                                 <Input
                                   id="new-customer-provincia"
-                                  placeholder="RM"
+                                  placeholder={t("placeholder.provinceExample")}
                                   maxLength={2}
                                   value={newCustomerForm.provincia}
                                   onChange={(e) => setNewCustomerForm(prev => ({ ...prev, provincia: e.target.value.toUpperCase() }))}

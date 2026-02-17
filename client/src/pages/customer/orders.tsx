@@ -12,13 +12,13 @@ function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     pending: t("common.waiting"),
     confirmed: t("common.confirmed"),
-    processing: "In elaborazione",
-    ready_to_ship: "Pronto per spedizione",
-    shipped: "Spedito",
+    processing: t("customerPages.processing"),
+    ready_to_ship: t("customerPages.readyToShip"),
+    shipped: t("customerPages.shipped"),
     delivered: t("common.delivered"),
     completed: t("common.completed"),
     cancelled: t("common.cancelled"),
-    refunded: "Rimborsato"
+    refunded: t("customerPages.refunded")
   };
 }
 
@@ -58,7 +58,7 @@ export default function CustomerOrders() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">I miei ordini</h1>
+        <h1 className="text-3xl font-bold">{t("customerPages.myOrders")}</h1>
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <Card key={i}>
@@ -90,8 +90,8 @@ export default function CustomerOrders() {
               <Package className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-orders-title">I miei ordini</h1>
-              <p className="text-white/80 text-sm">Visualizza e gestisci i tuoi ordini</p>
+              <h1 className="text-2xl font-bold text-white" data-testid="text-orders-title">{t("customerPages.myOrders")}</h1>
+              <p className="text-white/80 text-sm">{t("customerPages.viewAndManageOrders")}</p>
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function CustomerOrders() {
           <CardContent className="p-12 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">{t("customerPages.nessunOrdine")}</h3>
-            <p className="text-muted-foreground">Non hai ancora effettuato ordini</p>
+            <p className="text-muted-foreground">{t("customerPages.noOrdersYetDesc")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -139,14 +139,14 @@ export default function CustomerOrders() {
                     
                     {order.shippingCity && (
                       <p className="text-sm text-muted-foreground">
-                        Spedizione: {order.shippingAddress}, {order.shippingCity}
+                        {t("customerPages.shippingLabel")}: {order.shippingAddress}, {order.shippingCity}
                       </p>
                     )}
                   </div>
                   
                   <Button variant="outline" data-testid={`button-view-order-${order.id}`}>
                     <Eye className="mr-2 h-4 w-4" />
-                    Dettagli
+                    {t("customerPages.detailsButton")}
                   </Button>
                 </div>
               </CardContent>

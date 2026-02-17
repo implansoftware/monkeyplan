@@ -67,7 +67,7 @@ export default function NetworkWarehousesPage() {
     queryKey: ["/api/warehouses/accessible"],
     queryFn: async () => {
       const res = await fetch("/api/warehouses/accessible", { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento magazzini");
+      if (!res.ok) throw new Error(t("networkWarehouses.loadWarehousesError"));
       return res.json();
     },
   });
@@ -77,7 +77,7 @@ export default function NetworkWarehousesPage() {
     queryFn: async () => {
       if (!selectedWarehouse) return [];
       const res = await fetch(`/api/warehouses/${selectedWarehouse.id}/stock`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento stock");
+      if (!res.ok) throw new Error(t("networkWarehouses.loadStockError"));
       return res.json();
     },
     enabled: !!selectedWarehouse && detailDialogOpen,
@@ -88,7 +88,7 @@ export default function NetworkWarehousesPage() {
     queryFn: async () => {
       if (!selectedWarehouse) return [];
       const res = await fetch(`/api/warehouses/${selectedWarehouse.id}/movements`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento movimenti");
+      if (!res.ok) throw new Error(t("networkWarehouses.loadMovementsError"));
       return res.json();
     },
     enabled: !!selectedWarehouse && detailDialogOpen && activeDetailTab === "movements",

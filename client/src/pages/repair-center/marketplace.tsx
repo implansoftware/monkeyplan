@@ -194,7 +194,7 @@ export default function RepairCenterMarketplace() {
         sellerName: item.sellerName,
       }]);
     }
-    toast({ title: "Aggiunto al carrello", description: item.product.name });
+    toast({ title: t("cart.addedToCart"), description: item.product.name });
   };
 
   const updateCartQuantity = (productId: string, delta: number) => {
@@ -485,7 +485,7 @@ export default function RepairCenterMarketplace() {
             </div>
 
             <div className="space-y-2">
-              <Label>Metodo di spedizione</Label>
+              <Label>{t("marketplace.metodoSpedizione")}</Label>
               {shippingMethodsLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : !shippingMethods || shippingMethods.length === 0 ? (
@@ -563,7 +563,7 @@ export default function RepairCenterMarketplace() {
             )}
 
             <div className="space-y-2">
-              <Label>Note per il venditore</Label>
+              <Label>{t("marketplace.noteVenditore")}</Label>
               <Textarea 
                 placeholder={t("marketplace.addOrderNotes")}
                 value={notes}
@@ -621,7 +621,7 @@ export default function RepairCenterMarketplace() {
                   setCheckoutOpen(false);
                   setCart([]);
                   setNotes("");
-                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                  toast({ title: t("cart.orderCompleted"), description: t("cart.paymentReceived") });
                 }}
                 onError={(error) => {
                   toast({ title: t("auth.error"), description: error, variant: "destructive" });
@@ -634,7 +634,7 @@ export default function RepairCenterMarketplace() {
                 data-testid="button-rc-submit-marketplace-order"
               >
                 <Send className="h-4 w-4 mr-2" />
-                {createOrderMutation.isPending ? "Invio..." : "Invia Ordine"}
+                {createOrderMutation.isPending ? t("common.sending") : t("cart.submitOrder")}
               </Button>
             )}
           </DialogFooter>

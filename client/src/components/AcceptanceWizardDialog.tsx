@@ -1257,7 +1257,7 @@ export function AcceptanceWizardDialog({
                     <Input
                       id="new-customer-email"
                       type="email"
-                      placeholder="mario@email.com"
+                      placeholder={t("placeholder.email")}
                       value={newCustomerData.email}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
                       data-testid="input-new-customer-email"
@@ -1267,7 +1267,7 @@ export function AcceptanceWizardDialog({
                     <Label htmlFor="new-customer-phone">{t("common.phone")} *</Label>
                     <Input
                       id="new-customer-phone"
-                      placeholder="+39 333 1234567"
+                      placeholder={t("placeholder.phone")}
                       value={newCustomerData.phone}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
                       data-testid="input-new-customer-phone"
@@ -1312,7 +1312,7 @@ export function AcceptanceWizardDialog({
                     <Label htmlFor="new-customer-zip">{t("common.zipCode")} *</Label>
                     <Input
                       id="new-customer-zip"
-                      placeholder="20100"
+                      placeholder={t("placeholder.zipCode")}
                       value={newCustomerData.zipCode}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, zipCode: e.target.value }))}
                       data-testid="input-new-customer-zip"
@@ -1322,7 +1322,7 @@ export function AcceptanceWizardDialog({
                     <Label htmlFor="new-customer-country">{t("common.country")}</Label>
                     <Input
                       id="new-customer-country"
-                      placeholder="IT"
+                      placeholder={t("placeholder.countryCode")}
                       value={newCustomerData.country}
                       onChange={(e) => setNewCustomerData(prev => ({ ...prev, country: e.target.value }))}
                       data-testid="input-new-customer-country"
@@ -1339,7 +1339,7 @@ export function AcceptanceWizardDialog({
                         <Label htmlFor="new-customer-vat">{t("fiscal.vatNumber")}</Label>
                         <Input
                           id="new-customer-vat"
-                          placeholder="IT12345678901"
+                          placeholder={t("placeholder.vatNumber")}
                           value={newCustomerData.vatNumber}
                           onChange={(e) => setNewCustomerData(prev => ({ ...prev, vatNumber: e.target.value }))}
                           data-testid="input-new-customer-vat"
@@ -1349,7 +1349,7 @@ export function AcceptanceWizardDialog({
                         <Label htmlFor="new-customer-fiscal">{t("fiscal.fiscalCode")}</Label>
                         <Input
                           id="new-customer-fiscal"
-                          placeholder="12345678901"
+                          placeholder={t("placeholder.fiscalCode")}
                           value={newCustomerData.fiscalCode}
                           onChange={(e) => setNewCustomerData(prev => ({ ...prev, fiscalCode: e.target.value }))}
                           data-testid="input-new-customer-fiscal"
@@ -1362,7 +1362,7 @@ export function AcceptanceWizardDialog({
                         <Input
                           id="new-customer-pec"
                           type="email"
-                          placeholder="azienda@pec.it"
+                          placeholder={t("placeholder.pec")}
                           value={newCustomerData.pec}
                           onChange={(e) => setNewCustomerData(prev => ({ ...prev, pec: e.target.value }))}
                           data-testid="input-new-customer-pec"
@@ -1372,7 +1372,7 @@ export function AcceptanceWizardDialog({
                         <Label htmlFor="new-customer-sdi">{t("fiscal.sdiCode")} *</Label>
                         <Input
                           id="new-customer-sdi"
-                          placeholder="A1B2C3D"
+                          placeholder={t("placeholder.sdiCode")}
                           value={newCustomerData.codiceUnivoco}
                           onChange={(e) => setNewCustomerData(prev => ({ ...prev, codiceUnivoco: e.target.value }))}
                           data-testid="input-new-customer-sdi"
@@ -1385,10 +1385,10 @@ export function AcceptanceWizardDialog({
 
                 {/* IBAN */}
                 <div className="space-y-1">
-                  <Label htmlFor="new-customer-iban">IBAN</Label>
+                  <Label htmlFor="new-customer-iban">{t("fiscal.iban")}</Label>
                   <Input
                     id="new-customer-iban"
-                    placeholder="IT60X0542811101000000123456"
+                    placeholder={t("placeholder.iban")}
                     value={newCustomerData.iban}
                     onChange={(e) => setNewCustomerData(prev => ({ ...prev, iban: e.target.value }))}
                     data-testid="input-new-customer-iban"
@@ -1404,7 +1404,7 @@ export function AcceptanceWizardDialog({
                         <Label htmlFor="new-customer-username">{t("auth.username")} *</Label>
                         <Input
                           id="new-customer-username"
-                          placeholder="mrossi"
+                          placeholder={t("placeholder.username")}
                           value={newCustomerData.username}
                           onChange={(e) => setNewCustomerData(prev => ({ ...prev, username: e.target.value }))}
                           data-testid="input-new-customer-username"

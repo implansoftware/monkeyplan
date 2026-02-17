@@ -177,7 +177,7 @@ export default function CustomerServiceCatalog() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">{t("sidebar.items.serviceCatalog")}</h1>
-            <p className="text-white/80 text-sm">Richiedi interventi di riparazione al tuo rivenditore</p>
+            <p className="text-white/80 text-sm">{t("customerPages.requestRepairFromCatalog")}</p>
           </div>
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function CustomerServiceCatalog() {
       ) : filteredCatalog.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            Nessun servizio disponibile
+            {t("customerPages.noServicesAvailable")}
           </CardContent>
         </Card>
       ) : (
@@ -234,7 +234,7 @@ export default function CustomerServiceCatalog() {
                   </div>
                   <Button onClick={() => handleOrderService(service)} data-testid={`button-order-${service.id}`}>
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    Richiedi
+                    {t("customerPages.requestService")}
                   </Button>
                 </div>
               </CardContent>
@@ -246,7 +246,7 @@ export default function CustomerServiceCatalog() {
       <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Richiedi Intervento</DialogTitle>
+            <DialogTitle>{t("customerPages.requestIntervention")}</DialogTitle>
             <DialogDescription>
               {selectedService && (
                 <>
@@ -317,7 +317,7 @@ export default function CustomerServiceCatalog() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>IMEI (opzionale)</Label>
+                <Label>{t("customerPages.imeiOptional")}</Label>
                 <Input
                   value={orderForm.imei}
                   onChange={(e) => setOrderForm({ ...orderForm, imei: e.target.value })}
@@ -326,32 +326,32 @@ export default function CustomerServiceCatalog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Seriale (opzionale)</Label>
+                <Label>{t("customerPages.serialOptional")}</Label>
                 <Input
                   value={orderForm.serial}
                   onChange={(e) => setOrderForm({ ...orderForm, serial: e.target.value })}
-                  placeholder="Numero seriale"
+                  placeholder={t("customerPages.serialNumber")}
                   data-testid="input-serial"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Descrizione problema</Label>
+              <Label>{t("customerPages.issueDescription")}</Label>
               <Textarea
                 value={orderForm.issueDescription}
                 onChange={(e) => setOrderForm({ ...orderForm, issueDescription: e.target.value })}
-                placeholder="Descrivi il problema..."
+                placeholder={t("customerPages.describeProblemPlaceholder")}
                 data-testid="input-issue"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Note aggiuntive (opzionale)</Label>
+              <Label>{t("customerPages.additionalNotesOptionalLabel")}</Label>
               <Textarea
                 value={orderForm.customerNotes}
                 onChange={(e) => setOrderForm({ ...orderForm, customerNotes: e.target.value })}
-                placeholder="Altre informazioni utili..."
+                placeholder={t("customerPages.otherUsefulInfo")}
                 data-testid="input-notes"
               />
             </div>
@@ -393,17 +393,17 @@ export default function CustomerServiceCatalog() {
                   if (!bankMethod?.details) return null;
                   return (
                     <div className="p-3 bg-muted rounded-md text-sm mt-2">
-                      <p className="font-medium mb-1">Dati per il bonifico</p>
+                      <p className="font-medium mb-1">{t("customerPages.bankTransferData")}</p>
                       {bankMethod.details.accountHolder && (
-                        <p><span className="text-muted-foreground">Intestatario:</span> {bankMethod.details.accountHolder}</p>
+                        <p><span className="text-muted-foreground">{t("customerPages.accountHolder")}</span> {bankMethod.details.accountHolder}</p>
                       )}
                       {bankMethod.details.iban ? (
                         <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{bankMethod.details.iban}</span></p>
                       ) : (
-                        <p className="text-amber-600">IBAN non ancora configurato - contatta il rivenditore</p>
+                        <p className="text-amber-600">{t("customerPages.ibanNotConfiguredService")}</p>
                       )}
                       {bankMethod.details.bankName && (
-                        <p><span className="text-muted-foreground">Banca:</span> {bankMethod.details.bankName}</p>
+                        <p><span className="text-muted-foreground">{t("customerPages.bankLabel")}</span> {bankMethod.details.bankName}</p>
                       )}
                       {bankMethod.details.bic && (
                         <p><span className="text-muted-foreground">BIC/SWIFT:</span> <span className="font-mono">{bankMethod.details.bic}</span></p>
@@ -417,7 +417,7 @@ export default function CustomerServiceCatalog() {
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => setIsOrderDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             
             {orderForm.paymentMethod === "card" && selectedService ? (
@@ -439,7 +439,7 @@ export default function CustomerServiceCatalog() {
                 }}
                 onSuccess={() => {
                   queryClient.invalidateQueries({ queryKey: ["/api/customer/service-orders"] });
-                  toast({ title: "Ordine completato!", description: "Pagamento effettuato con successo" });
+                  toast({ title: t("customerPages.orderCompleted"), description: t("customerPages.paymentSuccessful") });
                   setIsOrderDialogOpen(false);
                   setSelectedService(null);
                 }}
@@ -472,7 +472,7 @@ export default function CustomerServiceCatalog() {
                     .then(res => res.json())
                     .then(() => {
                       queryClient.invalidateQueries({ queryKey: ["/api/customer/service-orders"] });
-                      toast({ title: "Ordine completato!", description: "Pagamento PayPal effettuato" });
+                      toast({ title: t("customerPages.orderCompleted"), description: t("customerPages.paypalPaymentCompleted") });
                       setIsOrderDialogOpen(false);
                       setSelectedService(null);
                     })
@@ -493,7 +493,7 @@ export default function CustomerServiceCatalog() {
                 ) : (
                   <ShoppingCart className="w-4 h-4 mr-2" />
                 )}
-                Invia Richiesta
+                {t("customerPages.sendRequest")}
               </Button>
             )}
           </DialogFooter>

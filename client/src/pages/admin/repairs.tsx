@@ -90,7 +90,7 @@ export default function AdminRepairs() {
     queryKey: ["/api/admin/resellers"],
     queryFn: async () => {
       const res = await fetch("/api/admin/resellers", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch resellers");
+      if (!res.ok) throw new Error(t("repairs.fetchResellersError"));
       return res.json();
     },
   });
@@ -131,7 +131,7 @@ export default function AdminRepairs() {
       if (dateRange?.to) params.append("endDate", format(dateRange.to, "yyyy-MM-dd"));
       
       const res = await fetch(`/api/admin/repairs/paginated?${params.toString()}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch repairs");
+      if (!res.ok) throw new Error(t("repairs.fetchRepairsError"));
       return res.json();
     },
     enabled: viewMode === "table",
@@ -144,7 +144,7 @@ export default function AdminRepairs() {
       const params = new URLSearchParams();
       if (slaFilter !== "all") params.append("slaSeverity", slaFilter);
       const res = await fetch(`/api/repair-orders?${params.toString()}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch repairs");
+      if (!res.ok) throw new Error(t("repairs.fetchRepairsError"));
       return res.json();
     },
     enabled: viewMode === "kanban",
@@ -196,7 +196,7 @@ export default function AdminRepairs() {
         credentials: "include",
       });
       
-      if (!response.ok) throw new Error("Export failed");
+      if (!response.ok) throw new Error(t("repairs.exportFailed"));
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);

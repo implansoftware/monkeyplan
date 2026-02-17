@@ -98,9 +98,9 @@ export default function CustomerTicketDetail() {
         credentials: "include",
       });
       if (!response.ok) {
-        if (response.status === 404) throw new Error("Ticket non trovato");
-        if (response.status === 403) throw new Error("Accesso negato");
-        throw new Error("Errore nel caricamento");
+        if (response.status === 404) throw new Error(t("customerPages.ticketNotFound"));
+        if (response.status === 403) throw new Error(t("customerPages.accessDenied"));
+        throw new Error(t("customerPages.loadingError"));
       }
       return response.json();
     },
@@ -115,7 +115,7 @@ export default function CustomerTicketDetail() {
       const response = await fetch(`/api/tickets/${id}/messages`, {
         credentials: "include",
       });
-      if (!response.ok) throw new Error("Errore nel caricamento messaggi");
+      if (!response.ok) throw new Error(t("customerPages.loadingMessagesError"));
       return response.json();
     },
     enabled: !!ticketId,
@@ -193,7 +193,7 @@ export default function CustomerTicketDetail() {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          Ticket non trovato
+          {t("customerPages.ticketNotFound")}
         </CardContent>
       </Card>
     );
@@ -261,7 +261,7 @@ export default function CustomerTicketDetail() {
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nessun messaggio ancora. Scrivi il primo messaggio per iniziare la conversazione.
+              {t("customerPages.noMessagesYet")}
             </div>
           ) : (
             <ScrollArea className="h-[400px] pr-4">
@@ -275,7 +275,7 @@ export default function CustomerTicketDetail() {
                     <div className="flex flex-wrap items-center gap-2 text-sm">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
-                        {msg.userId === ticket.customerId ? "Tu" : "Assistenza"}
+                        {msg.userId === ticket.customerId ? t("customerPages.you") : t("customerPages.support")}
                       </span>
                       <span className="text-muted-foreground">•</span>
                       <span className="text-muted-foreground">
@@ -309,7 +309,7 @@ export default function CustomerTicketDetail() {
                   data-testid="button-send-reply"
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  {sendMessageMutation.isPending ? "Invio..." : "Invia Messaggio"}
+                  {sendMessageMutation.isPending ? t("customerPages.sendingMessage") : t("customerPages.sendMessage")}
                 </Button>
               </div>
             </>

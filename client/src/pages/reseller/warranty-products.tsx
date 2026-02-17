@@ -59,11 +59,11 @@ export default function ResellerWarrantyProducts() {
     mutationFn: (data: WarrantyFormData) => apiRequest("POST", "/api/reseller/warranty-products", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranty-products"] });
-      toast({ title: "Prodotto creato", description: "Il prodotto garanzia è stato creato con successo" });
+      toast({ title: t("reseller.productCreated"), description: t("reseller.warrantyProductCreatedDesc") });
       closeDialog();
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile creare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.unableToCreateProduct"), variant: "destructive" });
     },
   });
 
@@ -72,11 +72,11 @@ export default function ResellerWarrantyProducts() {
       apiRequest("PATCH", `/api/reseller/warranty-products/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranty-products"] });
-      toast({ title: "Prodotto aggiornato", description: "Il prodotto garanzia è stato aggiornato" });
+      toast({ title: t("reseller.productUpdated"), description: t("reseller.warrantyProductUpdatedDesc") });
       closeDialog();
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile aggiornare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.unableToUpdateProduct"), variant: "destructive" });
     },
   });
 
@@ -84,11 +84,11 @@ export default function ResellerWarrantyProducts() {
     mutationFn: (id: string) => apiRequest("DELETE", `/api/reseller/warranty-products/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranty-products"] });
-      toast({ title: "Prodotto eliminato", description: "Il prodotto garanzia è stato eliminato" });
+      toast({ title: t("reseller.productDeleted"), description: t("reseller.warrantyProductDeletedDesc") });
       setDeleteConfirmId(null);
     },
     onError: () => {
-      toast({ title: t("common.error"), description: "Impossibile eliminare il prodotto", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.unableToDeleteProduct"), variant: "destructive" });
     },
   });
 
@@ -122,7 +122,7 @@ export default function ResellerWarrantyProducts() {
 
   const handleSubmit = () => {
     if (!formData.name || formData.durationMonths <= 0 || formData.priceInCents <= 0) {
-      toast({ title: t("common.error"), description: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.fillRequiredFields"), variant: "destructive" });
       return;
     }
 
@@ -142,9 +142,9 @@ export default function ResellerWarrantyProducts() {
 
   const getCoverageLabel = (type: string) => {
     switch (type) {
-      case "basic": return "Base";
-      case "extended": return "Estesa";
-      case "full": return "Completa";
+      case "basic": return t("reseller.coverageBasic");
+      case "extended": return t("reseller.coverageExtended");
+      case "full": return t("reseller.coverageFull");
       default: return type;
     }
   };
@@ -181,13 +181,13 @@ export default function ResellerWarrantyProducts() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white">{t("sidebar.items.warrantyProducts")}</h1>
               <p className="text-sm text-white/80">
-                Gestisci il catalogo delle garanzie e assicurazioni
+                {t("reseller.manageWarrantyCatalog")}
               </p>
             </div>
           </div>
           <Button onClick={openCreateDialog} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg gap-2" data-testid="button-create-warranty">
             <Plus className="h-4 w-4" />
-            Nuovo Prodotto
+            {t("reseller.newProduct")}
           </Button>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function ResellerWarrantyProducts() {
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca prodotto..."
+                placeholder={t("reseller.searchProduct")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -217,16 +217,16 @@ export default function ResellerWarrantyProducts() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Shield className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p className="font-medium">Nessun prodotto garanzia</p>
-              <p className="text-sm mt-1">Crea il tuo primo prodotto garanzia</p>
+              <p className="font-medium">{t("reseller.noWarrantyProducts")}</p>
+              <p className="text-sm mt-1">{t("reseller.createFirstWarrantyProduct")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("common.name")}</TableHead>
-                  <TableHead>Copertura</TableHead>
-                  <TableHead className="text-center">Durata</TableHead>
+                  <TableHead>{t("reseller.coverage")}</TableHead>
+                  <TableHead className="text-center">{t("reseller.duration")}</TableHead>
                   <TableHead className="text-right">{t("common.price")}</TableHead>
                   <TableHead className="text-center">{t("common.status")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -244,7 +244,7 @@ export default function ResellerWarrantyProducts() {
                       </div>
                     </TableCell>
                     <TableCell>{getCoverageBadge(product.coverageType)}</TableCell>
-                    <TableCell className="text-center">{product.durationMonths} mesi</TableCell>
+                    <TableCell className="text-center">{product.durationMonths} {t("reseller.months")}</TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(product.priceInCents)}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant={product.isActive ? "default" : "secondary"}>
@@ -282,19 +282,19 @@ export default function ResellerWarrantyProducts() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingProduct ? "Modifica Prodotto" : "Nuovo Prodotto Garanzia"}</DialogTitle>
+            <DialogTitle>{editingProduct ? t("reseller.editProduct") : t("reseller.newWarrantyProduct")}</DialogTitle>
             <DialogDescription>
-              {editingProduct ? "Modifica i dettagli del prodotto garanzia" : "Crea un nuovo prodotto garanzia per il catalogo"}
+              {editingProduct ? t("reseller.editWarrantyProductDesc") : t("reseller.createWarrantyProductDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome *</Label>
+              <Label htmlFor="name">{t("common.name")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="es. Garanzia Estesa 12 Mesi"
+                placeholder={t("reseller.warrantyNamePlaceholder")}
                 data-testid="input-warranty-name"
               />
             </div>
@@ -304,14 +304,14 @@ export default function ResellerWarrantyProducts() {
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descrizione della copertura..."
+                placeholder={t("reseller.coverageDescPlaceholder")}
                 rows={2}
                 data-testid="input-warranty-description"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="durationMonths">Durata (mesi) *</Label>
+                <Label htmlFor="durationMonths">{t("reseller.durationMonths")} *</Label>
                 <Input
                   id="durationMonths"
                   type="number"
@@ -322,7 +322,7 @@ export default function ResellerWarrantyProducts() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">Prezzo (EUR) *</Label>
+                <Label htmlFor="price">{t("reseller.priceEur")} *</Label>
                 <div className="relative">
                   <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -342,7 +342,7 @@ export default function ResellerWarrantyProducts() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="coverageType">Tipo Copertura *</Label>
+              <Label htmlFor="coverageType">{t("reseller.coverageType")} *</Label>
               <Select
                 value={formData.coverageType}
                 onValueChange={(value: "basic" | "extended" | "full") => setFormData({ ...formData, coverageType: value })}
@@ -351,15 +351,15 @@ export default function ResellerWarrantyProducts() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="basic">Base - Solo difetti manifattura</SelectItem>
-                  <SelectItem value="extended">Estesa - Include danni accidentali</SelectItem>
-                  <SelectItem value="full">Completa - Copertura totale</SelectItem>
+                  <SelectItem value="basic">{t("reseller.coverageBasicDesc")}</SelectItem>
+                  <SelectItem value="extended">{t("reseller.coverageExtendedDesc")}</SelectItem>
+                  <SelectItem value="full">{t("reseller.coverageFullDesc")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="maxClaimAmount">Massimale Rimborso (EUR)</Label>
+                <Label htmlFor="maxClaimAmount">{t("reseller.maxClaimAmount")}</Label>
                 <Input
                   id="maxClaimAmount"
                   type="text"
@@ -370,12 +370,12 @@ export default function ResellerWarrantyProducts() {
                     const val = e.target.value.replace(',', '.');
                     setFormData({ ...formData, maxClaimAmount: val ? Math.round(parseFloat(val) * 100) : null });
                   }}
-                  placeholder="Illimitato"
+                  placeholder={t("reseller.unlimited")}
                   data-testid="input-warranty-max-claim"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="deductibleAmount">Franchigia (EUR)</Label>
+                <Label htmlFor="deductibleAmount">{t("reseller.deductible")}</Label>
                 <Input
                   id="deductibleAmount"
                   type="text"
@@ -391,18 +391,18 @@ export default function ResellerWarrantyProducts() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="terms">Termini e Condizioni</Label>
+              <Label htmlFor="terms">{t("reseller.termsAndConditions")}</Label>
               <Textarea
                 id="terms"
                 value={formData.termsAndConditions}
                 onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
-                placeholder="Termini e condizioni della garanzia..."
+                placeholder={t("reseller.termsPlaceholder")}
                 rows={3}
                 data-testid="input-warranty-terms"
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Prodotto Attivo</Label>
+              <Label htmlFor="isActive">{t("reseller.activeProduct")}</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -418,7 +418,7 @@ export default function ResellerWarrantyProducts() {
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-warranty"
             >
-              {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : editingProduct ? t("profile.saveChanges") : "Crea Prodotto"}
+              {createMutation.isPending || updateMutation.isPending ? t("profile.saving") : editingProduct ? t("profile.saveChanges") : t("reseller.createProduct")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -427,9 +427,9 @@ export default function ResellerWarrantyProducts() {
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Eliminazione</DialogTitle>
+            <DialogTitle>{t("reseller.confirmDeletion")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare questo prodotto garanzia? L'azione non può essere annullata.
+              {t("reseller.confirmDeleteWarrantyProduct")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

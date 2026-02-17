@@ -50,18 +50,22 @@ type SmartphoneWithSpecs = Product & {
 };
 
 const STORAGE_OPTIONS = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB"];
-const GRADE_OPTIONS = [
-  { value: "A+", label: t("products.gradeAPlus") },
-  { value: "A", label: t("products.gradeA") },
-  { value: "B", label: t("products.gradeB") },
-  { value: "C", label: t("products.gradeC") },
-  { value: "D", label: t("products.gradeD") },
-];
-const NETWORK_LOCK_OPTIONS = [
-  { value: "unlocked", label: t("products.unlocked") },
-  { value: "locked", label: t("products.operatorLocked") },
-  { value: "icloud_locked", label: t("products.icloudLocked") },
-];
+function getGradeOptions(t: (key: string) => string) {
+  return [
+    { value: "A+", label: t("products.gradeAPlus") },
+    { value: "A", label: t("products.gradeA") },
+    { value: "B", label: t("products.gradeB") },
+    { value: "C", label: t("products.gradeC") },
+    { value: "D", label: t("products.gradeD") },
+  ];
+}
+function getNetworkLockOptions(t: (key: string) => string) {
+  return [
+    { value: "unlocked", label: t("products.unlocked") },
+    { value: "locked", label: t("products.operatorLocked") },
+    { value: "icloud_locked", label: t("products.icloudLocked") },
+  ];
+}
 function getConditionOptions(t: (key: string) => string) {
   return [
     { value: "nuovo", label: t("common.new") },
@@ -109,26 +113,34 @@ const COLOR_OPTIONS = [
   "Titanio Naturale", "Titanio Blu", "Titanio Bianco", "Altro"
 ];
 
-const BATTERY_OPTIONS = [
-  { value: "100", label: "100%" },
-  { value: "95-99", label: "95-99%" },
-  { value: "90-94", label: "90-94%" },
-  { value: "85-89", label: "85-89%" },
-  { value: "80-84", label: "80-84%" },
-  { value: "<80", label: t("products.lessThan80") },
-];
+function getBatteryOptions(t: (key: string) => string) {
+  return [
+    { value: "100", label: "100%" },
+    { value: "95-99", label: "95-99%" },
+    { value: "90-94", label: "90-94%" },
+    { value: "85-89", label: "85-89%" },
+    { value: "80-84", label: "80-84%" },
+    { value: "<80", label: t("products.lessThan80") },
+  ];
+}
 
-const ACCESSORY_OPTIONS = [
-  t("products.originalCharger"),
-  t("products.usbCable"),
-  t("products.earphones"),
-  t("products.cover"),
-  t("products.screenProtector"),
-];
+function getAccessoryOptions(t: (key: string) => string) {
+  return [
+    t("products.originalCharger"),
+    t("products.usbCable"),
+    t("products.earphones"),
+    t("products.cover"),
+    t("products.screenProtector"),
+  ];
+}
 
 export default function SmartphoneCatalog() {
   const { t } = useTranslation();
   const CONDITION_OPTIONS = getConditionOptions(t);
+  const GRADE_OPTIONS = getGradeOptions(t);
+  const NETWORK_LOCK_OPTIONS = getNetworkLockOptions(t);
+  const BATTERY_OPTIONS = getBatteryOptions(t);
+  const ACCESSORY_OPTIONS = getAccessoryOptions(t);
   const DEVICE_CATEGORIES = getDeviceCategories(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");

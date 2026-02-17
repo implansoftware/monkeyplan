@@ -169,7 +169,7 @@ export default function RepairCenterAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: t("appointments.disponibilitSalvata"), description: "Gli orari sono stati aggiornati" });
+      toast({ title: t("appointments.disponibilitSalvata"), description: t("appointments.orariAggiornati") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "availability"] });
       setEditingAvailability(false);
     },
@@ -187,7 +187,7 @@ export default function RepairCenterAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "Chiusura aggiunta", description: t("appointments.laDataDiChiusuraStataAggiunta") });
+      toast({ title: t("appointments.chiusuraAggiunta"), description: t("appointments.laDataDiChiusuraStataAggiunta") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "blackouts"] });
       setBlackoutDialogOpen(false);
       setNewBlackout({ date: "", reason: "" });
@@ -203,7 +203,7 @@ export default function RepairCenterAppointments() {
       return await apiRequest("DELETE", `/api/repair-centers/${repairCenterId}/blackouts/${blackoutId}`);
     },
     onSuccess: () => {
-      toast({ title: "Chiusura rimossa", description: t("appointments.laDataDiChiusuraStataRimossa") });
+      toast({ title: t("appointments.chiusuraRimossa"), description: t("appointments.laDataDiChiusuraStataRimossa") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "blackouts"] });
     },
     onError: (error: any) => {
@@ -216,7 +216,7 @@ export default function RepairCenterAppointments() {
       return await apiRequest("PATCH", `/api/appointments/${id}`, { status });
     },
     onSuccess: () => {
-      toast({ title: "Appuntamento aggiornato" });
+      toast({ title: t("appointments.appuntamentoAggiornato") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", repairCenterId, "appointments"] });
       setAppointmentDetailOpen(false);
     },
@@ -252,7 +252,7 @@ export default function RepairCenterAppointments() {
       <div className="p-6">
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Centro riparazione non configurato</p>
+            <p className="text-muted-foreground">{t("appointments.centroNonConfigurato")}</p>
           </CardContent>
         </Card>
       </div>
@@ -284,11 +284,11 @@ export default function RepairCenterAppointments() {
         <TabsList>
           <TabsTrigger value="calendar" className="gap-2" data-testid="tab-calendar">
             <CalendarIcon className="h-4 w-4" />
-            Calendario
+            {t("appointments.calendario")}
           </TabsTrigger>
           <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
             <Settings className="h-4 w-4" />
-            Impostazioni
+            {t("sidebar.items.settings")}
           </TabsTrigger>
         </TabsList>
 
@@ -298,7 +298,7 @@ export default function RepairCenterAppointments() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <CalendarIcon className="h-4 w-4" />
-                  Seleziona Data
+                  {t("appointments.selezionaData")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -325,7 +325,7 @@ export default function RepairCenterAppointments() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Appuntamenti del {format(selectedDate, "d MMMM yyyy", { locale: it })}
+                  {t("appointments.appuntamentiDel")} {format(selectedDate, "d MMMM yyyy", { locale: it })}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -363,7 +363,7 @@ export default function RepairCenterAppointments() {
                               <div>
                                 <div className="font-medium flex items-center gap-2">
                                   <Wrench className="h-4 w-4" />
-                                  Ordine
+                                  {t("appointments.ordine")}
                                 </div>
                                 {appointment.notes && (
                                   <p className="text-xs text-muted-foreground mt-0.5">{appointment.notes}</p>
@@ -387,7 +387,7 @@ export default function RepairCenterAppointments() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Orari di Apertura
+                  {t("appointments.orariApertura")}
                 </CardTitle>
                 {!editingAvailability ? (
                   <Button
@@ -396,7 +396,7 @@ export default function RepairCenterAppointments() {
                     onClick={() => setEditingAvailability(true)}
                     data-testid="button-edit-availability"
                   >
-                    Modifica
+                    {t("common.edit")}
                   </Button>
                 ) : (
                   <div className="flex gap-2">
@@ -418,7 +418,7 @@ export default function RepairCenterAppointments() {
                       }}
                       data-testid="button-cancel-availability"
                     >
-                      Annulla
+                      {t("common.cancel")}
                     </Button>
                     <Button
                       size="sm"
@@ -427,7 +427,7 @@ export default function RepairCenterAppointments() {
                       data-testid="button-save-availability"
                     >
                       {saveAvailabilityMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Salva
+                      {t("common.save")}
                     </Button>
                   </div>
                 )}
@@ -454,7 +454,7 @@ export default function RepairCenterAppointments() {
                           data-testid={`switch-day-${day.weekday}`}
                         />
                         <span className="text-sm text-muted-foreground">
-                          {day.isClosed ? "Chiuso" : t("common.open")}
+                          {day.isClosed ? t("common.closed") : t("common.open")}
                         </span>
                       </div>
 
@@ -606,7 +606,7 @@ export default function RepairCenterAppointments() {
             <div className="space-y-2">
               <Label>{t("common.reasonOptional")}</Label>
               <Input
-                placeholder="es. Ferie estive"
+                placeholder={t("appointments.placeholderBlackoutReason")}
                 value={newBlackout.reason}
                 onChange={(e) => setNewBlackout(prev => ({ ...prev, reason: e.target.value }))}
                 data-testid="input-blackout-reason"

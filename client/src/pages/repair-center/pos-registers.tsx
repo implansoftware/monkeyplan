@@ -278,9 +278,9 @@ export default function PosRegistersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Elenco Casse</CardTitle>
+          <CardTitle>{t("posRegisters.elencoCasse")}</CardTitle>
           <CardDescription>
-            Gestisci i registri di cassa del tuo centro riparazione
+            {t("posRegisters.gestisciRegistri")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -290,7 +290,7 @@ export default function PosRegistersPage() {
               <p>{t("pos.nessunaCassaConfigurata")}</p>
               <Button onClick={openCreateDialog} variant="outline" className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
-                Crea la prima cassa
+                {t("posRegisters.creaPrimaCassa")}
               </Button>
             </div>
           ) : (
@@ -301,7 +301,7 @@ export default function PosRegistersPage() {
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead className="hidden md:table-cell">{t("common.description")}</TableHead>
                   <TableHead className="text-center">{t("common.status")}</TableHead>
-                  <TableHead className="text-center">Predefinita</TableHead>
+                  <TableHead className="text-center">{t("posRegisters.predefinita")}</TableHead>
                   <TableHead className="hidden lg:table-cell">{t("pos.creataIl")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
@@ -317,12 +317,12 @@ export default function PosRegistersPage() {
                       {register.isActive ? (
                         <Badge variant="default" className="bg-green-500">
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Attiva
+                          {t("posRegisters.attiva")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
                           <XCircle className="h-3 w-3 mr-1" />
-                          Disattiva
+                          {t("posRegisters.disattiva")}
                         </Badge>
                       )}
                     </TableCell>
@@ -330,7 +330,7 @@ export default function PosRegistersPage() {
                       {register.isDefault ? (
                         <Badge variant="default" className="bg-amber-500">
                           <Star className="h-3 w-3 mr-1" />
-                          Predefinita
+                          {t("posRegisters.predefinita")}
                         </Badge>
                       ) : (
                         <Button
@@ -397,7 +397,7 @@ export default function PosRegistersPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingRegister ? "Modifica Cassa" : "Nuova Cassa"}
+              {editingRegister ? t("posRegisters.modificaCassa") : t("posRegisters.nuovaCassa")}
             </DialogTitle>
             <DialogDescription>
               {editingRegister 
@@ -411,7 +411,7 @@ export default function PosRegistersPage() {
               <Label htmlFor="name">{t("pos.nomeCassa")}</Label>
               <Input
                 id="name"
-                placeholder="Es. Cassa 1, Cassa Principale..."
+                placeholder={t("pos.placeholderRegisterName")}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 data-testid="input-register-name"
@@ -430,7 +430,7 @@ export default function PosRegistersPage() {
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="isDefault">Cassa predefinita</Label>
+                <Label htmlFor="isDefault">{t("posRegisters.cassaPredefinita")}</Label>
                 <p className="text-sm text-muted-foreground">
                   {t("pos.registerAutoSelected")}
                 </p>

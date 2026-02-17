@@ -151,10 +151,10 @@ export default function CustomerProfile() {
           <div>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <User className="h-5 w-5" />
-              Dati Personali
+              {t("customerPages.personalData")}
             </CardTitle>
             <CardDescription>
-              Gestisci le tue informazioni personali e di contatto
+              {t("customerPages.managePersonalInfo")}
             </CardDescription>
           </div>
           {!isEditingPersonal && (
@@ -172,7 +172,7 @@ export default function CustomerProfile() {
               data-testid="button-edit-personal"
             >
               <Pencil className="h-4 w-4 mr-2" />
-              Modifica
+              {t("customerPages.editButton")}
             </Button>
           )}
         </CardHeader>
@@ -186,7 +186,7 @@ export default function CustomerProfile() {
                     id="fullName"
                     value={personalData.fullName}
                     onChange={(e) => setPersonalData({ ...personalData, fullName: e.target.value })}
-                    placeholder="Nome e Cognome"
+                    placeholder={t("profile.fullName")}
                     data-testid="input-fullname"
                   />
                 </div>
@@ -215,7 +215,7 @@ export default function CustomerProfile() {
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={handleCancelPersonal} data-testid="button-cancel-personal">
                   <X className="h-4 w-4 mr-2" />
-                  Annulla
+                  {t("customerPages.cancelEdit")}
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-personal">
                   {updateMutation.isPending ? (
@@ -223,7 +223,7 @@ export default function CustomerProfile() {
                   ) : (
                     <Save className="h-4 w-4 mr-2" />
                   )}
-                  Salva
+                  {t("customerPages.saveButton")}
                 </Button>
               </div>
             </form>
@@ -260,10 +260,10 @@ export default function CustomerProfile() {
           <div>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Dati Fiscali
+              {t("customerPages.fiscalData")}
             </CardTitle>
             <CardDescription>
-              Informazioni per la fatturazione
+              {t("customerPages.billingInfo")}
             </CardDescription>
           </div>
           {!isEditingFiscal && (
@@ -287,7 +287,7 @@ export default function CustomerProfile() {
               data-testid="button-edit-fiscal"
             >
               <Pencil className="h-4 w-4 mr-2" />
-              Modifica
+              {t("customerPages.editButton")}
             </Button>
           )}
         </CardHeader>
@@ -379,7 +379,7 @@ export default function CustomerProfile() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="codiceUnivoco">Codice Univoco SDI</Label>
+                  <Label htmlFor="codiceUnivoco">{t("customerPages.sdiCode")}</Label>
                   <Input
                     id="codiceUnivoco"
                     value={fiscalData.codiceUnivoco}
@@ -392,7 +392,7 @@ export default function CustomerProfile() {
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={handleCancelFiscal} data-testid="button-cancel-fiscal">
                   <X className="h-4 w-4 mr-2" />
-                  Annulla
+                  {t("customerPages.cancelEdit")}
                 </Button>
                 <Button type="submit" disabled={updateMutation.isPending} data-testid="button-save-fiscal">
                   {updateMutation.isPending ? (
@@ -400,7 +400,7 @@ export default function CustomerProfile() {
                   ) : (
                     <Save className="h-4 w-4 mr-2" />
                   )}
-                  Salva
+                  {t("customerPages.saveButton")}
                 </Button>
               </div>
             </form>
@@ -448,7 +448,7 @@ export default function CustomerProfile() {
               <div className="flex flex-wrap items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Codice Univoco SDI</p>
+                  <p className="text-sm text-muted-foreground">{t("customerPages.sdiCode")}</p>
                   <p className="font-medium" data-testid="text-codice-univoco">{billingData?.codiceUnivoco || "-"}</p>
                 </div>
               </div>

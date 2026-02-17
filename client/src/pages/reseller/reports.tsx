@@ -42,12 +42,12 @@ export default function ResellerReports() {
       setIsExporting(true);
       
       const csv = [
-        ['Numero Ordine', 'Data', 'Dispositivo', 'Modello', 'Stato', 'Problema'].join(','),
+        [t("reseller.csvOrderNumber"), t("common.date"), t("reseller.csvDevice"), t("reseller.csvModel"), t("common.status"), t("reseller.csvProblem")].join(','),
         ...filteredRepairs.map(r => [
           r.orderNumber,
           format(new Date(r.createdAt), "dd/MM/yyyy"),
           r.deviceType,
-          r.deviceModel || 'N/D',
+          r.deviceModel || t("common.nd"),
           r.status,
           `"${(r.issueDescription || '').replace(/"/g, '""')}"`
         ].join(','))
@@ -65,7 +65,7 @@ export default function ResellerReports() {
       
       toast({
         title: t("reports.exportCompleted"),
-        description: "Il file CSV è stato scaricato con successo",
+        description: t("reseller.csvDownloaded"),
       });
     } catch (error) {
       toast({
@@ -86,15 +86,15 @@ export default function ResellerReports() {
   const statusOptions = [
     { value: "all", label: t("common.allStatuses") },
     { value: "pending", label: t("common.pending") },
-    { value: "ingressato", label: "Ingressato" },
-    { value: "in_diagnosi", label: "In Diagnosi" },
-    { value: "preventivo_emesso", label: "Preventivo Emesso" },
-    { value: "preventivo_accettato", label: "Preventivo Accettato" },
-    { value: "preventivo_rifiutato", label: "Preventivo Rifiutato" },
-    { value: "attesa_ricambi", label: "Attesa Ricambi" },
-    { value: "in_riparazione", label: "In Riparazione" },
-    { value: "in_test", label: "In Test" },
-    { value: "pronto_ritiro", label: "Pronto Ritiro" },
+    { value: "ingressato", label: t("repairs.status.received") },
+    { value: "in_diagnosi", label: t("repairs.status.inDiagnosis") },
+    { value: "preventivo_emesso", label: t("repairs.status.quoted") },
+    { value: "preventivo_accettato", label: t("repairs.status.approved") },
+    { value: "preventivo_rifiutato", label: t("repairs.status.quoteRejected") },
+    { value: "attesa_ricambi", label: t("repairs.status.waitingParts") },
+    { value: "in_riparazione", label: t("repairs.status.inRepair") },
+    { value: "in_test", label: t("repairs.status.inTest") },
+    { value: "pronto_ritiro", label: t("repairs.status.readyForDelivery") },
     { value: "consegnato", label: t("repairs.status.delivered") },
   ];
 
@@ -111,7 +111,7 @@ export default function ResellerReports() {
             <div>
               <h1 className="text-2xl font-semibold text-white">{t("reports.title")}</h1>
               <p className="text-white/80">
-                Statistiche e analisi del business
+                {t("reseller.businessStats")}
               </p>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function ResellerReports() {
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Completate</p>
+                <p className="text-sm text-muted-foreground">{t("common.completed")}</p>
                 <p className="text-2xl font-bold text-green-600" data-testid="text-completed-repairs">{completedRepairs}</p>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function ResellerReports() {
                 <Wrench className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">In Corso</p>
+                <p className="text-sm text-muted-foreground">{t("repairs.inProgress")}</p>
                 <p className="text-2xl font-bold text-blue-600" data-testid="text-inprogress-repairs">{inProgressRepairs}</p>
               </div>
             </div>
@@ -175,9 +175,9 @@ export default function ResellerReports() {
 
       <Card className="rounded-2xl">
         <CardHeader>
-          <CardTitle>Esporta Riparazioni</CardTitle>
+          <CardTitle>{t("reseller.exportRepairs")}</CardTitle>
           <CardDescription>
-            Filtra e esporta i dati delle riparazioni in formato CSV
+            {t("reseller.filterAndExportCsv")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -203,7 +203,7 @@ export default function ResellerReports() {
                       format(dateRange.from, "dd MMM yyyy", { locale: it })
                     )
                   ) : (
-                    "Seleziona periodo"
+                    t("reseller.selectPeriod")
                   )}
                 </Button>
               </PopoverTrigger>
@@ -223,7 +223,7 @@ export default function ResellerReports() {
               data-testid="button-export-repairs"
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? t("pages.exporting") : `Esporta ${filteredRepairs.length} riparazioni`}
+              {isExporting ? t("pages.exporting") : t("reseller.exportNRepairs", { count: filteredRepairs.length })}
             </Button>
           </div>
 
@@ -232,12 +232,12 @@ export default function ResellerReports() {
           ) : filteredRepairs.length === 0 ? (
             <div className="mt-6 text-center text-muted-foreground py-8">
               <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>Nessuna riparazione trovata con i filtri selezionati</p>
+              <p>{t("reseller.noRepairsWithFilters")}</p>
             </div>
           ) : (
             <div className="mt-6">
               <p className="text-sm text-muted-foreground">
-                {filteredRepairs.length} riparazioni pronte per l'export
+                {t("reseller.repairsReadyForExport", { count: filteredRepairs.length })}
               </p>
             </div>
           )}

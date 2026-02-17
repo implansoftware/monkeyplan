@@ -93,7 +93,7 @@ export default function ResellerPosSalesHistory() {
       cash: t("pos.cash"),
       card: t("pos.card"),
       pos_terminal: t("sidebar.sections.posSection"),
-      mixed: "Misto",
+      mixed: t("pos.mixed"),
     };
     return labels[method] || method;
   };
@@ -140,7 +140,7 @@ export default function ResellerPosSalesHistory() {
       });
       
       if (!response.ok) {
-        throw new Error("Errore nell'esportazione");
+        throw new Error(t("pos.exportError"));
       }
       
       const blob = await response.blob();
@@ -153,9 +153,9 @@ export default function ResellerPosSalesHistory() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast({ title: t("reports.exportCompleted"), description: `File ${format.toUpperCase()} scaricato con successo` });
+      toast({ title: t("reports.exportCompleted"), description: t("reports.fileDownloaded", { format: format.toUpperCase() }) });
     } catch (error) {
-      toast({ title: t("common.error"), description: "Impossibile esportare le vendite", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("pos.cannotExportSales"), variant: "destructive" });
     } finally {
       setIsExporting(false);
     }
@@ -212,7 +212,7 @@ export default function ResellerPosSalesHistory() {
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <Input
-                placeholder="Cerca per numero, centro..."
+                placeholder={t("pos.searchByNumberCenter")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full"

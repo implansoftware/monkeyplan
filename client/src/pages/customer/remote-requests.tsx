@@ -31,6 +31,7 @@ type EnrichedRequest = RemoteRepairRequest & {
 
 
 function StripePaymentForm({ onSuccess, onError }: { onSuccess: () => void; onError: (msg: string) => void }) {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -46,14 +47,14 @@ function StripePaymentForm({ onSuccess, onError }: { onSuccess: () => void; onEr
         redirect: "if_required",
       });
       if (error) {
-        onError(error.message || "Errore nel pagamento");
+        onError(error.message || t("customerPages.paymentError"));
       } else if (paymentIntent?.status === "succeeded") {
         onSuccess();
       } else {
-        onError("Pagamento non completato");
+        onError(t("customerPages.paymentNotCompleted"));
       }
     } catch (err: any) {
-      onError(err.message || "Errore imprevisto");
+      onError(err.message || t("customerPages.unexpectedError"));
     } finally {
       setIsProcessing(false);
     }
@@ -64,7 +65,7 @@ function StripePaymentForm({ onSuccess, onError }: { onSuccess: () => void; onEr
       <PaymentElement />
       <Button type="submit" disabled={!stripe || isProcessing} className="w-full" data-testid="button-stripe-submit">
         {isProcessing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-        {isProcessing ? "Elaborazione..." : "Paga Ora"}
+        {isProcessing ? t("common.processing") : t("customerPages.payNow")}
       </Button>
     </form>
   );
@@ -139,7 +140,7 @@ function RequestCard({
                 {needsAction && (
                   <Badge variant="outline" className="text-xs border-primary/40 text-primary">
                     <AlertCircle className="h-3 w-3 mr-1" />
-                    Azione richiesta
+                    {t("customerPages.actionRequired")}
                   </Badge>
                 )}
               </div>
@@ -168,13 +169,13 @@ function RequestCard({
             <div className="space-y-3 p-4 border border-primary/20 rounded-md bg-primary/5" data-testid={`shipping-info-${request.id}`}>
               <div className="flex items-center gap-2">
                 <Truck className="h-4 w-4 text-primary shrink-0" />
-                <span className="text-sm font-semibold">Spedisci i tuoi dispositivi</span>
+                <span className="text-sm font-semibold">{t("customerPages.shipYourDevices")}</span>
               </div>
               {request.centerAddress ? (
                 <div className="flex items-start gap-3 p-3 bg-background rounded-md border">
                   <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">Spedisci a:</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">{t("customerPages.shipTo")}</p>
                     <p className="text-sm font-medium" data-testid={`text-ship-to-name-${request.id}`}>{request.centerName}</p>
                     <p className="text-sm" data-testid={`text-ship-to-address-${request.id}`}>
                       {request.centerAddress}
@@ -202,7 +203,7 @@ function RequestCard({
                   data-testid={`button-download-ddt-${request.id}`}
                 >
                   <Download className="h-4 w-4 mr-1.5" />
-                  Scarica DDT
+                  {t("customerPages.downloadDDT")}
                 </Button>
                 <Button
                   size="sm"
@@ -210,7 +211,7 @@ function RequestCard({
                   data-testid={`button-ship-${request.id}`}
                 >
                   <Truck className="h-4 w-4 mr-1.5" />
-                  Inserisci Tracking
+                  {t("customerPages.enterTracking")}
                 </Button>
               </div>
             </div>
@@ -235,7 +236,7 @@ function RequestCard({
                 <div className="flex flex-wrap gap-1.5">
                   {device.photos.map((photo: string, pi: number) => (
                     <a key={pi} href={photo} target="_blank" rel="noopener noreferrer" data-testid={`link-photo-${device.id}-${pi}`}>
-                      <img src={photo} alt={`Foto ${pi + 1}`} className="w-12 h-12 object-cover rounded-md border transition-opacity" />
+                      <img src={photo} alt={t("customerPages.photoAlt", { number: pi + 1 })} className="w-12 h-12 object-cover rounded-md border transition-opacity" />
                     </a>
                   ))}
                 </div>
@@ -251,7 +252,7 @@ function RequestCard({
                   <span className="text-sm font-medium">{t("repairs.quote")}</span>
                 </div>
                 <Badge variant={request.paymentStatus === 'paid' ? 'default' : 'outline'}>
-                  {request.paymentStatus === 'paid' ? 'Pagato' : request.status === 'quote_accepted' ? 'Da pagare' : request.status === 'quoted' ? 'In attesa' : 'Accettato'}
+                  {request.paymentStatus === 'paid' ? t("customerPages.paidStatus") : request.status === 'quote_accepted' ? t("customerPages.toPayStatus") : request.status === 'quoted' ? t("customerPages.waitingStatus") : t("customerPages.acceptedStatus")}
                 </Badge>
               </div>
               <div>
@@ -261,14 +262,14 @@ function RequestCard({
                 {request.quoteDescription && <p className="text-sm text-muted-foreground mt-1">{request.quoteDescription}</p>}
                 {request.quoteValidUntil && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Valido fino al {format(new Date(request.quoteValidUntil), "d MMMM yyyy", { locale: it })}
+                    {t("customerPages.validUntil", { date: format(new Date(request.quoteValidUntil), "d MMMM yyyy", { locale: it }) })}
                   </p>
                 )}
               </div>
 
               {request.status === 'quoted' && (
                 <div className="space-y-3 pt-3 border-t">
-                  <p className="text-sm text-muted-foreground">Scegli come procedere:</p>
+                  <p className="text-sm text-muted-foreground">{t("customerPages.chooseHowToProceed")}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <Button
                       variant="outline"
@@ -277,7 +278,7 @@ function RequestCard({
                       data-testid={`button-pay-in-store-${request.id}`}
                     >
                       <Store className="h-4 w-4 mr-2" />
-                      In Negozio
+                      {t("customerPages.inStorePayment")}
                     </Button>
                     <Button
                       onClick={(e) => { e.stopPropagation(); onAcceptQuote(request.id, 'online_stripe'); }}
@@ -285,7 +286,7 @@ function RequestCard({
                       data-testid={`button-pay-stripe-${request.id}`}
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Carta
+                      {t("customerPages.cardLabel")}
                     </Button>
                     <Button
                       variant="outline"
@@ -306,14 +307,14 @@ function RequestCard({
                     data-testid={`button-decline-quote-${request.id}`}
                   >
                     <X className="h-4 w-4 mr-1.5" />
-                    Rifiuta preventivo
+                    {t("customerPages.declineQuote")}
                   </Button>
                 </div>
               )}
 
               {request.status === 'quote_accepted' && request.paymentStatus !== 'paid' && (
                 <div className="space-y-3 pt-3 border-t">
-                  <p className="text-sm text-muted-foreground">Completa il pagamento per procedere:</p>
+                  <p className="text-sm text-muted-foreground">{t("customerPages.completePaymentToProceed")}</p>
                   <div className="flex flex-wrap gap-2">
                     {request.paymentMethod === 'online_stripe' && (
                       <Button
@@ -322,7 +323,7 @@ function RequestCard({
                         data-testid={`button-checkout-stripe-${request.id}`}
                       >
                         {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                        Paga con Carta
+                        {t("customerPages.payWithCard")}
                       </Button>
                     )}
                     {request.paymentMethod === 'online_paypal' && (
@@ -334,7 +335,7 @@ function RequestCard({
                           data-testid={`button-checkout-paypal-${request.id}`}
                         >
                           {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                          {request.paypalOrderId ? 'Riprova PayPal' : 'Apri PayPal'}
+                          {request.paypalOrderId ? t("customerPages.retryPayPal") : t("customerPages.openPayPal")}
                         </Button>
                         {pendingPaypalCapture && pendingPaypalCapture.token === request.paypalOrderId && (
                           <Button
@@ -343,7 +344,7 @@ function RequestCard({
                             data-testid={`button-retry-paypal-${request.id}`}
                           >
                             {isProcessingPayment ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
-                            Conferma Pagamento
+                            {t("customerPages.confirmPayment")}
                           </Button>
                         )}
                       </>
@@ -366,7 +367,7 @@ function RequestCard({
                       try {
                         const res = await fetch(`/api/invoices/by-remote-request/${request.id}`, { credentials: 'include' });
                         if (!res.ok) {
-                          toast({ title: "Fattura non disponibile", description: "La fattura potrebbe non essere stata ancora generata.", variant: "destructive" });
+                          toast({ title: t("customerPages.invoiceNotAvailable"), description: t("customerPages.invoiceMayNotBeGenerated"), variant: "destructive" });
                           return;
                         }
                         const invoice = await res.json();
@@ -378,12 +379,12 @@ function RequestCard({
                     data-testid={`button-download-invoice-${request.id}`}
                   >
                     <Download className="h-4 w-4 mr-1.5" />
-                    Fattura
+                    {t("customerPages.invoiceLabel")}
                   </Button>
                 </div>
               )}
               {request.paymentMethod === 'in_store' && request.paymentStatus !== 'paid' && request.status !== 'quoted' && (
-                <p className="text-xs text-muted-foreground pt-2">Pagherai direttamente in negozio alla consegna.</p>
+                <p className="text-xs text-muted-foreground pt-2">{t("customerPages.payInStoreOnDelivery")}</p>
               )}
             </div>
           )}
@@ -397,7 +398,7 @@ function RequestCard({
 
           {request.rejectionReason && (
             <div className="p-3 bg-destructive/10 rounded-md">
-              <p className="text-xs text-muted-foreground mb-0.5">Motivo rifiuto</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t("customerPages.rejectionReason")}</p>
               <p className="text-sm text-destructive">{request.rejectionReason}</p>
             </div>
           )}
@@ -406,7 +407,7 @@ function RequestCard({
             <div className="flex items-center gap-3 p-3 bg-muted/40 rounded-md">
               <Truck className="h-4 w-4 text-muted-foreground shrink-0" />
               <div>
-                <p className="text-xs text-muted-foreground">Tracking spedizione</p>
+                <p className="text-xs text-muted-foreground">{t("customerPages.shippingTracking")}</p>
                 <p className="text-sm font-medium">{request.courierName}: {request.trackingNumber}</p>
               </div>
             </div>
@@ -416,7 +417,7 @@ function RequestCard({
             <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-md">
               <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs text-muted-foreground">Centro di riparazione</p>
+                <p className="text-xs text-muted-foreground">{t("customerPages.repairCenterLabel")}</p>
                 <p className="text-sm font-medium">{request.centerName}</p>
                 {request.centerAddress && (
                   <p className="text-xs text-muted-foreground">
@@ -434,7 +435,7 @@ function RequestCard({
 
           {request.customerNotes && (
             <div className="text-sm">
-              <p className="text-xs text-muted-foreground mb-0.5">Le tue note</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t("customerPages.yourNotes")}</p>
               <p className="text-muted-foreground">{request.customerNotes}</p>
             </div>
           )}
@@ -484,7 +485,7 @@ export default function CustomerRemoteRequests() {
       setIsShippingOpen(false);
       setSelectedRequest(null);
       setShippingInfo({ courierName: "", trackingNumber: "" });
-      toast({ title: "Spedizione confermata", description: "I dati della spedizione sono stati salvati" });
+      toast({ title: t("customerPages.shippingConfirmed"), description: t("customerPages.shippingDataSaved") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -505,9 +506,9 @@ export default function CustomerRemoteRequests() {
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
       if (data.paymentMethod === 'in_store') {
-        toast({ title: "Preventivo accettato", description: "Puoi ora procedere con la spedizione. Pagherai in negozio." });
+        toast({ title: t("customerPages.quoteAcceptedToast"), description: t("customerPages.proceedWithShippingInStore") });
       } else {
-        toast({ title: "Preventivo accettato", description: "Procedi con il pagamento online" });
+        toast({ title: t("customerPages.quoteAcceptedToast"), description: t("customerPages.proceedWithOnlinePayment") });
       }
     },
     onError: (error: Error) => {
@@ -522,7 +523,7 @@ export default function CustomerRemoteRequests() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
-      toast({ title: "Preventivo rifiutato", description: t("customerPages.laRichiestaStataChiusa") });
+      toast({ title: t("customerPages.quoteDeclinedToast"), description: t("customerPages.laRichiestaStataChiusa") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -539,7 +540,7 @@ export default function CustomerRemoteRequests() {
       setStripePromise(loadStripe(data.publishableKey));
       setIsPaymentOpen(true);
     } catch (error: any) {
-      toast({ title: t("auth.error"), description: error.message || "Errore avvio pagamento", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("customerPages.paymentStartError"), variant: "destructive" });
     } finally {
       setIsProcessingPayment(false);
     }
@@ -553,7 +554,7 @@ export default function CustomerRemoteRequests() {
       const approveUrl = `https://www.sandbox.paypal.com/checkoutnow?token=${data.orderID}`;
       window.location.href = approveUrl;
     } catch (error: any) {
-      toast({ title: t("auth.error"), description: error.message || "Errore avvio PayPal", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("customerPages.paypalStartError"), variant: "destructive" });
     } finally {
       setIsProcessingPayment(false);
     }
@@ -566,7 +567,7 @@ export default function CustomerRemoteRequests() {
       await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
       setPaymentRequest(null);
-      toast({ title: "Pagamento PayPal completato", description: "Puoi ora procedere con la spedizione del dispositivo" });
+      toast({ title: t("customerPages.paypalCompleted"), description: t("customerPages.proceedWithDeviceShipping") });
     } catch (error: any) {
       toast({ title: t("customerPages.erroreConfermaPayPal"), description: error.message, variant: "destructive" });
     } finally {
@@ -604,9 +605,9 @@ export default function CustomerRemoteRequests() {
           queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
           window.history.replaceState({}, '', window.location.pathname);
           setPendingPaypalCapture(null);
-          toast({ title: "Pagamento PayPal completato", description: "Puoi ora procedere con la spedizione del dispositivo" });
+          toast({ title: t("customerPages.paypalCompleted"), description: t("customerPages.proceedWithDeviceShipping") });
         } catch (error: any) {
-          toast({ title: t("customerPages.erroreConfermaPayPal"), description: "Riprova cliccando il bottone qui sotto.", variant: "destructive" });
+          toast({ title: t("customerPages.erroreConfermaPayPal"), description: t("customerPages.retryBelow"), variant: "destructive" });
         } finally {
           setIsProcessingPayment(false);
         }
@@ -623,7 +624,7 @@ export default function CustomerRemoteRequests() {
       setStripeClientSecret(null);
       setStripePromise(null);
       setPaymentRequest(null);
-      toast({ title: t("customerPages.pagamentoCompletato"), description: "Puoi ora procedere con la spedizione del dispositivo" });
+      toast({ title: t("customerPages.pagamentoCompletato"), description: t("customerPages.proceedWithDeviceShipping") });
     } catch (error: any) {
       toast({ title: t("customerPages.erroreConferma"), description: error.message, variant: "destructive" });
     }
@@ -657,15 +658,15 @@ export default function CustomerRemoteRequests() {
     <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">Richiedi una Riparazione</h1>
+          <h1 className="text-xl font-bold" data-testid="text-page-title">{t("customerPages.requestRepairTitle")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Invia i tuoi dispositivi da riparare senza recarti in negozio
+            {t("customerPages.sendDevicesDesc")}
           </p>
         </div>
         <Link href="/customer/remote-requests/new">
           <Button data-testid="button-new-request">
             <Plus className="h-4 w-4 mr-2" />
-            Nuova Richiesta
+            {t("customerPages.newRequest")}
           </Button>
         </Link>
       </div>
@@ -674,7 +675,7 @@ export default function CustomerRemoteRequests() {
         <div className="flex items-center gap-2 p-3 rounded-md border border-primary/30 bg-primary/5">
           <AlertCircle className="h-4 w-4 text-primary shrink-0" />
           <p className="text-sm">
-            Hai <span className="font-semibold">{actionRequiredCount}</span> richiest{actionRequiredCount === 1 ? "a" : "e"} che richied{actionRequiredCount === 1 ? "e" : "ono"} la tua attenzione
+            {actionRequiredCount === 1 ? t("customerPages.attentionRequiredSingular", { count: actionRequiredCount }) : t("customerPages.attentionRequired", { count: actionRequiredCount })}
           </p>
         </div>
       )}
@@ -686,12 +687,12 @@ export default function CustomerRemoteRequests() {
           </div>
           <h3 className="text-lg font-medium" data-testid="text-empty-title">{t("customerPages.nessunaRichiestaAncora")}</h3>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-            Hai un dispositivo da riparare? Invia una richiesta e riceverai un preventivo dal centro di riparazione.
+            {t("customerPages.emptyStateDesc")}
           </p>
           <Link href="/customer/remote-requests/new">
             <Button className="mt-4" data-testid="button-empty-new-request">
               <Plus className="h-4 w-4 mr-2" />
-              Crea la tua prima richiesta
+              {t("customerPages.createFirstRequest")}
             </Button>
           </Link>
         </div>
@@ -719,9 +720,9 @@ export default function CustomerRemoteRequests() {
       <Dialog open={isShippingOpen} onOpenChange={setIsShippingOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dati Spedizione</DialogTitle>
+            <DialogTitle>{t("customerPages.shippingDataTitle")}</DialogTitle>
             <DialogDescription>
-              Inserisci il corriere e il numero di tracking per la richiesta {selectedRequest?.requestNumber}
+              {t("customerPages.enterCourierAndTracking", { number: selectedRequest?.requestNumber })}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleShippingSubmit} className="space-y-4">
@@ -746,21 +747,21 @@ export default function CustomerRemoteRequests() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Numero Tracking</Label>
+              <Label>{t("customerPages.trackingNumberLabel")}</Label>
               <Input
                 value={shippingInfo.trackingNumber}
                 onChange={(e) => setShippingInfo({ ...shippingInfo, trackingNumber: e.target.value })}
-                placeholder="Numero di tracking"
+                placeholder={t("customerPages.trackingNumberPlaceholder")}
                 data-testid="input-tracking-number"
               />
             </div>
             <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => setIsShippingOpen(false)} data-testid="button-cancel-shipping">
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={shippingMutation.isPending} data-testid="button-confirm-shipping">
                 {shippingMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Truck className="h-4 w-4 mr-2" />}
-                Conferma Spedizione
+                {t("customerPages.confirmShipping")}
               </Button>
             </DialogFooter>
           </form>

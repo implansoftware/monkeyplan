@@ -278,10 +278,10 @@ interface RepairCenterPaymentConfig {
 export default function PosPage() {
   const { t } = useTranslation();
   const paymentMethodLabels: Record<string, { label: string; icon: typeof CreditCard }> = {
-    stripe_link: { label: "Link Pagamento", icon: QrCode },
+    stripe_link: { label: t("pos.linkPagamento"), icon: QrCode },
     cash: { label: t("pos.cash"), icon: Banknote },
-    paypal: { label: "PayPal", icon: Wallet },
-    mixed: { label: "Misto", icon: Calculator },
+    paypal: { label: t("common.paypal"), icon: Wallet },
+    mixed: { label: t("pos.misto"), icon: Calculator },
   };
   const { toast } = useToast();
   const [, navigate] = useLocation();
@@ -491,7 +491,7 @@ export default function PosPage() {
   const { data: customers = [] } = useQuery<PosCustomer[]>({
     queryFn: async () => {
       const res = await fetch(`/api/repair-center/pos/customers?search=${encodeURIComponent(customerSearch)}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore caricamento clienti");
+      if (!res.ok) throw new Error(t("pos.erroreCaricamentoClienti"));
       return res.json();
     },
     queryKey: ["/api/repair-center/pos/customers", customerSearch],
@@ -522,7 +522,7 @@ export default function PosPage() {
       setOpenSessionDialog(false);
       setOpeningCash("");
       setSessionNotes("");
-      toast({ title: "Cassa aperta", description: "Puoi iniziare a registrare vendite" });
+      toast({ title: t("pos.cassaAperta"), description: t("pos.puoiIniziareARegistrareVendite") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -541,7 +541,7 @@ export default function PosPage() {
       setCloseSessionDialog(false);
       setClosingCash("");
       setSessionNotes("");
-      toast({ title: "Cassa chiusa", description: "Sessione terminata con successo" });
+      toast({ title: t("pos.cassaChiusa"), description: t("pos.sessioneTerminataConSuccesso") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -560,7 +560,7 @@ export default function PosPage() {
       setNewCustomerName("");
       setNewCustomerEmail("");
       setNewCustomerPhone("");
-      toast({ title: t("utility.customerCreated"), description: `${customer.fullName} aggiunto con successo` });
+      toast({ title: t("utility.customerCreated"), description: t("pos.customerAddedSuccess", { name: customer.fullName }) });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -612,11 +612,11 @@ export default function PosPage() {
         // Pagamento immediato (contanti, carta, ecc.)
         if (data.invoice) {
           toast({ 
-            title: "Vendita con fattura", 
-            description: `Transazione e fattura ${data.invoice.invoiceNumber} create con successo` 
+            title: t("pos.venditaConFattura"), 
+            description: t("pos.transazioneEFattura", { invoiceNumber: data.invoice.invoiceNumber }) 
           });
         } else {
-          toast({ title: "Vendita registrata", description: "Transazione completata" });
+          toast({ title: t("pos.venditaRegistrata"), description: t("pos.transazioneCompletata") });
         }
       }
     },
@@ -652,7 +652,7 @@ export default function PosPage() {
         setPaymentLinkStatus("completed");
         queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
         queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/session/current", selectedRegisterId] });
-        toast({ title: "Pagamento ricevuto!", description: t("pos.laTransazioneStataCompletata") });
+        toast({ title: t("pos.pagamentoRicevuto"), description: t("pos.laTransazioneStataCompletata") });
       } else if (data.status === "expired") {
         setPaymentLinkStatus("expired");
       }
@@ -700,10 +700,10 @@ export default function PosPage() {
       if (data.paid) {
         setPaymentLinkStatus("completed");
         queryClient.invalidateQueries({ queryKey: ["/api/repair-center/pos/transactions", selectedRegisterId] });
-        toast({ title: "Pagamento PayPal ricevuto!", description: t("pos.ilPagamentoStatoCompletatoConSuccesso") });
+        toast({ title: t("pos.pagamentoPayPalRicevuto"), description: t("pos.ilPagamentoStatoCompletatoConSuccesso") });
       } else {
         setPaymentLinkStatus("ready");
-        toast({ title: t("b2b.status.pending"), description: "Il cliente non ha ancora completato il pagamento PayPal" });
+        toast({ title: t("b2b.status.pending"), description: t("pos.clienteNonCompletatoPagamentoPayPal") });
       }
     },
     onError: (error: any) => {
@@ -878,7 +878,7 @@ export default function PosPage() {
       addToCart(found);
       setBarcodeInput("");
     } else {
-      toast({ title: "Non trovato", description: `Prodotto con codice ${barcodeInput} non trovato`, variant: "destructive" });
+      toast({ title: t("pos.nonTrovato"), description: t("pos.prodottoNonTrovato", { code: barcodeInput }), variant: "destructive" });
     }
     barcodeInputRef.current?.focus();
   };
@@ -889,11 +889,11 @@ export default function PosPage() {
     const price = Number.isFinite(parsed) ? Math.round(parsed * 100) : NaN;
     
     if (!name) {
-      toast({ title: t("auth.error"), description: "Inserisci un nome per il prodotto", variant: "destructive" });
+      toast({ title: t("auth.error"), description: t("pos.inserisciNomeProdotto"), variant: "destructive" });
       return;
     }
     if (!Number.isFinite(price) || price <= 0) {
-      toast({ title: t("auth.error"), description: "Inserisci un prezzo valido", variant: "destructive" });
+      toast({ title: t("auth.error"), description: t("pos.inserisciPrezzoValido"), variant: "destructive" });
       return;
     }
     
@@ -902,7 +902,7 @@ export default function PosPage() {
       name,
       sku: null,
       barcode: null,
-      category: "Temporaneo",
+      category: t("pos.temporaneo"),
       imageUrl: null,
       quantity: 1,
       unitPrice: price,
@@ -915,13 +915,13 @@ export default function PosPage() {
     setTempProductName("");
     setTempProductPrice("");
     setTempProductDialog(false);
-    toast({ title: "Aggiunto", description: `Prodotto temporaneo "${name}" aggiunto al carrello` });
+    toast({ title: t("pos.aggiunto"), description: t("pos.prodottoTemporaneoAggiunto", { name }) });
   };
 
   const handlePayment = () => {
     if (cart.length === 0) return;
     if (invoiceRequested && (customerType === "guest" || !selectedCustomerId)) {
-      toast({ title: t("auth.error"), description: "Seleziona un cliente per la fattura", variant: "destructive" });
+      toast({ title: t("auth.error"), description: t("pos.selezionaClientePerFattura"), variant: "destructive" });
       return;
     }
     
@@ -1016,8 +1016,8 @@ export default function PosPage() {
                 <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-closed-${reg.id}`}>
                   <span className="flex flex-wrap items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
-                    {reg.name} {reg.isDefault && "(Default)"}
-                    {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">Aperta</span>}
+                    {reg.name} {reg.isDefault && t("pos.defaultLabel")}
+                    {registerSessions[reg.id] && <span className="text-xs text-green-600 ml-1">{t("pos.aperta")}</span>}
                   </span>
                 </SelectItem>
               ))}
@@ -1036,18 +1036,18 @@ export default function PosPage() {
             </div>
             <CardTitle className="text-xl sm:text-2xl">{t("sidebar.items.pos")}</CardTitle>
             <CardDescription>
-              Apri la cassa per iniziare a registrare le vendite
+              {t("pos.apriCassaDescrizione")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {dailyStats && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div className="bg-muted/50 rounded p-2">
-                  <div className="text-muted-foreground">Vendite Oggi</div>
+                  <div className="text-muted-foreground">{t("pos.venditeOggi")}</div>
                   <div className="font-semibold">{formatCurrency(dailyStats.totalSales)}</div>
                 </div>
                 <div className="bg-muted/50 rounded p-2">
-                  <div className="text-muted-foreground">Transazioni</div>
+                  <div className="text-muted-foreground">{t("pos.transazioni")}</div>
                   <div className="font-semibold">{dailyStats.transactionCount}</div>
                 </div>
               </div>
@@ -1060,7 +1060,7 @@ export default function PosPage() {
               data-testid="button-open-session"
             >
               <DollarSign className="w-5 h-5 mr-2" />
-              Apri Cassa
+              {t("pos.apriCassa")}
             </Button>
           </CardFooter>
         </Card>
@@ -1068,12 +1068,12 @@ export default function PosPage() {
         <Dialog open={openSessionDialog} onOpenChange={setOpenSessionDialog}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Apertura Cassa</DialogTitle>
-              <DialogDescription>Inserisci il fondo cassa iniziale</DialogDescription>
+              <DialogTitle>{t("pos.aperturaCassa")}</DialogTitle>
+              <DialogDescription>{t("pos.inserisciFondoCassa")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Fondo Cassa (EUR)</Label>
+                <Label>{t("pos.fondoCassa")}</Label>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -1085,14 +1085,14 @@ export default function PosPage() {
                 {lastClosedSession && lastClosedSession.closingCash != null && lastClosedSession.closingCash > 0 && (
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                     <History className="h-3 w-3" />
-                    Saldo dalla chiusura precedente: {formatCurrency(lastClosedSession.closingCash)}
+                    {t("pos.saldoChiusuraPrecedente", { amount: formatCurrency(lastClosedSession.closingCash) })}
                   </p>
                 )}
               </div>
               <div>
-                <Label>Note (opzionale)</Label>
+                <Label>{t("pos.noteOpzionale")}</Label>
                 <Textarea
-                  placeholder="Note apertura..."
+                  placeholder={t("pos.noteApertura")}
                   value={sessionNotes}
                   onChange={(e) => setSessionNotes(e.target.value)}
                   data-testid="input-session-notes"
@@ -1101,7 +1101,7 @@ export default function PosPage() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpenSessionDialog(false)}>
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={() => openSessionMutation.mutate({
@@ -1113,7 +1113,7 @@ export default function PosPage() {
                 data-testid="button-confirm-open"
               >
                 {openSessionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Apri Cassa
+                {t("pos.apriCassa")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1141,7 +1141,7 @@ export default function PosPage() {
                   <h1 className="text-lg font-bold text-white tracking-tight">POS</h1>
                   <div className="flex items-center gap-2 text-emerald-100 text-xs">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
-                    {selectedRegister?.name || "Cassa"} • dalle {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
+                    {selectedRegister?.name || t("pos.cassa")} • {t("pos.dalle")} {format(new Date(currentSession.openedAt), "HH:mm", { locale: it })}
                   </div>
                 </div>
               </div>
@@ -1153,7 +1153,7 @@ export default function PosPage() {
                 data-testid="button-close-session"
               >
                 <X className="w-4 h-4 mr-1" />
-                Chiudi
+                {t("pos.chiudi")}
               </Button>
             </div>
             
@@ -1162,14 +1162,14 @@ export default function PosPage() {
               <Select value={selectedRegisterId} onValueChange={setSelectedRegisterId}>
                 <SelectTrigger className="w-auto max-w-[160px] h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 text-sm" data-testid="select-register">
                   <Store className="w-3.5 h-3.5 mr-1 flex-shrink-0" />
-                  <SelectValue placeholder="Cassa" />
+                  <SelectValue placeholder={t("pos.cassa")} />
                 </SelectTrigger>
                 <SelectContent>
                   {registers.filter(r => r.isActive).map(reg => (
                     <SelectItem key={reg.id} value={reg.id} data-testid={`select-register-${reg.id}`}>
                       <span className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${registerSessions[reg.id] ? "bg-green-500" : "bg-gray-300"}`} />
-                        {reg.name} {reg.isDefault && "(Default)"}
+                        {reg.name} {reg.isDefault && t("pos.defaultLabel")}
                       </span>
                     </SelectItem>
                   ))}
@@ -1185,7 +1185,7 @@ export default function PosPage() {
                 <Link href="/repair-center/pos/sessions">
                   <Button variant="outline" size="sm" className="h-8 bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30" data-testid="button-session-history">
                     <History className="w-4 h-4 mr-1" />
-                    Storico
+                    {t("pos.storico")}
                   </Button>
                 </Link>
               </div>
@@ -1200,7 +1200,7 @@ export default function PosPage() {
                 <QrCode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   ref={barcodeInputRef}
-                  placeholder="Scansiona barcode o digita SKU..."
+                  placeholder={t("pos.scansionaBarcode")}
                   value={barcodeInput}
                   onChange={(e) => setBarcodeInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleBarcodeSearch()}
@@ -1222,10 +1222,10 @@ export default function PosPage() {
                 onClick={() => setTempProductDialog(true)}
                 className="h-12 px-4"
                 data-testid="button-add-temp-product"
-                title="Aggiungi prodotto temporaneo"
+                title={t("pos.aggiungiProdottoTemporaneo")}
               >
                 <Plus className="w-5 h-5 mr-1" />
-                Altro
+                {t("pos.altro")}
               </Button>
             </div>
           </CardHeader>
@@ -1234,27 +1234,27 @@ export default function PosPage() {
               <TabsList className="mb-2 grid grid-cols-3 h-auto gap-1 p-1">
                 <TabsTrigger value="ricambi" data-testid="tab-ricambi" className="text-xs sm:text-sm py-1.5">
                   <Wrench className="w-3.5 h-3.5 mr-1" />
-                  Ricambi
+                  {t("pos.ricambi")}
                 </TabsTrigger>
                 <TabsTrigger value="accessori" data-testid="tab-accessori" className="text-xs sm:text-sm py-1.5">
                   <Package className="w-3.5 h-3.5 mr-1" />
-                  Accessori
+                  {t("pos.accessori")}
                 </TabsTrigger>
                 <TabsTrigger value="dispositivi" data-testid="tab-dispositivi" className="text-xs sm:text-sm py-1.5">
                   <Smartphone className="w-3.5 h-3.5 mr-1" />
-                  Dispositivi
+                  {t("pos.dispositivi")}
                 </TabsTrigger>
                 <TabsTrigger value="services" data-testid="tab-services" className="text-xs sm:text-sm py-1.5">
                   <FileText className="w-3.5 h-3.5 mr-1" />
-                  Interventi
+                  {t("pos.interventi")}
                 </TabsTrigger>
                 <TabsTrigger value="history" data-testid="tab-history" className="text-xs sm:text-sm py-1.5">
                   <History className="w-3.5 h-3.5 mr-1" />
-                  Storico
+                  {t("pos.storico")}
                 </TabsTrigger>
                 <TabsTrigger value="warranties" data-testid="tab-warranties" className="text-xs sm:text-sm py-1.5">
                   <Shield className="w-3.5 h-3.5 mr-1" />
-                  Garanzie
+                  {t("pos.garanzie")}
                 </TabsTrigger>
               </TabsList>
               
@@ -1270,7 +1270,7 @@ export default function PosPage() {
                     <SelectContent>
                       {priceLists.map(pl => (
                         <SelectItem key={pl.id} value={pl.id} data-testid={`select-price-list-${pl.id}`}>
-                          {pl.name} {pl.defaultVatRate !== undefined && `(${pl.defaultVatRate}% IVA)`} {pl.isDefault && " - Default"}
+                          {pl.name} {pl.defaultVatRate !== undefined && `(${pl.defaultVatRate}% ${t("pos.iva")})`} {pl.isDefault && ` - ${t("pos.defaultLabel")}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1281,9 +1281,9 @@ export default function PosPage() {
               {/* Selezione Cliente */}
               <div className="space-y-2 mb-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Cliente:</span>
+                  <span className="text-sm text-muted-foreground">{t("pos.cliente")}</span>
                   {(["guest", "existing", "new"] as const).map((type) => {
-                    const labels = { guest: "Ospite", existing: "Esistente", new: t("common.new") };
+                    const labels = { guest: t("pos.ospite"), existing: t("pos.esistente"), new: t("common.new") };
                     return (
                       <Button
                         key={type}
@@ -1347,18 +1347,18 @@ export default function PosPage() {
 
                 {customerType === "new" && (
                   <div className="grid grid-cols-1 gap-1 p-2 rounded-md bg-muted/50">
-                    <Input placeholder="Nome *" value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name-main" />
+                    <Input placeholder={t("pos.nomeRequired")} value={newCustomerName} onChange={(e) => setNewCustomerName(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-name-main" />
                     <Input placeholder={t("auth.email")} type="email" value={newCustomerEmail} onChange={(e) => setNewCustomerEmail(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-email-main" />
                     <Input placeholder={t("auth.phone")} value={newCustomerPhone} onChange={(e) => setNewCustomerPhone(e.target.value)} className="h-8 text-sm" data-testid="input-new-customer-phone-main" />
                     <Button size="sm" variant="outline" disabled={!newCustomerName.trim() || createCustomerMutation.isPending} onClick={() => createCustomerMutation.mutate({ fullName: newCustomerName.trim(), email: newCustomerEmail.trim() || undefined, phone: newCustomerPhone.trim() || undefined })} data-testid="button-create-customer-main">
                       {createCustomerMutation.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <UserPlus className="w-3 h-3 mr-1" />}
-                      Crea Cliente
+                      {t("pos.creaCliente")}
                     </Button>
                   </div>
                 )}
                 
                 {invoiceRequested && customerType === "guest" && (
-                  <p className="text-xs text-amber-600">Fattura richiede cliente</p>
+                  <p className="text-xs text-amber-600">{t("pos.fatturaRichiedeCliente")}</p>
                 )}
                 {invoiceRequested && customerType === "existing" && !selectedCustomerId && (
                   <p className="text-xs text-amber-600">{t("pos.selezionaClientePerFattura")}</p>
@@ -1415,7 +1415,7 @@ export default function PosPage() {
                                 <div className="font-semibold text-primary">{formatCurrency(price)}</div>
                                 {product.availableQuantity !== undefined && (
                                   <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
-                                    {isOutOfStock ? t("catalog.outOfStock") : `${product.availableQuantity} disp.`}
+                                    {isOutOfStock ? t("catalog.outOfStock") : t("pos.disponibili", { count: product.availableQuantity })}
                                   </Badge>
                                 )}
                               </div>
@@ -1475,7 +1475,7 @@ export default function PosPage() {
                                 <div className="font-semibold text-primary">{formatCurrency(price)}</div>
                                 {product.availableQuantity !== undefined && (
                                   <Badge variant={isOutOfStock ? "destructive" : "secondary"} className="text-xs">
-                                    {isOutOfStock ? t("catalog.outOfStock") : `${product.availableQuantity} disp.`}
+                                    {isOutOfStock ? t("catalog.outOfStock") : t("pos.disponibili", { count: product.availableQuantity })}
                                   </Badge>
                                 )}
                               </div>
@@ -1623,7 +1623,7 @@ export default function PosPage() {
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
                       <Shield className="w-12 h-12 mb-2 opacity-50" />
                       <span>{t("pos.nessunaGaranziaDisponibile")}</span>
-                      <span className="text-sm">Configura il catalogo garanzie</span>
+                      <span className="text-sm">{t("pos.configuraCatalogoGaranzie")}</span>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -1640,10 +1640,10 @@ export default function PosPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm line-clamp-2">{wp.name}</div>
-                              <div className="text-xs text-muted-foreground mt-0.5">{wp.durationMonths} mesi</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">{wp.durationMonths} {t("pos.mesi")}</div>
                             </div>
                           </div>
-                          <Badge variant="outline" className="mb-2 text-xs">{wp.coverageType === 'basic' ? 'Base' : wp.coverageType === 'extended' ? 'Estesa' : wp.coverageType === 'premium' ? 'Premium' : wp.coverageType}</Badge>
+                          <Badge variant="outline" className="mb-2 text-xs">{wp.coverageType === 'basic' ? t("pos.coverageBase") : wp.coverageType === 'extended' ? t("pos.coverageEstesa") : wp.coverageType === 'premium' ? t("pos.coveragePremium") : wp.coverageType}</Badge>
                           <div className="flex items-center justify-between">
                             <div className="font-semibold text-primary">
                               {formatCurrency(wp.priceInCents)}
@@ -1664,7 +1664,7 @@ export default function PosPage() {
                     </div>
                   ) : transactions.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
-                      Nessuna transazione in questa sessione
+                      {t("pos.nessunaTransazioneSessione")}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1697,10 +1697,10 @@ export default function PosPage() {
                                 </Badge>
                               )}
                               {tx.status === "refunded" && (
-                                <Badge variant="destructive" className="text-xs">Rimborsato</Badge>
+                                <Badge variant="destructive" className="text-xs">{t("pos.rimborsato")}</Badge>
                               )}
                               {tx.status === "partial_refund" && (
-                                <Badge variant="secondary" className="text-xs">Rimborso parziale</Badge>
+                                <Badge variant="secondary" className="text-xs">{t("pos.rimborsoParziale")}</Badge>
                               )}
                               {tx.status === "voided" && (
                                 <Badge variant="destructive" className="text-xs">{t("common.cancelled")}</Badge>
@@ -1723,7 +1723,7 @@ export default function PosPage() {
         <CardHeader className="pb-2">
           <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
-            Carrello
+            {t("pos.carrello")}
             {cart.length > 0 && (
               <Badge variant="secondary" className="ml-auto">{cart.length}</Badge>
             )}
@@ -1753,17 +1753,17 @@ export default function PosPage() {
                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                           {item.isService && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-indigo-500/50 text-indigo-600 dark:text-indigo-400">
-                              Servizio
+                              {t("pos.servizio")}
                             </Badge>
                           )}
                           {item.isWarranty && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
-                              Garanzia
+                              {t("pos.garanziaLabel")}
                             </Badge>
                           )}
                           {item.isTemporary && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-600 dark:text-amber-400">
-                              Temp
+                              {t("pos.tempLabel")}
                             </Badge>
                           )}
                           <span className="text-xs text-muted-foreground">
@@ -1821,7 +1821,7 @@ export default function PosPage() {
         
         <div className="p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Imponibile</span>
+            <span className="text-muted-foreground">{t("pos.imponibile")}</span>
             <span>{formatCurrency(cartVatSummary.subtotal)}</span>
           </div>
           {discount > 0 && (
@@ -1831,7 +1831,7 @@ export default function PosPage() {
             </div>
           )}
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">IVA</span>
+            <span className="text-muted-foreground">{t("pos.iva")}</span>
             <span>{formatCurrency(discountedVat)}</span>
           </div>
           <Separator className="my-1" />
@@ -1844,7 +1844,7 @@ export default function PosPage() {
         <CardFooter className="flex-col gap-3 pt-0">
           <div className="w-full">
             <Input
-              placeholder="Sconto (EUR)"
+              placeholder={t("pos.scontoEUR")}
               type="number"
               value={discountAmount}
               onChange={(e) => setDiscountAmount(e.target.value)}
@@ -1877,7 +1877,7 @@ export default function PosPage() {
 
           {/* Switch Richiedi Fattura */}
           <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border w-full">
-            <Label htmlFor="invoice-switch-inline" className="text-sm font-medium cursor-pointer">Richiedi Fattura</Label>
+            <Label htmlFor="invoice-switch-inline" className="text-sm font-medium cursor-pointer">{t("pos.richiediFattura")}</Label>
             <Switch
               id="invoice-switch-inline"
               checked={invoiceRequested}
@@ -1889,7 +1889,7 @@ export default function PosPage() {
           {/* Codice Lotteria degli Scontrini */}
           <div className="w-full">
             <Input
-              placeholder="Codice Lotteria (8 caratteri)"
+              placeholder={t("pos.codiceLotteria")}
               value={lotteryCode}
               onChange={(e) => setLotteryCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
               maxLength={8}
@@ -1903,7 +1903,7 @@ export default function PosPage() {
             <div className="w-full space-y-2">
               <div className="flex items-center gap-2">
                 <Input
-                  placeholder="Contante ricevuto"
+                  placeholder={t("pos.contanteRicevuto")}
                   value={cashReceived}
                   onChange={(e) => setCashReceived(e.target.value)}
                   className="h-9 text-center font-bold"
@@ -1911,7 +1911,7 @@ export default function PosPage() {
                 />
                 {parseFloat(cashReceived || "0") * 100 >= cartTotal && cartTotal > 0 && (
                   <div className="px-2 py-1 rounded bg-blue-500/10 border border-blue-500/30">
-                    <span className="text-xs font-bold text-blue-600">Resto: {formatCurrency(changeAmount)}</span>
+                    <span className="text-xs font-bold text-blue-600">{t("pos.resto")} {formatCurrency(changeAmount)}</span>
                   </div>
                 )}
               </div>
@@ -1937,7 +1937,7 @@ export default function PosPage() {
                 ))}
                 <Button variant="outline" size="sm" className="h-8 font-bold col-span-2" onClick={() => setCashReceived(prev => prev + "0")} data-testid="keypad-inline-0">0</Button>
                 <Button variant="outline" size="sm" className="h-8 font-bold" onClick={() => setCashReceived(prev => prev + "00")} data-testid="keypad-inline-00">00</Button>
-                <Button size="sm" className="h-8 font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-[10px]" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-inline-exact">Esatto</Button>
+                <Button size="sm" className="h-8 font-bold bg-gradient-to-r from-blue-500 to-cyan-500 text-[10px]" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-inline-exact">{t("pos.esatto")}</Button>
               </div>
             </div>
           )}
@@ -1953,7 +1953,7 @@ export default function PosPage() {
             ) : (
               <>
                 <Check className="w-5 h-5 mr-2" />
-                Conferma Pagamento
+                {t("pos.confermaPagamento")}
               </>
             )}
           </Button>
@@ -1992,7 +1992,7 @@ export default function PosPage() {
             </div>
 
             <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
-              <Label htmlFor="invoice-switch" className="text-sm font-medium cursor-pointer">Richiedi Fattura</Label>
+              <Label htmlFor="invoice-switch" className="text-sm font-medium cursor-pointer">{t("pos.richiediFattura")}</Label>
               <Switch
                 id="invoice-switch"
                 checked={invoiceRequested}
@@ -2003,7 +2003,7 @@ export default function PosPage() {
 
             {/* Codice Lotteria degli Scontrini */}
             <Input
-              placeholder="Codice Lotteria (8 caratteri)"
+              placeholder={t("pos.codiceLotteria")}
               value={lotteryCode}
               onChange={(e) => setLotteryCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
               maxLength={8}
@@ -2050,12 +2050,12 @@ export default function PosPage() {
                   ))}
                   <Button variant="outline" size="sm" className="h-9 font-bold col-span-2" onClick={() => setCashReceived(prev => prev + "0")} data-testid="keypad-0">0</Button>
                   <Button variant="outline" size="sm" className="h-9 font-bold" onClick={() => setCashReceived(prev => prev + "00")} data-testid="keypad-00">00</Button>
-                  <Button size="sm" className="h-9 font-bold bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-exact">Esatto</Button>
+                  <Button size="sm" className="h-9 font-bold bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => setCashReceived((cartTotal / 100).toFixed(2))} data-testid="keypad-exact">{t("pos.esatto")}</Button>
                 </div>
 
                 {parseFloat(cashReceived || "0") * 100 >= cartTotal && (
                   <div className="p-2 rounded-md bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-center">
-                    <span className="text-xs text-muted-foreground mr-2">Resto:</span>
+                    <span className="text-xs text-muted-foreground mr-2">{t("pos.resto")}</span>
                     <span className="text-lg font-bold text-blue-600">{formatCurrency(changeAmount)}</span>
                   </div>
                 )}
@@ -2063,7 +2063,7 @@ export default function PosPage() {
             )}
 
             <Input
-              placeholder="Note (opzionale)"
+              placeholder={t("pos.noteOpzionale")}
               value={transactionNotes}
               onChange={(e) => setTransactionNotes(e.target.value)}
               className="h-9"
@@ -2073,7 +2073,7 @@ export default function PosPage() {
 
           <DialogFooter className="gap-2 sm:gap-0 pt-2">
             <Button variant="outline" size="sm" onClick={() => setPaymentDialog(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               size="sm"
@@ -2084,7 +2084,7 @@ export default function PosPage() {
             >
               {createTransactionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               <Check className="w-4 h-4 mr-2" />
-              Conferma
+              {t("pos.conferma")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2093,39 +2093,39 @@ export default function PosPage() {
       <Dialog open={closeSessionDialog} onOpenChange={setCloseSessionDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Chiusura Cassa</DialogTitle>
-            <DialogDescription>Verifica il conteggio e chiudi la sessione</DialogDescription>
+            <DialogTitle>{t("pos.chiusuraCassa")}</DialogTitle>
+            <DialogDescription>{t("pos.verificaConteggio")}</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Fondo Iniziale</div>
+                <div className="text-muted-foreground">{t("pos.fondoIniziale")}</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.openingCash || 0)}</div>
               </div>
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Vendite Contanti</div>
+                <div className="text-muted-foreground">{t("pos.venditeContanti")}</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.totalCashSales || 0)}</div>
               </div>
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Vendite Carta</div>
+                <div className="text-muted-foreground">{t("pos.venditeCarta")}</div>
                 <div className="font-semibold">{formatCurrency(currentSession?.totalCardSales || 0)}</div>
               </div>
               <div className="p-3 rounded bg-muted/50">
-                <div className="text-muted-foreground">Transazioni</div>
+                <div className="text-muted-foreground">{t("pos.transazioni")}</div>
                 <div className="font-semibold">{currentSession?.totalTransactions || 0}</div>
               </div>
             </div>
 
             <div className="p-3 sm:p-4 rounded bg-primary/10 text-center">
-              <div className="text-sm text-muted-foreground">Contanti Attesi</div>
+              <div className="text-sm text-muted-foreground">{t("pos.contantiAttesi")}</div>
               <div className="text-xl sm:text-2xl font-bold">
                 {formatCurrency((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0))}
               </div>
             </div>
 
             <div>
-              <Label>Contanti Contati (EUR)</Label>
+              <Label>{t("pos.contantiContati")}</Label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -2141,19 +2141,19 @@ export default function PosPage() {
                 <div className="mt-2 p-2 rounded bg-amber-500/10 border border-amber-500/20">
                   <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Banknote className="h-3 w-3" />
-                    Prelievo: {formatCurrency(
+                    {t("pos.prelievo", { amount: formatCurrency(
                       ((currentSession?.openingCash || 0) + (currentSession?.totalCashSales || 0) - (currentSession?.totalRefunds || 0)) - 
                       Math.round(parseFloat(closingCash) * 100)
-                    )}
+                    ) })}
                   </p>
                 </div>
               )}
             </div>
 
             <div>
-              <Label>Note Chiusura (opzionale)</Label>
+              <Label>{t("pos.noteChiusuraOpzionale")}</Label>
               <Textarea
-                placeholder="Note chiusura..."
+                placeholder={t("pos.noteChiusura")}
                 value={sessionNotes}
                 onChange={(e) => setSessionNotes(e.target.value)}
                 data-testid="input-closing-notes"
@@ -2163,7 +2163,7 @@ export default function PosPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setCloseSessionDialog(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -2175,7 +2175,7 @@ export default function PosPage() {
               data-testid="button-confirm-close"
             >
               {closeSessionMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Chiudi Cassa
+              {t("pos.chiudiCassa")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2187,7 +2187,7 @@ export default function PosPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="w-5 h-5" />
-              Aggiungi Prodotto Temporaneo
+              {t("pos.aggiungiProdottoTemp")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -2195,7 +2195,7 @@ export default function PosPage() {
               <Label htmlFor="temp-name">{t("products.productName")}</Label>
               <Input
                 id="temp-name"
-                placeholder="Es: Riparazione vetro, Servizio..."
+                placeholder={t("pos.esRiparazioneVetro")}
                 value={tempProductName}
                 onChange={(e) => setTempProductName(e.target.value)}
                 data-testid="input-temp-product-name"
@@ -2221,11 +2221,11 @@ export default function PosPage() {
               setTempProductPrice("");
               setTempProductDialog(false);
             }}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button onClick={addTemporaryProduct} data-testid="button-confirm-temp-product">
               <Plus className="w-4 h-4 mr-2" />
-              Aggiungi al Carrello
+              {t("pos.aggiungiAlCarrello")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2264,7 +2264,7 @@ export default function PosPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {paymentLinkType === "paypal" ? <Wallet className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
-              {paymentLinkType === "paypal" ? "Pagamento PayPal" : "Link Pagamento"}
+              {paymentLinkType === "paypal" ? t("pos.pagamentoPayPal") : t("pos.linkPagamento")}
             </DialogTitle>
           </DialogHeader>
           
@@ -2272,7 +2272,7 @@ export default function PosPage() {
             {paymentLinkStatus === "generating" && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <span className="text-muted-foreground">Generazione link in corso...</span>
+                <span className="text-muted-foreground">{t("pos.generazioneLinkInCorso")}</span>
               </div>
             )}
             
@@ -2280,7 +2280,7 @@ export default function PosPage() {
               <>
                 <div className="text-center space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Scansiona il QR code o copia il link per pagare
+                    {t("pos.scansionaQRCode")}
                   </p>
                 </div>
                 
@@ -2288,7 +2288,7 @@ export default function PosPage() {
                 <div className="flex justify-center p-4 bg-white rounded-lg">
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentLinkUrl)}`}
-                    alt="QR Code Pagamento"
+                    alt={t("pos.qrCodePagamento")}
                     className="w-48 h-48"
                   />
                 </div>
@@ -2305,11 +2305,11 @@ export default function PosPage() {
                     variant="outline" 
                     onClick={() => {
                       navigator.clipboard.writeText(paymentLinkUrl);
-                      toast({ title: "Link copiato!" });
+                      toast({ title: t("pos.linkCopiato") });
                     }}
                     data-testid="button-copy-link"
                   >
-                    Copia
+                    {t("pos.copia")}
                   </Button>
                 </div>
                 
@@ -2319,7 +2319,7 @@ export default function PosPage() {
                   onClick={() => window.open(paymentLinkUrl, '_blank')}
                   data-testid="button-open-payment-link"
                 >
-                  Apri Link Pagamento
+                  {t("pos.apriLinkPagamento")}
                 </Button>
                 
                 {/* Verifica stato */}
@@ -2342,12 +2342,12 @@ export default function PosPage() {
                   {(checkPaymentStatusMutation.isPending || checkPaypalStatusMutation.isPending) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Verifica in corso...
+                      {t("pos.verificaInCorso")}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Verifica Pagamento
+                      {t("pos.verificaPagamento")}
                     </>
                   )}
                 </Button>
@@ -2357,7 +2357,7 @@ export default function PosPage() {
             {paymentLinkStatus === "checking" && (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <span className="text-muted-foreground">Verifica stato pagamento...</span>
+                <span className="text-muted-foreground">{t("pos.verificaStatoPagamento")}</span>
               </div>
             )}
             
@@ -2367,7 +2367,7 @@ export default function PosPage() {
                   <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
                 </div>
                 <span className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  Pagamento Ricevuto!
+                  {t("pos.pagamentoRicevuto")}
                 </span>
                 <div className="flex gap-2 w-full">
                   <Button 
@@ -2381,10 +2381,10 @@ export default function PosPage() {
                     data-testid="button-print-receipt"
                   >
                     <Printer className="w-4 h-4 mr-2" />
-                    {paymentLinkHasInvoice ? "Stampa Fattura" : t("pos.printReceipt")}
+                    {paymentLinkHasInvoice ? t("pos.stampaFattura") : t("pos.printReceipt")}
                   </Button>
                   <Button onClick={() => setPaymentLinkDialog(false)} data-testid="button-close-payment-success">
-                    Chiudi
+                    {t("common.close")}
                   </Button>
                 </div>
               </div>
@@ -2396,7 +2396,7 @@ export default function PosPage() {
                   <Clock className="w-8 h-8 text-orange-600 dark:text-orange-400" />
                 </div>
                 <span className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                  Link Scaduto
+                  {t("pos.linkScaduto")}
                 </span>
                 <Button 
                   onClick={() => {
@@ -2411,12 +2411,12 @@ export default function PosPage() {
                   {regeneratePaymentLinkMutation.isPending ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Rigenerazione...
+                      {t("pos.rigenerazione")}
                     </>
                   ) : (
                     <>
                       <RotateCcw className="w-4 h-4 mr-2" />
-                      Rigenera Link
+                      {t("pos.rigeneraLink")}
                     </>
                   )}
                 </Button>

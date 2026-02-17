@@ -75,12 +75,12 @@ export default function RepairCenterTeam() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
-      toast({ title: "Membro creato", description: t("team.ilMembroDelTeamStatoCreatoConSuccesso") });
+      toast({ title: t("team.membroCreato"), description: t("team.ilMembroDelTeamStatoCreatoConSuccesso") });
       setDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      toast({ title: t("auth.error"), description: error.message || "Errore nella creazione", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("team.erroreCreazione"), variant: "destructive" });
     },
   });
 
@@ -90,14 +90,14 @@ export default function RepairCenterTeam() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
-      toast({ title: "Membro aggiornato", description: "Le modifiche sono state salvate" });
+      toast({ title: t("team.membroAggiornato"), description: t("team.modificheSalvate") });
       setDialogOpen(false);
       form.reset();
       setSelectedMember(null);
       setIsEditing(false);
     },
     onError: (error: any) => {
-      toast({ title: t("auth.error"), description: error.message || "Errore nell'aggiornamento", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("team.erroreAggiornamento"), variant: "destructive" });
     },
   });
 
@@ -107,12 +107,12 @@ export default function RepairCenterTeam() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/team"] });
-      toast({ title: "Membro eliminato", description: t("team.ilMembroStatoRimossoDalTeam") });
+      toast({ title: t("team.membroEliminato"), description: t("team.ilMembroStatoRimossoDalTeam") });
       setDeleteDialogOpen(false);
       setSelectedMember(null);
     },
     onError: (error: any) => {
-      toast({ title: t("auth.error"), description: error.message || "Errore nell'eliminazione", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("team.erroreEliminazione"), variant: "destructive" });
     },
   });
 
@@ -121,13 +121,13 @@ export default function RepairCenterTeam() {
       return await apiRequest("POST", `/api/repair-center/team/${id}/reset-password`, { newPassword });
     },
     onSuccess: () => {
-      toast({ title: "Password reimpostata", description: t("team.laNuovaPasswordStataImpostata") });
+      toast({ title: t("team.passwordReimpostata"), description: t("team.laNuovaPasswordStataImpostata") });
       setResetPasswordDialogOpen(false);
       setNewPassword("");
       setSelectedMember(null);
     },
     onError: (error: any) => {
-      toast({ title: t("auth.error"), description: error.message || "Errore nel reset password", variant: "destructive" });
+      toast({ title: t("auth.error"), description: error.message || t("team.erroreResetPassword"), variant: "destructive" });
     },
   });
 
@@ -206,7 +206,7 @@ export default function RepairCenterTeam() {
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={handleOpenCreate} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-create-member">
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo Membro
+              {t("team.nuovoMembro")}
             </Button>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function RepairCenterTeam() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.active}</p>
-                <p className="text-sm text-muted-foreground">Attivi</p>
+                <p className="text-sm text-muted-foreground">{t("team.attivi")}</p>
               </div>
             </div>
           </CardContent>
@@ -247,7 +247,7 @@ export default function RepairCenterTeam() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.inactive}</p>
-                <p className="text-sm text-muted-foreground">Inattivi</p>
+                <p className="text-sm text-muted-foreground">{t("team.inattivi")}</p>
               </div>
             </div>
           </CardContent>
@@ -311,7 +311,7 @@ export default function RepairCenterTeam() {
                           {member.fullName}
                           {isOwner && (
                             <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                              Proprietario
+                              {t("team.proprietario")}
                             </Badge>
                           )}
                         </div>
@@ -386,7 +386,7 @@ export default function RepairCenterTeam() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditing ? t("team.editMember") : "Nuovo Membro del Team"}</DialogTitle>
+            <DialogTitle>{isEditing ? t("team.editMember") : t("team.nuovoMembroDelTeam")}</DialogTitle>
             <DialogDescription>
               {isEditing
                 ? t("team.editMemberData")
@@ -402,7 +402,7 @@ export default function RepairCenterTeam() {
                   <FormItem>
                     <FormLabel>{t("profile.fullName")}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Mario Rossi" data-testid="input-fullname" />
+                      <Input {...field} placeholder={t("team.placeholderFullName")} data-testid="input-fullname" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -415,7 +415,7 @@ export default function RepairCenterTeam() {
                   <FormItem>
                     <FormLabel>{t("admin.common.usernameLabel")}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="mario.rossi" data-testid="input-username" />
+                      <Input {...field} placeholder={t("team.placeholderUsername")} data-testid="input-username" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -428,7 +428,7 @@ export default function RepairCenterTeam() {
                   <FormItem>
                     <FormLabel>{t("auth.email")}</FormLabel>
                     <FormControl>
-                      <Input {...field} type="email" placeholder="mario@esempio.it" data-testid="input-email" />
+                      <Input {...field} type="email" placeholder={t("team.placeholderEmail")} data-testid="input-email" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -441,7 +441,7 @@ export default function RepairCenterTeam() {
                   <FormItem>
                     <FormLabel>{t("auth.phone")}</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="+39 123 456 7890" data-testid="input-phone" />
+                      <Input {...field} placeholder={t("team.placeholderPhone")} data-testid="input-phone" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -464,7 +464,7 @@ export default function RepairCenterTeam() {
               )}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
-                  Annulla
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="submit"
@@ -493,7 +493,7 @@ export default function RepairCenterTeam() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} data-testid="button-cancel-delete">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -501,7 +501,7 @@ export default function RepairCenterTeam() {
               disabled={deleteMutation.isPending}
               data-testid="button-confirm-delete"
             >
-              {deleteMutation.isPending ? "Eliminazione..." : t("common.delete")}
+              {deleteMutation.isPending ? t("team.eliminazione") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -510,9 +510,9 @@ export default function RepairCenterTeam() {
       <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reimposta Password</DialogTitle>
+            <DialogTitle>{t("team.reimpostaPassword")}</DialogTitle>
             <DialogDescription>
-              Inserisci la nuova password per {selectedMember?.fullName}
+              {t("team.inserisciNuovaPassword", { name: selectedMember?.fullName })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -523,14 +523,14 @@ export default function RepairCenterTeam() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Minimo 6 caratteri"
+                placeholder={t("team.minimo6Caratteri")}
                 data-testid="input-new-password"
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)} data-testid="button-cancel-reset">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() =>
@@ -539,7 +539,7 @@ export default function RepairCenterTeam() {
               disabled={resetPasswordMutation.isPending || newPassword.length < 6}
               data-testid="button-confirm-reset"
             >
-              {resetPasswordMutation.isPending ? t("settings.saving") : "Reimposta Password"}
+              {resetPasswordMutation.isPending ? t("settings.saving") : t("team.reimpostaPassword")}
             </Button>
           </DialogFooter>
         </DialogContent>

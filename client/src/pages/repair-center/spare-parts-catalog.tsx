@@ -35,15 +35,15 @@ const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Goog
 export default function RepairCenterSparePartsCatalog() {
   const { t } = useTranslation();
   const PART_TYPES = [
-    { value: "display", label: "Display/LCD", icon: Monitor },
-    { value: "batteria", label: "Batterie", icon: Battery },
-    { value: "fotocamera", label: "Fotocamere", icon: Camera },
-    { value: "connettore", label: "Connettori Ricarica", icon: Cpu },
-    { value: "altoparlante", label: "Altoparlanti", icon: Speaker },
-    { value: "microfono", label: "Microfoni", icon: Mic },
-    { value: "antenna", label: "Antenne/WiFi", icon: Wifi },
-    { value: "scheda_madre", label: "Scheda Madre", icon: Cpu },
-    { value: "vetro", label: "Vetri/Back Cover", icon: Monitor },
+    { value: "display", label: t("spareParts.displayLcd"), icon: Monitor },
+    { value: "batteria", label: t("spareParts.batteries"), icon: Battery },
+    { value: "fotocamera", label: t("spareParts.cameras"), icon: Camera },
+    { value: "connettore", label: t("spareParts.chargingConnectors"), icon: Cpu },
+    { value: "altoparlante", label: t("spareParts.speakers"), icon: Speaker },
+    { value: "microfono", label: t("spareParts.microphones"), icon: Mic },
+    { value: "antenna", label: t("spareParts.antennasWifi"), icon: Wifi },
+    { value: "scheda_madre", label: t("spareParts.motherboard"), icon: Cpu },
+    { value: "vetro", label: t("spareParts.glassBackCover"), icon: Monitor },
     { value: "altro", label: t("common.more"), icon: Wrench },
   ];
   const [searchQuery, setSearchQuery] = useState("");
@@ -377,8 +377,8 @@ export default function RepairCenterSparePartsCatalog() {
                   <p className="text-lg font-bold">{formatPrice(selectedPart.b2bPrice)}</p>
                 </div>
                 <div>
-                  <Label>Disponibili</Label>
-                  <p className="text-lg">{selectedPart.resellerStock} pz</p>
+                  <Label>{t("spareParts.disponibili")}</Label>
+                  <p className="text-lg">{selectedPart.resellerStock} {t("spareParts.pz")}</p>
                 </div>
               </div>
               <div>

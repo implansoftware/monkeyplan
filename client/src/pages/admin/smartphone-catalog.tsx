@@ -475,7 +475,7 @@ export default function AdminSmartphoneCatalog() {
   const addEditStock = (warehouseId: string) => {
     const wh = warehouses.find(w => w.id === warehouseId);
     if (wh && !editStock.find(s => s.warehouseId === warehouseId)) {
-      const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
+      const ownerName = wh.owner?.fullName || wh.owner?.username || t("common.system");
       setEditStock([...editStock, { 
         warehouseId, 
         warehouseName: wh.name, 
@@ -593,9 +593,9 @@ export default function AdminSmartphoneCatalog() {
         const data = await response.json();
         const stockEntries = data.stocks.map((ws: any) => ({
           warehouseId: ws.warehouseId,
-          warehouseName: ws.warehouse?.name || 'Sconosciuto',
+          warehouseName: ws.warehouse?.name || t("common.unknown"),
           ownerType: ws.warehouse?.ownerType || 'admin',
-          ownerName: ws.warehouse?.ownerName || 'Sistema',
+          ownerName: ws.warehouse?.ownerName || t("common.system"),
           quantity: ws.quantity,
           originalQuantity: ws.quantity,
           location: ws.location || "",
@@ -1057,7 +1057,7 @@ export default function AdminSmartphoneCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORY_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

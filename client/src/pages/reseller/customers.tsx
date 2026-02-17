@@ -77,7 +77,7 @@ export default function ResellerCustomers() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
-      toast({ title: "Cliente aggiornato con successo" });
+      toast({ title: t("customers.customerUpdatedSuccess") });
       setIsEditing(false);
       setSelectedCustomer(null);
     },
@@ -93,7 +93,7 @@ export default function ResellerCustomers() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/reseller/customers"] });
-      toast({ title: "Cliente eliminato con successo" });
+      toast({ title: t("customers.customerDeleted") });
       setDeleteDialogOpen(false);
       setCustomerToDelete(null);
     },
@@ -105,7 +105,7 @@ export default function ResellerCustomers() {
           const errorData = JSON.parse(jsonMatch[1]);
           if (errorData.error === "ACTIVE_REPAIRS") {
             toast({ 
-              title: "Impossibile eliminare il cliente", 
+              title: t("customers.cannotDeleteCustomer"), 
               description: errorData.message,
               variant: "destructive" 
             });
@@ -344,7 +344,7 @@ export default function ResellerCustomers() {
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Cerca cliente..."
+                  placeholder={t("customers.searchCustomerPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 h-9 bg-background"

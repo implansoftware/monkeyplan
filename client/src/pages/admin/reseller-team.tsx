@@ -357,7 +357,7 @@ export default function AdminResellerTeam() {
           <Link href="/admin/resellers">
             <Button variant="ghost" size="sm" className="text-white/80 hover:text-white hover:bg-white/10 mb-4" data-testid="button-back">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna ai rivenditori
+              {t("resellerTeam.backToResellers")}
             </Button>
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -369,13 +369,13 @@ export default function AdminResellerTeam() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Team di {reseller?.fullName || t("resellerTeam.resellerFallback")}</h1>
                 <p className="text-blue-100/80 mt-1 flex items-center gap-2">
                   <Store className="h-4 w-4" />
-                  Gestisci i collaboratori e i loro permessi
+                  {t("resellerTeam.manageCollaboratorsDesc")}
                 </p>
               </div>
             </div>
             <Button onClick={() => setWizardOpen(true)} className="bg-white text-blue-700 hover:bg-white/90 shadow-lg rounded-xl" data-testid="button-new-staff">
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo Collaboratore
+              {t("resellerTeam.newCollaborator")}
             </Button>
           </div>
         </div>
@@ -387,7 +387,7 @@ export default function AdminResellerTeam() {
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
               <Search className="h-5 w-5 text-white" />
             </div>
-            Ricerca
+            {t("common.search")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -410,7 +410,7 @@ export default function AdminResellerTeam() {
             <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
               <Users className="h-5 w-5 text-white" />
             </div>
-            Membri del Team ({filteredMembers.length})
+            {t("resellerTeam.teamMembers")} ({filteredMembers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -425,7 +425,7 @@ export default function AdminResellerTeam() {
               <Users className="h-16 w-16 mx-auto mb-4 text-slate-300" />
               <p className="text-slate-500 text-lg">
                 {staffMembers.length === 0
-                  ? "Nessun collaboratore nel team. Aggiungi il primo membro!"
+                  ? t("resellerTeam.emptyTeam")
                   : t("resellerTeam.noCollaborators")}
               </p>
             </div>
@@ -439,8 +439,8 @@ export default function AdminResellerTeam() {
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("auth.username")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("common.status")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("common.permissions")}</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Centri Assegnati</TableHead>
-                    <TableHead className="text-slate-600 dark:text-slate-400">Data Creazione</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("resellerTeam.assignedCenters")}</TableHead>
+                    <TableHead className="text-slate-600 dark:text-slate-400">{t("common.creationDate")}</TableHead>
                     <TableHead className="text-slate-600 dark:text-slate-400">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -456,12 +456,12 @@ export default function AdminResellerTeam() {
                         {member.isActive ? (
                           <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">{t("common.active")}</Badge>
                         ) : (
-                          <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">Disattivato</Badge>
+                          <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100">{t("resellerTeam.deactivated")}</Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100" data-testid={`badge-permissions-${member.id}`}>
-                          {getPermissionCount(member)} permessi
+                          {getPermissionCount(member)} {t("common.permissions")}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -531,12 +531,12 @@ export default function AdminResellerTeam() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <Users className="h-5 w-5 text-white" />
               </div>
-              {isEditing ? "Modifica Collaboratore" : "Nuovo Collaboratore"}
+              {isEditing ? t("resellerTeam.editCollaborator") : t("resellerTeam.newCollaborator")}
             </DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "Modifica i dati del collaboratore"
-                : "Inserisci i dati del nuovo membro del team"}
+                ? t("resellerTeam.editCollaboratorDesc")
+                : t("resellerTeam.newCollaboratorDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -609,7 +609,7 @@ export default function AdminResellerTeam() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem className={isEditing ? "col-span-2" : ""}>
-                      <FormLabel className="text-slate-700 dark:text-slate-300">Telefono (opzionale)</FormLabel>
+                      <FormLabel className="text-slate-700 dark:text-slate-300">{t("resellerTeam.phoneOptional")}</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="+39 333 1234567" className="h-11 rounded-xl" data-testid="input-phone" />
                       </FormControl>
@@ -621,9 +621,9 @@ export default function AdminResellerTeam() {
 
               {repairCenters.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Centri di Riparazione Assegnati</Label>
+                  <Label className="text-base font-medium text-slate-700 dark:text-slate-300">{t("resellerTeam.assignedRepairCenters")}</Label>
                   <p className="text-sm text-slate-500">
-                    Seleziona i centri a cui questo collaboratore avrà accesso
+                    {t("resellerTeam.selectCentersAccess")}
                   </p>
                   <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-h-40 overflow-y-auto bg-slate-50 dark:bg-slate-800/30">
                     <div className="space-y-2">
@@ -656,9 +656,9 @@ export default function AdminResellerTeam() {
 
               {!isEditing && (
                 <div className="space-y-3">
-                  <Label className="text-base font-medium text-slate-700 dark:text-slate-300">Permessi Iniziali</Label>
+                  <Label className="text-base font-medium text-slate-700 dark:text-slate-300">{t("resellerTeam.initialPermissions")}</Label>
                   <p className="text-sm text-slate-500">
-                    Puoi configurare i permessi dettagliati dopo la creazione
+                    {t("resellerTeam.configurePermissionsLater")}
                   </p>
                   <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 max-h-60 overflow-y-auto bg-slate-50 dark:bg-slate-800/30">
                     <div className="space-y-2">
@@ -688,7 +688,7 @@ export default function AdminResellerTeam() {
 
               <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="rounded-xl">
-                  Annulla
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="submit"
@@ -696,7 +696,7 @@ export default function AdminResellerTeam() {
                   className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
                   data-testid="button-save-staff"
                 >
-                  {isEditing ? "Salva Modifiche" : "Crea Collaboratore"}
+                  {isEditing ? t("resellerTeam.saveChanges") : t("resellerTeam.createCollaborator")}
                 </Button>
               </DialogFooter>
             </form>
@@ -711,10 +711,10 @@ export default function AdminResellerTeam() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600">
                 <UserCog className="h-5 w-5 text-white" />
               </div>
-              Permessi di {selectedMember?.fullName}
+              {t("resellerTeam.permissionsOf")} {selectedMember?.fullName}
             </DialogTitle>
             <DialogDescription>
-              Configura i permessi per ogni modulo. Seleziona le azioni consentite.
+              {t("resellerTeam.configurePermissionsDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -723,7 +723,7 @@ export default function AdminResellerTeam() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50 dark:bg-slate-800/50">
-                    <TableHead className="w-[250px] text-slate-600 dark:text-slate-400">Modulo</TableHead>
+                    <TableHead className="w-[250px] text-slate-600 dark:text-slate-400">{t("resellerTeam.module")}</TableHead>
                     {PERMISSION_ACTIONS.map((action) => (
                       <TableHead key={action.id} className="text-center w-[100px] text-slate-600 dark:text-slate-400">
                         <div className="flex flex-col items-center gap-1">
@@ -778,7 +778,7 @@ export default function AdminResellerTeam() {
 
           <DialogFooter className="pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="outline" onClick={() => setPermissionsDialogOpen(false)} className="rounded-xl">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSavePermissions}
@@ -786,7 +786,7 @@ export default function AdminResellerTeam() {
               className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
               data-testid="button-save-permissions"
             >
-              Salva Permessi
+              {t("resellerTeam.savePermissions")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -799,15 +799,15 @@ export default function AdminResellerTeam() {
               <div className="p-2 rounded-xl bg-gradient-to-br from-red-500 to-red-600">
                 <Trash2 className="h-5 w-5 text-white" />
               </div>
-              Conferma Eliminazione
+              {t("common.confirmDelete")}
             </DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare {selectedMember?.fullName} dal team? Questa azione non può essere annullata.
+              {t("resellerTeam.confirmDeleteMember", { name: selectedMember?.fullName })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="rounded-xl">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -816,7 +816,7 @@ export default function AdminResellerTeam() {
               className="rounded-xl"
               data-testid="button-confirm-delete"
             >
-              Elimina
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

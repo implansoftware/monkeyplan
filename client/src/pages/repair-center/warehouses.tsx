@@ -150,10 +150,10 @@ export default function RepairCenterWarehousesPage() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-warehouse-title">
-                Magazzini
+                {t("sidebar.items.warehouse")}
               </h1>
               <p className="text-emerald-100">
-                {myWarehouse?.name || "Il Mio Magazzino"}{myWarehouse?.address && ` - ${myWarehouse.address}`}
+                {myWarehouse?.name || t("warehouses.myWarehouse")}{myWarehouse?.address && ` - ${myWarehouse.address}`}
               </p>
             </div>
           </div>
@@ -377,7 +377,7 @@ export default function RepairCenterWarehousesPage() {
                     ) : filteredStock.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="text-center p-8 text-muted-foreground">
-                          Nessun prodotto in stock
+                          {t("warehouse.nessunProdottoInStock")}
                         </td>
                       </tr>
                     ) : (
@@ -454,7 +454,7 @@ export default function RepairCenterWarehousesPage() {
                     ) : movements.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="text-center p-8 text-muted-foreground">
-                          Nessun movimento registrato
+                          {t("warehouse.nessunMovimentoRegistrato")}
                         </td>
                       </tr>
                     ) : (

@@ -40,11 +40,11 @@ type RepairCenter = {
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     draft: t("invoices.draft"),
-    requested: "Richiesto",
+    requested: t("supplierReturns.requested"),
     approved: t("repairs.status.approved"),
     shipped: t("b2b.status.shipped"),
     received: t("repairs.status.received"),
-    refunded: "Rimborsato",
+    refunded: t("supplierReturns.refunded"),
     rejected: t("b2b.status.cancelled"),
   };
 }
@@ -61,10 +61,10 @@ const statusVariants: Record<string, "default" | "secondary" | "destructive" | "
 
 function getReasonLabels(t: (key: string) => string): Record<string, string> {
   return {
-    defective: "Difettoso",
-    wrong_item: "Articolo Errato",
-    damaged: "Danneggiato",
-    not_needed: "Non Necessario",
+    defective: t("supplierReturns.defective"),
+    wrong_item: t("supplierReturns.wrongItem"),
+    damaged: t("supplierReturns.damaged"),
+    not_needed: t("supplierReturns.notNeeded"),
     other: t("common.other"),
   };
 }

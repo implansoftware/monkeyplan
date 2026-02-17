@@ -73,7 +73,7 @@ export default function RepairCenterTickets() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-tickets"] });
-      toast({ title: "Ticket creato con successo" });
+      toast({ title: t("tickets.ticketCreated") });
       setIsDialogOpen(false);
       setNewTicket({
         subject: "",
@@ -121,7 +121,7 @@ export default function RepairCenterTickets() {
     if (ticket.targetType === "admin") return "Admin";
     if (ticket.targetType === "reseller") {
       const reseller = resellers.find(r => r.id === ticket.targetId);
-      return reseller?.company || reseller?.fullName || "Rivenditore";
+      return reseller?.company || reseller?.fullName || t("tickets.reseller");
     }
     return ticket.targetType;
   };
@@ -180,7 +180,7 @@ export default function RepairCenterTickets() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label>Destinatario *</Label>
+                <Label>{t("tickets.destinatario")} *</Label>
                 <Select 
                   value={newTicket.targetType} 
                   onValueChange={(v) => setNewTicket({ ...newTicket, targetType: v, targetId: "" })}
@@ -192,13 +192,13 @@ export default function RepairCenterTickets() {
                     <SelectItem value="admin">
                       <div className="flex flex-wrap items-center gap-2">
                         <Building2 className="h-4 w-4" />
-                        Amministrazione
+                        {t("tickets.amministrazione")}
                       </div>
                     </SelectItem>
                     <SelectItem value="reseller">
                       <div className="flex flex-wrap items-center gap-2">
                         <Users className="h-4 w-4" />
-                        Rivenditore
+                        {t("tickets.rivenditore")}
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -207,7 +207,7 @@ export default function RepairCenterTickets() {
               
               {newTicket.targetType === "reseller" && (
                 <div className="space-y-2">
-                  <Label>Rivenditore *</Label>
+                  <Label>{t("tickets.rivenditore")} *</Label>
                   <Select 
                     value={newTicket.targetId} 
                     onValueChange={(v) => setNewTicket({ ...newTicket, targetId: v })}
@@ -227,7 +227,7 @@ export default function RepairCenterTickets() {
               )}
               
               <div className="space-y-2">
-                <Label>Oggetto *</Label>
+                <Label>{t("tickets.oggetto")} *</Label>
                 <Input
                   value={newTicket.subject}
                   onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
@@ -237,7 +237,7 @@ export default function RepairCenterTickets() {
               </div>
               
               <div className="space-y-2">
-                <Label>Descrizione *</Label>
+                <Label>{t("tickets.descrizione")} *</Label>
                 <Textarea
                   value={newTicket.description}
                   onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
@@ -266,14 +266,14 @@ export default function RepairCenterTickets() {
               
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Annulla
+                  {t("profile.cancel")}
                 </Button>
                 <Button 
                   onClick={handleSubmit} 
                   disabled={createMutation.isPending}
                   data-testid="button-submit-ticket"
                 >
-                  {createMutation.isPending ? "Invio..." : "Invia Ticket"}
+                  {createMutation.isPending ? t("common.sending") : t("tickets.submitTicket")}
                 </Button>
               </div>
             </div>

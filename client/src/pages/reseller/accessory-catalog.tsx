@@ -115,7 +115,19 @@ function getConditionOptions(t: (key: string) => string) {
   ];
 }
 
-const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Universale", "Altro"];
+function getBrandOptions(t: (key: string) => string) {
+  return [
+    { value: "Apple", label: "Apple" },
+    { value: "Samsung", label: "Samsung" },
+    { value: "Xiaomi", label: "Xiaomi" },
+    { value: "Huawei", label: "Huawei" },
+    { value: "OPPO", label: "OPPO" },
+    { value: "OnePlus", label: "OnePlus" },
+    { value: "Google", label: "Google" },
+    { value: "Universale", label: t("products.universal") },
+    { value: "Altro", label: t("common.other") },
+  ];
+}
 
 export default function AccessoryCatalog() {
   const { t } = useTranslation();
@@ -123,6 +135,7 @@ export default function AccessoryCatalog() {
   const CONDITION_OPTIONS = getConditionOptions(t);
   const COLOR_OPTIONS = getColorOptions(t);
   const MATERIAL_OPTIONS = getMaterialOptions(t);
+  const BRANDS = getBrandOptions(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -1003,7 +1016,7 @@ export default function AccessoryCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {BRANDS.map((b) => (
-                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                      <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

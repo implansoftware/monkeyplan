@@ -22,13 +22,13 @@ type SmartphoneWithSpecs = Product & {
   availableForPurchase: boolean;
 };
 
-const GRADE_OPTIONS = [
-  { value: "A+", label: "A+ - Come nuovo" },
-  { value: "A", label: "A - Ottimo" },
-  { value: "B", label: "B - Buono" },
-  { value: "C", label: "C - Discreto" },
-  { value: "D", label: "D - Danneggiato" },
-];
+const GRADE_KEYS: Record<string, string> = {
+  "A+": "smartphoneCatalog.gradeAPlus",
+  "A": "smartphoneCatalog.gradeA",
+  "B": "smartphoneCatalog.gradeB",
+  "C": "smartphoneCatalog.gradeC",
+  "D": "smartphoneCatalog.gradeD",
+};
 
 // Categorie dispositivi
 
@@ -43,11 +43,15 @@ const ALL_BRANDS = Array.from(new Set([...MOBILE_BRANDS, ...PC_BRANDS]));
 
 export default function RepairCenterSmartphoneCatalog() {
   const { t } = useTranslation();
+  const GRADE_OPTIONS = Object.entries(GRADE_KEYS).map(([value, key]) => ({
+    value,
+    label: t(key),
+  }));
   const DEVICE_CATEGORIES = [
     { value: "smartphone", label: "Smartphone" },
     { value: "tablet", label: "Tablet" },
-    { value: "portatile", label: "Portatile" },
-    { value: "pc_fisso", label: "PC Fisso" },
+    { value: "portatile", label: t("smartphoneCatalog.laptop") },
+    { value: "pc_fisso", label: t("smartphoneCatalog.desktop") },
     { value: "display", label: "Display" },
     { value: "batteria", label: t("settings.battery") },
     { value: "accessorio", label: t("products.accessory") },
@@ -354,7 +358,7 @@ export default function RepairCenterSmartphoneCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Smartphone className="h-5 w-5" />
-              Dettagli Smartphone
+              {t("smartphones.dettagliSmartphone")}
             </DialogTitle>
           </DialogHeader>
           {selectedPhone && (

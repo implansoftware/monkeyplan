@@ -120,13 +120,15 @@ const getBrandsForCategory = (category: string): string[] => {
   }
 };
 
-const GRADE_OPTIONS = [
-  { value: "A+", label: t("products.gradeAPlus") },
-  { value: "A", label: t("products.gradeA") },
-  { value: "B", label: t("products.gradeB") },
-  { value: "C", label: t("products.gradeC") },
-  { value: "D", label: t("products.gradeD") },
-];
+function getGradeOptions(t: (key: string) => string) {
+  return [
+    { value: "A+", label: t("products.gradeAPlus") },
+    { value: "A", label: t("products.gradeA") },
+    { value: "B", label: t("products.gradeB") },
+    { value: "C", label: t("products.gradeC") },
+    { value: "D", label: t("products.gradeD") },
+  ];
+}
 function getConditionOptions(t: (key: string) => string) {
   return [
     { value: "nuovo", label: t("common.new") },
@@ -142,14 +144,16 @@ function getNetworkLockOptions(t: (key: string) => string) {
     { value: "icloud_locked", label: t("products.icloudLocked") },
   ];
 }
-const BATTERY_OPTIONS = [
-  { value: "100", label: "100%" },
-  { value: "95-99", label: "95-99%" },
-  { value: "90-94", label: "90-94%" },
-  { value: "85-89", label: "85-89%" },
-  { value: "80-84", label: "80-84%" },
-  { value: "<80", label: t("products.lessThan80") },
-];
+function getBatteryOptions(t: (key: string) => string) {
+  return [
+    { value: "100", label: "100%" },
+    { value: "95-99", label: "95-99%" },
+    { value: "90-94", label: "90-94%" },
+    { value: "85-89", label: "85-89%" },
+    { value: "80-84", label: "80-84%" },
+    { value: "<80", label: t("products.lessThan80") },
+  ];
+}
 function getCategoryOptions(t: (key: string) => string) {
   return [
     { value: "smartphone", label: t("repair.smartphone") },
@@ -165,15 +169,17 @@ function getCategoryOptions(t: (key: string) => string) {
 // Categorie che sono dispositivi (hanno specs tecniche)
 const DEVICE_CATEGORIES = ["smartphone", "tablet", "portatile", "pc_fisso", "smartwatch", "console"];
 const isDeviceCategory = (category: string) => DEVICE_CATEGORIES.includes(category);
-const ACCESSORY_OPTIONS = [
-  t("products.originalCharger"),
-  t("products.usbCable"),
-  t("products.earphones"),
-  t("products.cover"),
-  t("products.screenProtector"),
-  t("products.originalBox"),
-  t("products.manual"),
-];
+function getAccessoryOptions(t: (key: string) => string) {
+  return [
+    t("products.originalCharger"),
+    t("products.usbCable"),
+    t("products.earphones"),
+    t("products.cover"),
+    t("products.screenProtector"),
+    t("products.originalBox"),
+    t("products.manual"),
+  ];
+}
 
 
 export function SmartphoneWizard({ 
@@ -189,6 +195,9 @@ export function SmartphoneWizard({
   const CONDITION_OPTIONS = getConditionOptions(t);
   const NETWORK_LOCK_OPTIONS = getNetworkLockOptions(t);
   const CATEGORY_OPTIONS = getCategoryOptions(t);
+  const GRADE_OPTIONS = getGradeOptions(t);
+  const BATTERY_OPTIONS = getBatteryOptions(t);
+  const ACCESSORY_OPTIONS = getAccessoryOptions(t);
   const [currentStep, setCurrentStep] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -655,7 +664,7 @@ export function SmartphoneWizard({
                           </FormControl>
                           <SelectContent>
                             {getBrandsForCategory(form.watch("category")).map(brand => (
-                              <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                              <SelectItem key={brand} value={brand}>{brand === "Altro" ? t("common.other") : brand}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -850,7 +859,7 @@ export function SmartphoneWizard({
                         <FormItem>
                           <FormLabel>{t("common.serialNumber")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="S/N" {...field} data-testid="input-smartphone-serial" />
+                            <Input placeholder={t("repair.serialAbbr")} {...field} data-testid="input-smartphone-serial" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1178,7 +1187,7 @@ export function SmartphoneWizard({
                               const model = allModels.find(m => m.id === compat.deviceModelId);
                               label = `${brand?.name || ""} ${model?.modelName || t("common.model")}`;
                             } else {
-                              label = `${brand?.name || t("common.brand")} (tutti)`;
+                              label = `${brand?.name || t("common.brand")} (${t("products.allModels")})`;
                             }
                             return (
                               <Badge key={index} variant="secondary" className="gap-1">
@@ -1245,7 +1254,7 @@ export function SmartphoneWizard({
                         )}
                         {values.imei2 && (
                           <div>
-                            <Label className="text-xs text-muted-foreground">IMEI 2</Label>
+                            <Label className="text-xs text-muted-foreground">{t("repair.imei2")}</Label>
                             <p className="font-medium font-mono text-sm" data-testid="text-summary-imei2">{values.imei2}</p>
                           </div>
                         )}
@@ -1293,7 +1302,7 @@ export function SmartphoneWizard({
                             return (
                               <div key={i} className="flex justify-between text-sm">
                                 <span>{wh?.name || t("common.warehouse")}</span>
-                                <span className="font-medium">{stock.quantity} pz</span>
+                                <span className="font-medium">{stock.quantity} {t("products.pcsAbbr")}</span>
                               </div>
                             );
                           })}
@@ -1320,7 +1329,7 @@ export function SmartphoneWizard({
                             const brand = deviceBrands.find(b => b.id === compat.deviceBrandId);
                             let label = brand?.name || t("common.brand");
                             if (!compat.deviceModelId) {
-                              label = `${brand?.name || t("common.brand")} (tutti)`;
+                              label = `${brand?.name || t("common.brand")} (${t("products.allModels")})`;
                             }
                             return (
                               <Badge key={index} variant="secondary" className="text-xs">

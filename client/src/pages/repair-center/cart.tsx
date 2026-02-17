@@ -105,12 +105,12 @@ export default function RepairCenterCart() {
   const removeFromCart = (productId: string) => {
     const newCart = cart.filter(item => item.productId !== productId);
     saveCart(newCart);
-    toast({ title: "Prodotto rimosso", description: "Prodotto rimosso dal carrello" });
+    toast({ title: t("cart.productRemoved"), description: t("cart.productRemovedFromCart") });
   };
 
   const clearCart = () => {
     saveCart([]);
-    toast({ title: "Carrello svuotato", description: "Tutti i prodotti sono stati rimossi" });
+    toast({ title: t("cart.cartCleared"), description: t("cart.allProductsRemoved") });
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.b2bPrice * item.quantity), 0);
@@ -182,7 +182,7 @@ export default function RepairCenterCart() {
           <div className="lg:col-span-2 space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Prodotti nel Carrello ({cartItemCount})</CardTitle>
+                <CardTitle>{t("cart.prodottiNelCarrello")} ({cartItemCount})</CardTitle>
                 <CardDescription>{t("cart.modificaLeQuantitORimuoviProdotti")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -252,7 +252,7 @@ export default function RepairCenterCart() {
               <CardFooter>
                 <Button className="w-full" onClick={handleCheckout} data-testid="button-checkout">
                   <Send className="h-4 w-4 mr-2" />
-                  Procedi all'Ordine
+                  {t("cart.procediOrdine")}
                 </Button>
               </CardFooter>
             </Card>
@@ -294,15 +294,15 @@ export default function RepairCenterCart() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="payment-method">Metodo di Pagamento</Label>
+              <Label htmlFor="payment-method">{t("b2b.metodoPagamento")}</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger id="payment-method" data-testid="select-payment-method">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bank_transfer">{t("settings.bankTransfer")}</SelectItem>
-                  <SelectItem value="cash">Contanti alla Consegna</SelectItem>
-                  <SelectItem value="credit">Credito Rivenditore</SelectItem>
+                  <SelectItem value="cash">{t("cart.contantiConsegna")}</SelectItem>
+                  <SelectItem value="credit">{t("cart.creditoRivenditore")}</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -315,7 +315,7 @@ export default function RepairCenterCart() {
                         <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div className="space-y-2 flex-1">
-                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">Coordinate Bancarie Rivenditore</h4>
+                        <h4 className="font-semibold text-blue-900 dark:text-blue-100">{t("cart.coordinateBancarie")}</h4>
                         <div className="grid gap-1.5 text-sm">
                           <div className="flex justify-between">
                             <span className="text-blue-700 dark:text-blue-300">IBAN:</span>
@@ -323,13 +323,13 @@ export default function RepairCenterCart() {
                           </div>
                           {paymentConfig.bankTransfer.accountHolder && (
                             <div className="flex justify-between">
-                              <span className="text-blue-700 dark:text-blue-300">Intestatario:</span>
+                              <span className="text-blue-700 dark:text-blue-300">{t("cart.intestatario")}:</span>
                               <span className="font-medium text-blue-900 dark:text-blue-100">{paymentConfig.bankTransfer.accountHolder}</span>
                             </div>
                           )}
                           {paymentConfig.bankTransfer.bankName && (
                             <div className="flex justify-between">
-                              <span className="text-blue-700 dark:text-blue-300">Banca:</span>
+                              <span className="text-blue-700 dark:text-blue-300">{t("cart.banca")}:</span>
                               <span className="font-medium text-blue-900 dark:text-blue-100">{paymentConfig.bankTransfer.bankName}</span>
                             </div>
                           )}
@@ -351,7 +351,7 @@ export default function RepairCenterCart() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note Ordine (opzionale)</Label>
+              <Label htmlFor="notes">{t("cart.noteOrdineOpzionale")}</Label>
               <Textarea
                 id="notes"
                 placeholder={t("cart.addNotesForReseller")}

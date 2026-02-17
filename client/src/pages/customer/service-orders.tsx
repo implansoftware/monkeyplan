@@ -22,7 +22,7 @@ export default function CustomerServiceOrders() {
   const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("b2b.status.pending"), variant: "secondary" },
     accepted: { label: t("standalone.accepted"), variant: "default" },
-    scheduled: { label: "Programmato", variant: "outline" },
+    scheduled: { label: t("customerPages.scheduledLabel"), variant: "outline" },
     in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
     completed: { label: t("repairs.status.completed"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
@@ -68,7 +68,7 @@ export default function CustomerServiceOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/service-orders"] });
-      toast({ title: "Ordine annullato" });
+      toast({ title: t("customerPages.orderCancelled") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -94,9 +94,9 @@ export default function CustomerServiceOrders() {
         trackingNumber: "",
       });
       if (data.deliveryMethod === "shipping") {
-        toast({ title: "Spedizione confermata", description: "DDT generato. Puoi scaricarlo dalla scheda ordine." });
+        toast({ title: t("customerPages.shippingConfirmedDdt"), description: t("customerPages.ddtGenerated") });
       } else {
-        toast({ title: "Consegna di persona confermata", description: "Porta il dispositivo al rivenditore." });
+        toast({ title: t("customerPages.inPersonConfirmed"), description: t("customerPages.bringDeviceToReseller") });
       }
     },
     onError: (error: Error) => {
@@ -192,8 +192,8 @@ export default function CustomerServiceOrders() {
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>Non hai ancora effettuato ordini</p>
-            <p className="text-sm mt-2">Vai al catalogo servizi per richiedere un intervento</p>
+            <p>{t("customerPages.noOrdersYetServiceDesc")}</p>
+            <p className="text-sm mt-2">{t("customerPages.goToServiceCatalog")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -216,16 +216,16 @@ export default function CustomerServiceOrders() {
               <CardContent className="space-y-2">
                 {order.brand && order.model && (
                   <p className="text-sm">
-                    <span className="text-muted-foreground">Dispositivo:</span> {order.brand} {order.model}
+                    <span className="text-muted-foreground">{t("customerPages.deviceLabel2")}</span> {order.brand} {order.model}
                   </p>
                 )}
                 {order.issueDescription && (
                   <p className="text-sm">
-                    <span className="text-muted-foreground">Problema:</span> {order.issueDescription}
+                    <span className="text-muted-foreground">{t("customerPages.issueLabel")}</span> {order.issueDescription}
                   </p>
                 )}
                 <p className="text-sm font-medium">
-                  Importo: {formatPrice(order.priceCents)}
+                  {t("customerPages.amountLabel")} {formatPrice(order.priceCents)}
                 </p>
 
                 {(order as any).paymentMethod === "bank_transfer" && (
@@ -233,22 +233,22 @@ export default function CustomerServiceOrders() {
                     <p className="font-medium mb-1">{t("customerPages.pagamentoConBonifico")}</p>
                     {myReseller ? (
                       <>
-                        <p><span className="text-muted-foreground">Intestatario:</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
+                        <p><span className="text-muted-foreground">{t("customerPages.accountHolder")}</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
                         {myReseller.iban ? (
                           <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{myReseller.iban}</span></p>
                         ) : (
-                          <p className="text-amber-600">IBAN non ancora configurato - contatta il rivenditore</p>
+                          <p className="text-amber-600">{t("customerPages.ibanNotConfigured")}</p>
                         )}
                       </>
                     ) : (
-                      <p className="text-muted-foreground">Contatta il rivenditore per le coordinate bancarie</p>
+                      <p className="text-muted-foreground">{t("customerPages.contactResellerBank")}</p>
                     )}
                   </div>
                 )}
 
                 {order.scheduledAt && (
                   <p className="text-sm">
-                    <span className="text-muted-foreground">Appuntamento:</span>{" "}
+                    <span className="text-muted-foreground">{t("customerPages.appointmentLabel")}:</span>{" "}
                     {format(new Date(order.scheduledAt), "dd MMM yyyy HH:mm", { locale: it })}
                   </p>
                 )}
@@ -259,7 +259,7 @@ export default function CustomerServiceOrders() {
                       {order.deliveryMethod === "shipping" ? (
                         <><Truck className="w-4 h-4" /> {t("common.shipment")}</>
                       ) : (
-                        <><MapPin className="w-4 h-4" /> Consegna di persona</>
+                        <><MapPin className="w-4 h-4" /> {t("customerPages.inPersonDelivery")}</>
                       )}
                     </p>
                     {order.deliveryMethod === "shipping" && order.trackingNumber && (
@@ -269,7 +269,7 @@ export default function CustomerServiceOrders() {
                     )}
                     {order.deviceReceivedAt && (
                       <Badge variant="default" className="mt-1">
-                        <Check className="w-3 h-3 mr-1" /> Dispositivo ricevuto
+                        <Check className="w-3 h-3 mr-1" /> {t("customerPages.deviceReceivedBadge")}
                       </Badge>
                     )}
                   </div>
@@ -289,7 +289,7 @@ export default function CustomerServiceOrders() {
                       ) : (
                         <X className="w-4 h-4 mr-2" />
                       )}
-                      Annulla
+                      {t("customerPages.cancelOrder")}
                     </Button>
                   )}
 
@@ -300,7 +300,7 @@ export default function CustomerServiceOrders() {
                       data-testid={`button-set-delivery-${order.id}`}
                     >
                       <Truck className="w-4 h-4 mr-2" />
-                      Scegli come consegnare
+                      {t("customerPages.chooseDelivery")}
                     </Button>
                   )}
 
@@ -317,7 +317,7 @@ export default function CustomerServiceOrders() {
                       ) : (
                         <Download className="w-4 h-4 mr-2" />
                       )}
-                      Scarica DDT
+                      {t("customerPages.downloadDdt")}
                     </Button>
                   )}
                 </div>
@@ -330,9 +330,9 @@ export default function CustomerServiceOrders() {
       <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Come vuoi consegnare il dispositivo?</DialogTitle>
+            <DialogTitle>{t("customerPages.deliveryDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Scegli se portare il dispositivo di persona o spedirlo
+              {t("customerPages.deliveryDialogDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -347,14 +347,14 @@ export default function CustomerServiceOrders() {
                 <RadioGroupItem value="in_person" id="in_person" data-testid="radio-in-person" />
                 <Label htmlFor="in_person" className="flex flex-wrap items-center gap-2 cursor-pointer">
                   <MapPin className="w-4 h-4" />
-                  Consegna di persona
+                  {t("customerPages.inPersonDelivery")}
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="shipping" id="shipping" data-testid="radio-shipping" />
                 <Label htmlFor="shipping" className="flex flex-wrap items-center gap-2 cursor-pointer">
                   <Truck className="w-4 h-4" />
-                  Spedizione
+                  {t("customerPages.shippingOption")}
                 </Label>
               </div>
             </RadioGroup>
@@ -364,9 +364,9 @@ export default function CustomerServiceOrders() {
                 <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-md border" data-testid="shipping-destination">
                   <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">Spedisci a:</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">{t("customerPages.shipTo")}</p>
                     <p className="text-sm font-medium" data-testid="text-ship-to-name">
-                      {myReseller?.ragioneSociale || myReseller?.fullName || "Rivenditore"}
+                      {myReseller?.ragioneSociale || myReseller?.fullName || t("customerPages.resellerLabel")}
                     </p>
                     {myReseller?.indirizzo ? (
                       <p className="text-sm" data-testid="text-ship-to-address">
@@ -377,7 +377,7 @@ export default function CustomerServiceOrders() {
                         {myReseller.provincia ? ` (${myReseller.provincia})` : ""}
                       </p>
                     ) : (
-                      <p className="text-xs text-muted-foreground">Contatta il rivenditore per confermare l'indirizzo</p>
+                      <p className="text-xs text-muted-foreground">{t("customerPages.contactResellerAddress")}</p>
                     )}
                     {myReseller?.phone && (
                       <p className="text-xs text-muted-foreground mt-1">Tel: {myReseller.phone}</p>
@@ -390,16 +390,16 @@ export default function CustomerServiceOrders() {
                     <Input
                       value={deliveryForm.courierName}
                       onChange={(e) => setDeliveryForm({ ...deliveryForm, courierName: e.target.value })}
-                      placeholder="Nome corriere (es. BRT, DHL, GLS...)"
+                      placeholder={t("customerPages.courierPlaceholder")}
                       data-testid="input-courier-name"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Numero Tracking</Label>
+                    <Label>{t("shipping.trackingNumber")}</Label>
                     <Input
                       value={deliveryForm.trackingNumber}
                       onChange={(e) => setDeliveryForm({ ...deliveryForm, trackingNumber: e.target.value })}
-                      placeholder="Numero di tracking"
+                      placeholder={t("customerPages.trackingPlaceholder")}
                       data-testid="input-tracking-number"
                     />
                   </div>
@@ -410,13 +410,13 @@ export default function CustomerServiceOrders() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeliveryDialogOpen(false)}>
-              Annulla
+              {t("customerPages.cancelButton")}
             </Button>
             <Button onClick={handleSubmitDelivery} disabled={setDeliveryMutation.isPending} data-testid="button-confirm-delivery">
               {setDeliveryMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : null}
-              Conferma
+              {t("customerPages.confirmButton")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -179,7 +179,7 @@ export default function ResellerPosSessions() {
       });
       
       if (!response.ok) {
-        throw new Error("Errore nell'esportazione");
+        throw new Error(t("pos.exportError"));
       }
       
       const blob = await response.blob();
@@ -192,9 +192,9 @@ export default function ResellerPosSessions() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      toast({ title: t("reports.exportCompleted"), description: `File ${format.toUpperCase()} scaricato con successo` });
+      toast({ title: t("reports.exportCompleted"), description: t("reports.fileDownloaded", { format: format.toUpperCase() }) });
     } catch (error) {
-      toast({ title: t("common.error"), description: "Impossibile esportare le sessioni", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("pos.cannotExportSessions"), variant: "destructive" });
     } finally {
       setIsExporting(false);
     }
@@ -250,7 +250,7 @@ export default function ResellerPosSessions() {
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[200px]">
               <Input
-                placeholder="Cerca per centro, operatore..."
+                placeholder={t("pos.searchByCenterOperator")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full"

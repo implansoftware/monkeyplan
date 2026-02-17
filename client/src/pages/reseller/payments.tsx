@@ -23,11 +23,11 @@ import { useTranslation } from "react-i18next";
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     pending: t("hr.pending"),
-    processing: "In elaborazione",
+    processing: t("reseller.paymentProcessing"),
     completed: t("common.completed"),
-    failed: "Fallito",
-    refunded: "Rimborsato",
-    partially_refunded: "Rimborsato parzialmente"
+    failed: t("reseller.paymentFailed"),
+    refunded: t("reseller.paymentRefunded"),
+    partially_refunded: t("reseller.paymentPartiallyRefunded")
   };
 }
 
@@ -44,11 +44,11 @@ function getMethodLabels(t: (key: string) => string): Record<string, string> {
   return {
     cash: t("pos.cash"),
     card: t("pos.card"),
-    bank_transfer: "Bonifico",
+    bank_transfer: t("reseller.bankTransfer"),
     paypal: "PayPal",
     stripe: "Stripe",
     pos: t("sidebar.sections.posSection"),
-    credit: "Credito"
+    credit: t("reseller.credit")
   };
 }
 
@@ -82,7 +82,7 @@ export default function ResellerPayments() {
       if (statusFilter && statusFilter !== "all") params.set('status', statusFilter);
       if (methodFilter && methodFilter !== "all") params.set('method', methodFilter);
       const res = await fetch(`/api/reseller/payments?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Errore nel caricamento pagamenti');
+      if (!res.ok) throw new Error(t("reseller.loadingPaymentsError"));
       return res.json();
     }
   });
@@ -92,12 +92,12 @@ export default function ResellerPayments() {
       const res = await apiRequest('PUT', `/api/payments/${paymentId}`, {
         status: 'completed',
         paidAt: new Date().toISOString(),
-        notes: 'Confermato manualmente'
+        notes: t("reseller.manuallyConfirmed")
       });
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("license.paymentConfirmed"), description: "Il pagamento è stato confermato con successo" });
+      toast({ title: t("license.paymentConfirmed"), description: t("reseller.paymentConfirmedDesc") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/payments'] });
       setShowDetailDialog(false);
       setSelectedPayment(null);
@@ -172,7 +172,7 @@ export default function ResellerPayments() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white" data-testid="page-title">{t("sidebar.items.payments")}</h1>
-              <p className="text-white/80 text-sm">Gestione pagamenti e transazioni</p>
+              <p className="text-white/80 text-sm">{t("reseller.managePaymentsAndTransactions")}</p>
             </div>
           </div>
         </div>
@@ -225,7 +225,7 @@ export default function ResellerPayments() {
                 <TrendingUp className="h-5 w-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Incassato</p>
+                <p className="text-sm text-muted-foreground">{t("reseller.collected")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-amount">{formatPrice(stats.totalAmount)}</p>
               </div>
             </div>
@@ -237,7 +237,7 @@ export default function ResellerPayments() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per ID transazione..."
+            placeholder={t("reseller.searchByTransactionId")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -282,7 +282,7 @@ export default function ResellerPayments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID Transazione</TableHead>
+                  <TableHead>{t("reseller.transactionId")}</TableHead>
                   <TableHead>{t("common.date")}</TableHead>
                   <TableHead>{t("common.method")}</TableHead>
                   <TableHead>{t("common.amount")}</TableHead>
@@ -338,7 +338,7 @@ export default function ResellerPayments() {
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Dettaglio Pagamento</DialogTitle>
+            <DialogTitle>{t("reseller.paymentDetail")}</DialogTitle>
             <DialogDescription>
               {selectedPayment?.transactionId || selectedPayment?.id}
             </DialogDescription>
@@ -397,7 +397,7 @@ export default function ResellerPayments() {
                   <p className="font-medium">{(selectedPayment as any)?.customerName || '-'}</p>
                 </div>
                 <div>
-                  <Label className="text-muted-foreground">Email Cliente</Label>
+                  <Label className="text-muted-foreground">{t("reseller.customerEmail")}</Label>
                   <p className="font-medium text-sm">{(selectedPayment as any)?.customerEmail || '-'}</p>
                 </div>
               </div>
@@ -430,7 +430,7 @@ export default function ResellerPayments() {
                 data-testid="button-confirm-payment"
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                {isConfirming ? "Confermo..." : "Conferma Pagamento"}
+                {isConfirming ? t("reseller.confirming") : t("reseller.confirmPayment")}
               </Button>
             )}
           </DialogFooter>

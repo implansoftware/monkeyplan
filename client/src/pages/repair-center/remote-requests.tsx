@@ -24,10 +24,10 @@ export default function RepairCenterRemoteRequests() {
   const { t } = useTranslation();
   const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("b2b.status.pending"), variant: "secondary" },
-    assigned: { label: "Assegnata", variant: "outline" },
+    assigned: { label: t("remoteRequests.assigned"), variant: "outline" },
     accepted: { label: t("remoteRequests.accepted"), variant: "default" },
     rejected: { label: t("common.rejected"), variant: "destructive" },
-    awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
+    awaiting_shipment: { label: t("remoteRequests.awaitingShipment"), variant: "outline" },
     in_transit: { label: t("shipping.inTransit"), variant: "default" },
     received: { label: t("repairs.status.received"), variant: "default" },
     repair_created: { label: t("remoteRequests.repairCreated"), variant: "default" },
@@ -389,10 +389,10 @@ export default function RepairCenterRemoteRequests() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
-                            {request.quotedAt && <span>Inviato il: {format(new Date(request.quotedAt), "d MMM yyyy, HH:mm", { locale: it })}</span>}
-                            {request.quoteValidUntil && <span>Valido fino al: {format(new Date(request.quoteValidUntil), "d MMM yyyy", { locale: it })}</span>}
+                            {request.quotedAt && <span>{t("remoteRequests.inviatoIl")} {format(new Date(request.quotedAt), "d MMM yyyy, HH:mm", { locale: it })}</span>}
+                            {request.quoteValidUntil && <span>{t("remoteRequests.validoFinoAl")} {format(new Date(request.quoteValidUntil), "d MMM yyyy", { locale: it })}</span>}
                           </div>
-                          {request.paymentMethod && <p className="text-xs text-muted-foreground mt-1">Pagamento: {request.paymentMethod === 'in_store' ? 'In negozio' : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? 'Pagato' : 'In attesa'})</p>}
+                          {request.paymentMethod && <p className="text-xs text-muted-foreground mt-1">{t("remoteRequests.pagamento")}: {request.paymentMethod === 'in_store' ? t("remoteRequests.inNegozio") : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? t("remoteRequests.pagato") : t("remoteRequests.inAttesa")})</p>}
                         </div>
                       )}
                       <div className="space-y-3">
@@ -506,7 +506,7 @@ export default function RepairCenterRemoteRequests() {
                           )}
                           {request.status === 'quoted' && (
                             <>
-                              <Badge variant="outline">In attesa risposta cliente</Badge>
+                              <Badge variant="outline">{t("remoteRequests.inAttesaRispostaCliente")}</Badge>
                               <Button
                                 variant="outline"
                                 onClick={() => {
@@ -609,10 +609,10 @@ export default function RepairCenterRemoteRequests() {
                             </div>
                           )}
                           <div className="flex flex-wrap gap-4 mt-2 text-xs text-muted-foreground">
-                            {request.quotedAt && <span>Inviato il: {format(new Date(request.quotedAt), "d MMM yyyy, HH:mm", { locale: it })}</span>}
-                            {request.quoteValidUntil && <span>Valido fino al: {format(new Date(request.quoteValidUntil), "d MMM yyyy", { locale: it })}</span>}
+                            {request.quotedAt && <span>{t("remoteRequests.inviatoIl")} {format(new Date(request.quotedAt), "d MMM yyyy, HH:mm", { locale: it })}</span>}
+                            {request.quoteValidUntil && <span>{t("remoteRequests.validoFinoAl")} {format(new Date(request.quoteValidUntil), "d MMM yyyy", { locale: it })}</span>}
                           </div>
-                          {request.paymentMethod && <p className="text-xs text-muted-foreground mt-1">Pagamento: {request.paymentMethod === 'in_store' ? 'In negozio' : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? 'Pagato' : 'In attesa'})</p>}
+                          {request.paymentMethod && <p className="text-xs text-muted-foreground mt-1">{t("remoteRequests.pagamento")}: {request.paymentMethod === 'in_store' ? t("remoteRequests.inNegozio") : request.paymentMethod === 'online_stripe' ? 'Stripe' : 'PayPal'} ({request.paymentStatus === 'paid' ? t("remoteRequests.pagato") : t("remoteRequests.inAttesa")})</p>}
                         </div>
                       )}
                       <div className="space-y-3">
@@ -727,7 +727,7 @@ export default function RepairCenterRemoteRequests() {
       <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rifiuta Richiesta</DialogTitle>
+            <DialogTitle>{t("remoteRequests.rifiutaRichiesta")}</DialogTitle>
             <DialogDescription>
               Indica il motivo del rifiuto
             </DialogDescription>
@@ -763,7 +763,7 @@ export default function RepairCenterRemoteRequests() {
       <Dialog open={isReadyOpen} onOpenChange={setIsReadyOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Richiedi Spedizione</DialogTitle>
+            <DialogTitle>{t("remoteRequests.richiediSpedizione")}</DialogTitle>
             <DialogDescription>
               Inserisci l'indirizzo dove il cliente deve spedire il dispositivo
             </DialogDescription>
@@ -775,7 +775,7 @@ export default function RepairCenterRemoteRequests() {
                 id="customerAddress"
                 value={shippingAddress.customerAddress}
                 onChange={(e) => setShippingAddress({ ...shippingAddress, customerAddress: e.target.value })}
-                placeholder="Via/Piazza..."
+                placeholder={t("settings.placeholderAddress")}
                 data-testid="input-address"
               />
             </div>
@@ -813,7 +813,7 @@ export default function RepairCenterRemoteRequests() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="centerNotes">Note per il cliente (opzionale)</Label>
+              <Label htmlFor="centerNotes">{t("remoteRequests.noteClienteOpzionale")}</Label>
               <Textarea
                 id="centerNotes"
                 value={shippingAddress.centerNotes}
@@ -854,14 +854,14 @@ export default function RepairCenterRemoteRequests() {
                 id="cancellationReason"
                 value={cancellationReason}
                 onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="Es: cliente non reperibile, richiesta scaduta..."
+                placeholder={t("remoteRequests.placeholderCancellationReason")}
                 rows={3}
                 data-testid="input-cancellation-reason"
               />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsCancelOpen(false)}>
-                Indietro
+                {t("common.back")}
               </Button>
               <Button 
                 variant="destructive" 
@@ -914,7 +914,7 @@ export default function RepairCenterRemoteRequests() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="quoteDescription">Descrizione lavori</Label>
+              <Label htmlFor="quoteDescription">{t("remoteRequests.descrizioneLavori")}</Label>
               <Textarea
                 id="quoteDescription"
                 value={quoteDescription}
@@ -938,13 +938,13 @@ export default function RepairCenterRemoteRequests() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsQuoteOpen(false)}>
-                Annulla
+                {t("profile.cancel")}
               </Button>
               <Button type="submit" disabled={quoteMutation.isPending || !quoteAmount} data-testid="button-confirm-quote">
                 {quoteMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Invia Preventivo"
+                  t("remoteRequests.sendQuote")
                 )}
               </Button>
             </DialogFooter>
@@ -957,24 +957,24 @@ export default function RepairCenterRemoteRequests() {
           <DialogHeader>
             <DialogTitle>{t("remote.confermaRicezioneManuale")}</DialogTitle>
             <DialogDescription>
-              Usa questa opzione se hai ricevuto il dispositivo ma il cliente non ha inserito i dati di spedizione nel sistema.
+              {t("remoteRequests.forceReceivedDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="forceReceivedNotes">Note (opzionale)</Label>
+              <Label htmlFor="forceReceivedNotes">{t("remoteRequests.noteOpzionale")}</Label>
               <Textarea
                 id="forceReceivedNotes"
                 value={forceReceivedNotes}
                 onChange={(e) => setForceReceivedNotes(e.target.value)}
-                placeholder="Es: dispositivo consegnato a mano..."
+                placeholder={t("remoteRequests.placeholderForceReceived")}
                 rows={3}
                 data-testid="input-force-received-notes"
               />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsForceReceivedOpen(false)}>
-                Indietro
+                {t("common.back")}
               </Button>
               <Button 
                 onClick={() => selectedRequest && forceReceivedMutation.mutate({ id: selectedRequest.id, centerNotes: forceReceivedNotes })}

@@ -59,10 +59,10 @@ export default function PosRegisterSettingsPage() {
   const { t } = useTranslation();
   const PAYMENT_METHODS = [
     { value: "cash", label: t("pos.cash"), alwaysEnabled: true },
-    { value: "card", label: "Carta (POS fisico)" },
-    { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
+    { value: "card", label: t("pos.cardPhysical") },
+    { value: "stripe_link", label: t("pos.stripePaymentLink"), requiresConfig: "stripeEnabled" },
     { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
-    { value: "pos_terminal", label: "Terminale POS" },
+    { value: "pos_terminal", label: t("pos.posTerminal") },
     { value: "mixed", label: t("pos.pagamentoMisto") },
   ];
   const { id } = useParams<{ id: string }>();
@@ -208,15 +208,15 @@ export default function PosRegisterSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Metodi di Pagamento
+              {t("posRegisters.metodiPagamento")}
             </CardTitle>
             <CardDescription>
-              Configura i metodi di pagamento disponibili per questa cassa
+              {t("posRegisters.configuraMetodiPagamento")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label>Metodo di Pagamento Predefinito</Label>
+              <Label>{t("posRegisters.metodoPagamentoPredefinito")}</Label>
               <Select value={defaultPaymentMethod} onValueChange={setDefaultPaymentMethod}>
                 <SelectTrigger data-testid="select-default-payment">
                   <SelectValue placeholder={t("pos.selezionaMetodoPredefinito")} />
@@ -238,7 +238,7 @@ export default function PosRegisterSettingsPage() {
             </div>
 
             <div className="space-y-3">
-              <Label>Metodi Abilitati</Label>
+              <Label>{t("posRegisters.metodiAbilitati")}</Label>
               <div className="space-y-2">
                 {PAYMENT_METHODS.map(method => {
                   const isConfigured = isMethodConfigured(method);
@@ -285,7 +285,7 @@ export default function PosRegisterSettingsPage() {
               Stampa Automatica
             </CardTitle>
             <CardDescription>
-              Configura le opzioni di stampa per questa cassa
+              {t("posRegisters.configuraOpzioniStampa")}
             </CardDescription>
           </CardHeader>
           <CardContent>

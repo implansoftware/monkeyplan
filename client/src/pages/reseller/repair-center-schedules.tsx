@@ -54,7 +54,7 @@ type Blackout = {
   reason: string | null;
 };
 
-const weekdayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+const weekdayNameKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 const defaultAvailability: Omit<Availability, "id" | "repairCenterId">[] = [
   { weekday: 0, startTime: "09:00", endTime: "13:00", slotDurationMinutes: 30, capacityPerSlot: 3, isClosed: true },
@@ -109,7 +109,7 @@ export default function ResellerRepairCenterSchedules() {
 
   useEffect(() => {
     if (availability && availability.length > 0) {
-      const mapped = weekdayNames.map((_, weekday) => {
+      const mapped = weekdayNameKeys.map((_, weekday) => {
         const existing = availability.find(a => a.weekday === weekday);
         if (existing) {
           return {
@@ -140,7 +140,7 @@ export default function ResellerRepairCenterSchedules() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "availability"] });
       setEditingAvailability(false);
-      toast({ title: "Orari salvati", description: "Gli orari di apertura sono stati aggiornati." });
+      toast({ title: t("reseller.hoursSaved"), description: t("reseller.openingHoursUpdated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -157,7 +157,7 @@ export default function ResellerRepairCenterSchedules() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
       setBlackoutDialogOpen(false);
       setNewBlackout({ date: "", reason: "" });
-      toast({ title: "Chiusura aggiunta", description: "La data di chiusura è stata registrata." });
+      toast({ title: t("schedules.closureAdded"), description: t("schedules.closureDateAdded") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -171,7 +171,7 @@ export default function ResellerRepairCenterSchedules() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
-      toast({ title: "Chiusura rimossa" });
+      toast({ title: t("schedules.closureRemoved") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -201,9 +201,9 @@ export default function ResellerRepairCenterSchedules() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Building className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Nessun Centro Riparazione</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("reseller.noRepairCenter")}</h3>
             <p className="text-muted-foreground text-center max-w-md">
-              Non hai ancora creato nessun centro riparazione. Vai alla sezione "Centri Riparazione" per crearne uno.
+              {t("reseller.noRepairCenterDesc")}
             </p>
           </CardContent>
         </Card>
@@ -215,8 +215,8 @@ export default function ResellerRepairCenterSchedules() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">Gestione Orari Centri</h1>
-          <p className="text-muted-foreground">Configura gli orari di apertura e le chiusure dei tuoi centri riparazione</p>
+          <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("reseller.manageSchedules")}</h1>
+          <p className="text-muted-foreground">{t("reseller.manageSchedulesDesc")}</p>
         </div>
       </div>
 
@@ -224,7 +224,7 @@ export default function ResellerRepairCenterSchedules() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Building className="h-5 w-5" />
-            Seleziona Centro Riparazione
+            {t("reseller.selectRepairCenter")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -233,7 +233,7 @@ export default function ResellerRepairCenterSchedules() {
             onValueChange={(value) => setSelectedCenterId(value)}
           >
             <SelectTrigger data-testid="select-repair-center">
-              <SelectValue placeholder="Seleziona un centro..." />
+              <SelectValue placeholder={t("reseller.selectCenterPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               {centers.map((center) => (
@@ -259,11 +259,11 @@ export default function ResellerRepairCenterSchedules() {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="availability" data-testid="tab-availability">
                   <Settings className="h-4 w-4 mr-2" />
-                  Orari Settimanali
+                  {t("reseller.weeklySchedule")}
                 </TabsTrigger>
                 <TabsTrigger value="blackouts" data-testid="tab-blackouts">
                   <CalendarIcon className="h-4 w-4 mr-2" />
-                  Giorni Chiusura
+                  {t("schedules.closureDays")}
                 </TabsTrigger>
               </TabsList>
 
@@ -276,7 +276,7 @@ export default function ResellerRepairCenterSchedules() {
                   <>
                     <div className="flex items-center justify-between mb-4">
                       <p className="text-sm text-muted-foreground">
-                        Configura gli orari di apertura per ogni giorno della settimana
+                        {t("reseller.configureWeeklyHours")}
                       </p>
                       {editingAvailability ? (
                         <div className="flex gap-2">
@@ -298,7 +298,7 @@ export default function ResellerRepairCenterSchedules() {
                             ) : (
                               <Save className="h-4 w-4 mr-1" />
                             )}
-                            Salva
+                            {t("common.save")}
                           </Button>
                         </div>
                       ) : (
@@ -321,7 +321,7 @@ export default function ResellerRepairCenterSchedules() {
                           }`}
                         >
                           <div className="w-24 font-medium">
-                            {weekdayNames[day.weekday]}
+                            {t(`reseller.weekdays.${weekdayNameKeys[day.weekday]}`)}
                           </div>
 
                           {editingAvailability ? (
@@ -342,7 +342,7 @@ export default function ResellerRepairCenterSchedules() {
                               {!day.isClosed && (
                                 <>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Label className="text-xs">Dalle</Label>
+                                    <Label className="text-xs">{t("reseller.fromTime")}</Label>
                                     <Input
                                       type="time"
                                       value={day.startTime}
@@ -354,7 +354,7 @@ export default function ResellerRepairCenterSchedules() {
                                     />
                                   </div>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Label className="text-xs">Alle</Label>
+                                    <Label className="text-xs">{t("reseller.toTime")}</Label>
                                     <Input
                                       type="time"
                                       value={day.endTime}
@@ -366,7 +366,7 @@ export default function ResellerRepairCenterSchedules() {
                                     />
                                   </div>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Label className="text-xs">Slot (min)</Label>
+                                    <Label className="text-xs">{t("reseller.slotMin")}</Label>
                                     <Input
                                       type="number"
                                       value={day.slotDurationMinutes}
@@ -380,7 +380,7 @@ export default function ResellerRepairCenterSchedules() {
                                     />
                                   </div>
                                   <div className="flex flex-wrap items-center gap-2">
-                                    <Label className="text-xs">Capacità</Label>
+                                    <Label className="text-xs">{t("reseller.capacity")}</Label>
                                     <Input
                                       type="number"
                                       value={day.capacityPerSlot}
@@ -404,10 +404,10 @@ export default function ResellerRepairCenterSchedules() {
                                 <div className="flex flex-wrap items-center gap-4 text-sm">
                                   <span>{day.startTime} - {day.endTime}</span>
                                   <span className="text-muted-foreground">
-                                    Slot: {day.slotDurationMinutes} min
+                                    {t("reseller.slotMin")}: {day.slotDurationMinutes} min
                                   </span>
                                   <span className="text-muted-foreground">
-                                    Capacità: {day.capacityPerSlot}
+                                    {t("reseller.capacity")}: {day.capacityPerSlot}
                                   </span>
                                 </div>
                               )}
@@ -423,7 +423,7 @@ export default function ResellerRepairCenterSchedules() {
               <TabsContent value="blackouts" className="space-y-4 mt-4">
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-muted-foreground">
-                    Gestisci le chiusure straordinarie (ferie, festività, manutenzione)
+                    {t("reseller.manageExtraClosures")}
                   </p>
                   <Button
                     size="sm"
@@ -431,7 +431,7 @@ export default function ResellerRepairCenterSchedules() {
                     data-testid="button-add-blackout"
                   >
                     <Plus className="h-4 w-4 mr-1" />
-                    Aggiungi Chiusura
+                    {t("reseller.addClosure")}
                   </Button>
                 </div>
 
@@ -470,7 +470,7 @@ export default function ResellerRepairCenterSchedules() {
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <CalendarIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>Nessuna chiusura programmata</p>
+                    <p>{t("schedules.noClosureDatesPlanned")}</p>
                   </div>
                 )}
               </TabsContent>
@@ -482,9 +482,9 @@ export default function ResellerRepairCenterSchedules() {
       <Dialog open={blackoutDialogOpen} onOpenChange={setBlackoutDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aggiungi Giorno di Chiusura</DialogTitle>
+            <DialogTitle>{t("schedules.addClosureDay")}</DialogTitle>
             <DialogDescription>
-              Aggiungi una data di chiusura straordinaria per {selectedCenter?.name}
+              {t("reseller.addExtraClosureFor", { name: selectedCenter?.name })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -503,7 +503,7 @@ export default function ResellerRepairCenterSchedules() {
               <Label htmlFor="blackout-reason">{t("common.reasonOptional")}</Label>
               <Input
                 id="blackout-reason"
-                placeholder="Es: Ferie, Festività, Manutenzione"
+                placeholder={t("reseller.closureReasonPlaceholder")}
                 value={newBlackout.reason}
                 onChange={(e) => setNewBlackout(prev => ({ ...prev, reason: e.target.value }))}
                 data-testid="input-blackout-reason"
@@ -524,7 +524,7 @@ export default function ResellerRepairCenterSchedules() {
                 ) : (
                   <Plus className="h-4 w-4 mr-1" />
                 )}
-                Aggiungi
+                {t("common.add")}
               </Button>
             </div>
           </div>

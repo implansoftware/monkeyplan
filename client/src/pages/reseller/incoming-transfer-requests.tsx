@@ -113,8 +113,8 @@ export default function IncomingTransferRequestsPage() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
-      const action = variables.decision === 'approve' ? 'approvata' : 'rifiutata';
-      toast({ title: "Richiesta " + action, description: `La richiesta è stata ${action} con successo` });
+      const action = variables.decision === 'approve' ? t("reseller.approved") : t("reseller.rejected");
+      toast({ title: t("reseller.requestProcessed"), description: action });
       setShowDecideDialog(false);
       setSelectedRequest(null);
       setApprovedItems([]);
@@ -142,7 +142,7 @@ export default function IncomingTransferRequestsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/incoming-transfer-requests/summary"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      toast({ title: t("warehouse.shipmentConfirmed"), description: "Gli articoli sono stati spediti e il DDT è stato generato automaticamente" });
+      toast({ title: t("warehouse.shipmentConfirmed"), description: t("reseller.itemsShippedAndDdt") });
       setShowShipDialog(false);
       setSelectedRequest(null);
       setShippedItems([]);
@@ -223,19 +223,19 @@ export default function IncomingTransferRequestsPage() {
               <Inbox className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-title">Richieste in Arrivo</h1>
-              <p className="text-sm text-white/80">Gestisci le richieste dai centri riparazione e sub-reseller</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-title">{t("reseller.incomingRequests")}</h1>
+              <p className="text-sm text-white/80">{t("reseller.manageRequestsFromCentersAndSub")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             {pendingCount > 0 && (
               <Badge variant="outline" className="bg-white/20 border-white/30 text-white">
-                {pendingCount} in attesa
+                {pendingCount} {t("common.pending")}
               </Badge>
             )}
             {approvedCount > 0 && (
               <Badge variant="outline" className="bg-white/20 border-white/30 text-white">
-                {approvedCount} da spedire
+                {approvedCount} {t("reseller.toShip")}
               </Badge>
             )}
           </div>
@@ -246,7 +246,7 @@ export default function IncomingTransferRequestsPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero, richiedente o prodotto..."
+            placeholder={t("reseller.searchByNumberRequesterOrProduct")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -311,7 +311,7 @@ export default function IncomingTransferRequestsPage() {
                           data-testid={`button-decide-${request.id}`}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Gestisci
+                          {t("reseller.manage")}
                         </Button>
                       )}
                       {request.status === 'approved' && (
@@ -321,7 +321,7 @@ export default function IncomingTransferRequestsPage() {
                           data-testid={`button-ship-${request.id}`}
                         >
                           <Truck className="h-4 w-4 mr-1" />
-                          Spedisci
+                          {t("reseller.ship")}
                         </Button>
                       )}
                       {request.status === 'shipped' && request.ddtNumber && (
@@ -349,25 +349,25 @@ export default function IncomingTransferRequestsPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Richiedente:</span>{" "}
-                      {request.requester?.fullName || request.requester?.username || "N/A"}
+                      <span className="text-muted-foreground">{t("reseller.requester")}:</span>{" "}
+                      {request.requester?.fullName || request.requester?.username || t("common.na")}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Data:</span>{" "}
+                      <span className="text-muted-foreground">{t("common.date")}:</span>{" "}
                       {new Date(request.createdAt).toLocaleDateString('it-IT')}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Articoli:</span>{" "}
-                      {request.items.length} prodotti
+                      <span className="text-muted-foreground">{t("reseller.items")}:</span>{" "}
+                      {request.items.length} {t("reseller.products")}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Destinazione:</span>{" "}
-                      {request.requesterWarehouse?.name || "N/A"}
+                      <span className="text-muted-foreground">{t("reseller.destination")}:</span>{" "}
+                      {request.requesterWarehouse?.name || t("common.na")}
                     </div>
                   </div>
                   {request.notes && (
                     <div className="mt-2 p-2 bg-muted rounded text-sm">
-                      <span className="text-muted-foreground">Note:</span> {request.notes}
+                      <span className="text-muted-foreground">{t("common.notes")}:</span> {request.notes}
                     </div>
                   )}
                 </CardContent>
@@ -380,46 +380,46 @@ export default function IncomingTransferRequestsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettagli Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("reseller.requestDetails")} {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Stato:</span>{" "}
+                  <span className="text-muted-foreground">{t("common.status")}:</span>{" "}
                   <Badge className={statusConfig[selectedRequest.status]?.color}>
                     {statusConfig[selectedRequest.status]?.label}
                   </Badge>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Tipo:</span>{" "}
+                  <span className="text-muted-foreground">{t("common.type")}:</span>{" "}
                   {requesterTypeLabels[selectedRequest.requesterType]?.label}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Richiedente:</span>{" "}
+                  <span className="text-muted-foreground">{t("reseller.requester")}:</span>{" "}
                   {selectedRequest.requester?.fullName || selectedRequest.requester?.username}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Data Creazione:</span>{" "}
+                  <span className="text-muted-foreground">{t("common.creationDate")}:</span>{" "}
                   {new Date(selectedRequest.createdAt).toLocaleString('it-IT')}
                 </div>
               </div>
               
               {selectedRequest.notes && (
                 <div>
-                  <Label>Note:</Label>
+                  <Label>{t("common.notes")}:</Label>
                   <p className="text-sm mt-1">{selectedRequest.notes}</p>
                 </div>
               )}
 
               <div>
-                <Label>Articoli:</Label>
+                <Label>{t("reseller.items")}:</Label>
                 <div className="mt-2 border rounded-md">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
                         <th className="text-left p-2">{t("common.product")}</th>
-                        <th className="text-center p-2">Richiesto</th>
+                        <th className="text-center p-2">{t("reseller.requested")}</th>
                         <th className="text-center p-2">{t("repairs.status.approved")}</th>
                         <th className="text-center p-2">{t("b2b.status.shipped")}</th>
                         <th className="text-center p-2">{t("repairs.status.received")}</th>
@@ -442,7 +442,7 @@ export default function IncomingTransferRequestsPage() {
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <p className="font-medium truncate">{item.product?.name || "Prodotto"}</p>
+                                <p className="font-medium truncate">{item.product?.name || t("common.product")}</p>
                                 <p className="text-xs text-muted-foreground">{item.product?.sku}</p>
                               </div>
                             </div>
@@ -465,18 +465,18 @@ export default function IncomingTransferRequestsPage() {
       <Dialog open={showDecideDialog} onOpenChange={setShowDecideDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Gestisci Richiesta - {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("reseller.manageRequest")} - {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                Richiesta da: <span className="font-medium text-foreground">
+                {t("reseller.requestFrom")}: <span className="font-medium text-foreground">
                   {selectedRequest.requester?.fullName || selectedRequest.requester?.username}
                 </span> ({requesterTypeLabels[selectedRequest.requesterType]?.label})
               </div>
 
               <div>
-                <Label>Quantità Approvate:</Label>
+                <Label>{t("reseller.approvedQuantities")}:</Label>
                 <div className="mt-2 space-y-2">
                   {selectedRequest.items.map((item, index) => (
                     <div key={item.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
@@ -492,9 +492,9 @@ export default function IncomingTransferRequestsPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.product?.name || "Prodotto"}</p>
+                        <p className="font-medium truncate">{item.product?.name || t("common.product")}</p>
                         <p className="text-sm text-muted-foreground">
-                          Richiesto: {item.requestedQuantity} | Disponibile: {item.availableStock ?? "N/A"}
+                          {t("reseller.requested")}: {item.requestedQuantity} | {t("reseller.available")}: {item.availableStock ?? t("common.na")}
                         </p>
                       </div>
                       <Input
@@ -519,7 +519,7 @@ export default function IncomingTransferRequestsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Motivo Rifiuto (opzionale se rifiutata)</Label>
+                <Label>{t("reseller.rejectionReasonOptional")}</Label>
                 <Textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
@@ -567,16 +567,16 @@ export default function IncomingTransferRequestsPage() {
       <Dialog open={showShipDialog} onOpenChange={setShowShipDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Spedisci - {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("reseller.ship")} - {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="carrier">Corriere *</Label>
+                  <Label htmlFor="carrier">{t("reseller.carrier")} *</Label>
                   <Select value={shipTrackingCarrier} onValueChange={setShipTrackingCarrier}>
                     <SelectTrigger data-testid="select-carrier">
-                      <SelectValue placeholder="Seleziona corriere" />
+                      <SelectValue placeholder={t("reseller.selectCarrier")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="brt">BRT/Bartolini</SelectItem>
@@ -592,10 +592,10 @@ export default function IncomingTransferRequestsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tracking">Numero Tracking *</Label>
+                  <Label htmlFor="tracking">{t("reseller.trackingNumber")} *</Label>
                   <Input
                     id="tracking"
-                    placeholder="es. 1234567890"
+                    placeholder={t("reseller.trackingPlaceholder")}
                     value={shipTrackingNumber}
                     onChange={(e) => setShipTrackingNumber(e.target.value)}
                     data-testid="input-tracking-number"
@@ -603,12 +603,12 @@ export default function IncomingTransferRequestsPage() {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Il numero DDT verrà generato automaticamente alla conferma della spedizione.
+                {t("reseller.ddtAutoGenerated")}
               </p>
 
               <div className="border-t pt-4">
                 <p className="text-sm text-muted-foreground mb-2">
-                  Quantità da spedire per ogni prodotto:
+                  {t("reseller.quantityToShipPerProduct")}:
                 </p>
                 <div className="space-y-2 max-h-60 overflow-y-auto">
                   {selectedRequest.items.map((item, index) => (
@@ -625,9 +625,9 @@ export default function IncomingTransferRequestsPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{item.product?.name || "Prodotto"}</p>
+                        <p className="font-medium truncate">{item.product?.name || t("common.product")}</p>
                         <p className="text-sm text-muted-foreground">
-                          Approvato: {item.approvedQuantity || 0}
+                          {t("reseller.approved")}: {item.approvedQuantity || 0}
                         </p>
                       </div>
                       <Input
@@ -657,11 +657,11 @@ export default function IncomingTransferRequestsPage() {
             <Button
               onClick={() => {
                 if (!shipTrackingCarrier) {
-                  toast({ title: t("common.error"), description: "Seleziona un corriere", variant: "destructive" });
+                  toast({ title: t("common.error"), description: t("reseller.selectCarrier"), variant: "destructive" });
                   return;
                 }
                 if (!shipTrackingNumber.trim()) {
-                  toast({ title: t("common.error"), description: "Inserisci il numero di tracking", variant: "destructive" });
+                  toast({ title: t("common.error"), description: t("reseller.enterTrackingNumber"), variant: "destructive" });
                   return;
                 }
                 if (selectedRequest) {
@@ -677,7 +677,7 @@ export default function IncomingTransferRequestsPage() {
               data-testid="button-confirm-ship"
             >
               <Truck className="h-4 w-4 mr-1" />
-              {shipMutation.isPending ? "Spedizione..." : "Conferma Spedizione"}
+              {shipMutation.isPending ? t("reseller.shipping") : t("reseller.confirmShipment")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -35,7 +35,7 @@ export default function CustomerTickets() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
       setDialogOpen(false);
-      toast({ title: "Ticket creato con successo" });
+      toast({ title: t("customerPages.ticketCreatedSuccess") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -83,9 +83,9 @@ export default function CustomerTickets() {
               <MessageSquare className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">I Miei Ticket</h1>
+              <h1 className="text-2xl font-bold text-white">{t("customerPages.myTickets")}</h1>
               <p className="text-white/80 text-sm">
-                Richieste di assistenza e supporto
+                {t("customerPages.supportRequests")}
               </p>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function CustomerTickets() {
             <DialogTrigger asChild>
               <Button data-testid="button-new-ticket">
                 <Plus className="h-4 w-4 mr-2" />
-                Nuovo Ticket
+                {t("customerPages.newTicket")}
               </Button>
             </DialogTrigger>
           <DialogContent>
@@ -106,7 +106,7 @@ export default function CustomerTickets() {
                 <Input
                   id="subject"
                   name="subject"
-                  placeholder="Riassumi il problema..."
+                  placeholder={t("customerPages.summarizeProblem")}
                   required
                   data-testid="input-subject"
                 />
@@ -116,7 +116,7 @@ export default function CustomerTickets() {
                 <Textarea
                   id="description"
                   name="description"
-                  placeholder="Descrivi dettagliatamente il problema..."
+                  placeholder={t("customerPages.describeInDetail")}
                   required
                   rows={4}
                   data-testid="textarea-description"
@@ -141,7 +141,7 @@ export default function CustomerTickets() {
                 disabled={createTicketMutation.isPending}
                 data-testid="button-submit-ticket"
               >
-                {createTicketMutation.isPending ? "Creazione..." : t("tickets.createTicket")}
+                {createTicketMutation.isPending ? t("customerPages.creatingTicket") : t("tickets.createTicket")}
               </Button>
             </form>
           </DialogContent>

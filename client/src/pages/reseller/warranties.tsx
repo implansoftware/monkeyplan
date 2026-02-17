@@ -60,14 +60,15 @@ function getDaysRemainingBadge(daysRemaining: number | null, status: string, t: 
     return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</Badge>;
   }
   if (daysRemaining <= 30) {
-    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
+    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{t("reseller.daysRemaining", { count: daysRemaining })}</Badge>;
   }
-  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
+  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{t("reseller.daysRemaining", { count: daysRemaining })}</Badge>;
 }
 
 export default function ResellerWarranties() {
   const { t } = useTranslation();
   const statusConfig = getStatusConfig(t);
+  const coverageLabels = getCoverageLabels(t);
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -95,20 +96,20 @@ export default function ResellerWarranties() {
       apiRequest("POST", "/api/reseller/warranties", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/warranties"] });
-      toast({ title: "Garanzia creata", description: "La garanzia è stata assegnata al cliente con successo" });
+      toast({ title: t("reseller.warrantyCreated"), description: t("reseller.warrantyAssignedToCustomer") });
       setIsCreateOpen(false);
       setSelectedCustomerId("");
       setSelectedProductId("");
       setNotes("");
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Impossibile creare la garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("reseller.cannotCreateWarranty"), variant: "destructive" });
     },
   });
 
   const handleCreate = () => {
     if (!selectedCustomerId || !selectedProductId) {
-      toast({ title: t("common.error"), description: "Seleziona un cliente e un prodotto garanzia", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.selectCustomerAndProduct"), variant: "destructive" });
       return;
     }
     createMutation.mutate({ customerId: selectedCustomerId, warrantyProductId: selectedProductId, notes: notes || undefined });
@@ -156,13 +157,13 @@ export default function ResellerWarranties() {
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Garanzie Clienti</h1>
-              <p className="text-sm text-white/80">Gestisci le garanzie attive e monitora le scadenze</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("reseller.customerWarranties")}</h1>
+              <p className="text-sm text-white/80">{t("reseller.manageWarrantiesDesc")}</p>
             </div>
           </div>
           <Button onClick={() => setIsCreateOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-new-warranty">
             <Plus className="h-4 w-4 mr-2" />
-            Nuova Garanzia
+            {t("reseller.newWarranty")}
           </Button>
         </div>
       </div>
@@ -175,7 +176,7 @@ export default function ResellerWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{activeCount}</p>
-              <p className="text-xs text-muted-foreground">Attive</p>
+              <p className="text-xs text-muted-foreground">{t("warranties.active")}</p>
             </div>
           </CardContent>
         </Card>
@@ -186,7 +187,7 @@ export default function ResellerWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{expiringCount}</p>
-              <p className="text-xs text-muted-foreground">In Scadenza</p>
+              <p className="text-xs text-muted-foreground">{t("reseller.expiring")}</p>
             </div>
           </CardContent>
         </Card>
@@ -197,7 +198,7 @@ export default function ResellerWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{expiredCount}</p>
-              <p className="text-xs text-muted-foreground">Scadute</p>
+              <p className="text-xs text-muted-foreground">{t("reseller.expired")}</p>
             </div>
           </CardContent>
         </Card>
@@ -218,7 +219,7 @@ export default function ResellerWarranties() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per cliente, ordine, prodotto, dispositivo..."
+            placeholder={t("warranties.cercaPerClienteOrdineProdottoDispositivo")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -232,7 +233,7 @@ export default function ResellerWarranties() {
           <SelectContent>
             <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             <SelectItem value="offered">{t("common.pending")}</SelectItem>
-            <SelectItem value="accepted">Attiva</SelectItem>
+            <SelectItem value="accepted">{t("warranties.active")}</SelectItem>
             <SelectItem value="declined">{t("common.rejected")}</SelectItem>
             <SelectItem value="expired">{t("invoices.overdue")}</SelectItem>
           </SelectContent>
@@ -246,8 +247,8 @@ export default function ResellerWarranties() {
             <p className="text-lg font-medium">{t("warranties.noWarrantiesFound")}</p>
             <p className="text-sm text-muted-foreground">
               {search || statusFilter !== "all"
-                ? "Prova a modificare i filtri di ricerca"
-                : "Le garanzie offerte ai clienti appariranno qui"}
+                ? t("reseller.tryModifyFilters")
+                : t("reseller.warrantiesWillAppearHere")}
             </p>
           </CardContent>
         </Card>
@@ -271,11 +272,11 @@ export default function ResellerWarranties() {
                         <div>
                           <p className="font-semibold text-sm">{w.productName}</p>
                           <p className="text-xs text-muted-foreground">
-                            {isStandalone ? "Garanzia Diretta" : `Ordine #${w.orderNumber}`}
+                            {isStandalone ? t("reseller.directWarranty") : `${t("common.order")} #${w.orderNumber}`}
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          {isStandalone && <Badge variant="outline" className="text-xs">Diretta</Badge>}
+                          {isStandalone && <Badge variant="outline" className="text-xs">{t("reseller.direct")}</Badge>}
                           {getDaysRemainingBadge(w.daysRemaining, w.status, t)}
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </div>
@@ -293,16 +294,16 @@ export default function ResellerWarranties() {
                           <div className="flex items-center gap-2">
                             <Smartphone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             <div className="min-w-0">
-                              <p className="text-muted-foreground">Dispositivo</p>
-                              <p className="font-medium truncate">{[w.brand, w.deviceModel].filter(Boolean).join(" ") || w.deviceType || "N/A"}</p>
+                              <p className="text-muted-foreground">{t("repairs.device")}</p>
+                              <p className="font-medium truncate">{[w.brand, w.deviceModel].filter(Boolean).join(" ") || w.deviceType || t("common.na")}</p>
                             </div>
                           </div>
                         )}
                         <div className="flex items-center gap-2">
                           <Shield className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-muted-foreground">Copertura</p>
-                            <p className="font-medium">{coverageLabels[w.coverageType] || w.coverageType} - {w.durationMonths} mesi</p>
+                            <p className="text-muted-foreground">{t("warranties.coverage")}</p>
+                            <p className="font-medium">{coverageLabels[w.coverageType] || w.coverageType} - {w.durationMonths} {t("reseller.months")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -324,7 +325,7 @@ export default function ResellerWarranties() {
                         }`}>
                           <Calendar className="h-3.5 w-3.5 shrink-0" />
                           <span>
-                            Dal {format(new Date(w.startsAt), "dd/MM/yyyy", { locale: it })} al {format(new Date(w.endsAt), "dd/MM/yyyy", { locale: it })}
+                            {t("reseller.dateFromTo", { from: format(new Date(w.startsAt), "dd/MM/yyyy", { locale: it }), to: format(new Date(w.endsAt), "dd/MM/yyyy", { locale: it }) })}
                           </span>
                         </div>
                       )}
@@ -332,7 +333,7 @@ export default function ResellerWarranties() {
                       {w.status === "offered" && (
                         <div className="flex items-center gap-2 p-2 rounded-md text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                           <Clock className="h-3.5 w-3.5 shrink-0" />
-                          <span>Offerta inviata il {format(new Date(w.offeredAt), "dd/MM/yyyy", { locale: it })}</span>
+                          <span>{t("reseller.offerSentOn", { date: format(new Date(w.offeredAt), "dd/MM/yyyy", { locale: it }) })}</span>
                         </div>
                       )}
                     </div>
@@ -347,9 +348,9 @@ export default function ResellerWarranties() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Nuova Garanzia Diretta</DialogTitle>
+            <DialogTitle>{t("reseller.newDirectWarranty")}</DialogTitle>
             <DialogDescription>
-              Assegna una garanzia a un cliente senza passare dalla riparazione
+              {t("reseller.assignWarrantyWithoutRepair")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -357,7 +358,7 @@ export default function ResellerWarranties() {
               <Label htmlFor="customer">{t("common.customer")}</Label>
               <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
                 <SelectTrigger data-testid="select-warranty-customer">
-                  <SelectValue placeholder="Seleziona un cliente" />
+                  <SelectValue placeholder={t("reseller.selectCustomer")} />
                 </SelectTrigger>
                 <SelectContent>
                   {customers.filter((c: any) => c.role === 'customer').map((c: any) => (
@@ -369,26 +370,26 @@ export default function ResellerWarranties() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="product">Prodotto Garanzia</Label>
+              <Label htmlFor="product">{t("warranties.warrantyProduct")}</Label>
               <Select value={selectedProductId} onValueChange={setSelectedProductId}>
                 <SelectTrigger data-testid="select-warranty-product">
-                  <SelectValue placeholder="Seleziona un prodotto" />
+                  <SelectValue placeholder={t("reseller.selectProduct")} />
                 </SelectTrigger>
                 <SelectContent>
                   {activeProducts.map((p: any) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} - {coverageLabels[p.coverageType] || p.coverageType} - {p.durationMonths} mesi - {(p.priceInCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                      {p.name} - {coverageLabels[p.coverageType] || p.coverageType} - {p.durationMonths} {t("reseller.months")} - {(p.priceInCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Note (opzionale)</Label>
+              <Label htmlFor="notes">{t("common.reasonOptional")}</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Eventuali note sulla garanzia..."
+                placeholder={t("reseller.warrantyNotesPlaceholder")}
                 data-testid="textarea-warranty-notes"
               />
             </div>
@@ -397,7 +398,7 @@ export default function ResellerWarranties() {
             <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">{t("common.cancel")}</Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending || !selectedCustomerId || !selectedProductId} data-testid="button-confirm-warranty">
               {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
-              Crea Garanzia
+              {t("reseller.createWarranty")}
             </Button>
           </DialogFooter>
         </DialogContent>

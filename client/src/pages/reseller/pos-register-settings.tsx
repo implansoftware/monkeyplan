@@ -57,11 +57,11 @@ interface PaymentConfigResponse {
 function getPaymentMethods(t: (key: string) => string) {
   return [
     { value: "cash", label: t("pos.cash"), alwaysEnabled: true },
-    { value: "card", label: "Carta (POS fisico)" },
+    { value: "card", label: t("pos.cardPhysicalPos") },
     { value: "stripe_link", label: "Stripe Payment Link", requiresConfig: "stripeEnabled" },
     { value: "paypal", label: "PayPal", requiresConfig: "paypalEnabled" },
-    { value: "pos_terminal", label: "Terminale POS" },
-    { value: "mixed", label: "Pagamento Misto" },
+    { value: "pos_terminal", label: t("pos.posTerminal") },
+    { value: "mixed", label: t("pos.mixedPayment") },
   ];
 }
 
@@ -117,10 +117,10 @@ export default function ResellerPosRegisterSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/registers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/pos/registers", id] });
-      toast({ title: t("settings.saved"), description: "Le impostazioni della cassa sono state aggiornate" });
+      toast({ title: t("settings.saved"), description: t("pos.registerSettingsUpdated") });
     },
     onError: (error: any) => {
-      toast({ title: t("common.error"), description: error.message || "Errore nel salvataggio", variant: "destructive" });
+      toast({ title: t("common.error"), description: error.message || t("pos.saveError"), variant: "destructive" });
     },
   });
 

@@ -25,7 +25,7 @@ export default function ResellerNewRepair() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
-      toast({ title: "Riparazione creata con successo" });
+      toast({ title: t("newRepair.repairCreated") });
       setLocation("/reseller/orders");
     },
     onError: (error: Error) => {
@@ -57,16 +57,16 @@ export default function ResellerNewRepair() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold mb-2">Nuova Richiesta Riparazione</h1>
+          <h1 className="text-2xl font-semibold mb-2">{t("newRepair.title")}</h1>
           <p className="text-muted-foreground">
-            Crea una nuova richiesta di riparazione per un cliente
+            {t("newRepair.subtitle")}
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Dettagli Dispositivo</CardTitle>
+          <CardTitle>{t("newRepair.deviceDetails")}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,7 +90,7 @@ export default function ResellerNewRepair() {
                 <Input
                   id="deviceModel"
                   name="deviceModel"
-                  placeholder="es. iPhone 13 Pro"
+                  placeholder={t("newRepair.modelPlaceholder")}
                   required
                   data-testid="input-device-model"
                 />
@@ -102,7 +102,7 @@ export default function ResellerNewRepair() {
               <Textarea
                 id="issueDescription"
                 name="issueDescription"
-                placeholder="Descrivi il problema riscontrato..."
+                placeholder={t("newRepair.describeIssuePlaceholder")}
                 required
                 rows={4}
                 data-testid="textarea-issue-description"
@@ -110,11 +110,11 @@ export default function ResellerNewRepair() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Note Aggiuntive</Label>
+              <Label htmlFor="notes">{t("newRepair.additionalNotesLabel")}</Label>
               <Textarea
                 id="notes"
                 name="notes"
-                placeholder="Eventuali note aggiuntive..."
+                placeholder={t("newRepair.additionalNotesPlaceholder")}
                 rows={3}
                 data-testid="textarea-notes"
               />
@@ -132,7 +132,7 @@ export default function ResellerNewRepair() {
                 disabled={createRepairMutation.isPending}
                 data-testid="button-submit-repair"
               >
-                {createRepairMutation.isPending ? t("pages.creating") : "Crea Richiesta"}
+                {createRepairMutation.isPending ? t("pages.creating") : t("newRepair.createRequest")}
               </Button>
             </div>
           </form>

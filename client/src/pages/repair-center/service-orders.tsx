@@ -29,19 +29,19 @@ export default function RepairCenterServiceOrders() {
   const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("b2b.status.pending"), variant: "secondary" },
     accepted: { label: t("standalone.accepted"), variant: "default" },
-    scheduled: { label: "Programmato", variant: "outline" },
+    scheduled: { label: t("serviceOrders.scheduled"), variant: "outline" },
     in_progress: { label: t("tickets.status.inProgress"), variant: "default" },
     completed: { label: t("repairs.status.completed"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
   const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("serviceOrders.toPay"), variant: "secondary" },
-    paid: { label: "Pagato", variant: "default" },
+    paid: { label: t("serviceOrders.paid"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
   };
   const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
     in_person: { label: t("services.inNegozio"), icon: Banknote },
-    bank_transfer: { label: "Bonifico", icon: Building },
+    bank_transfer: { label: t("settings.bankTransfer"), icon: Building },
     card: { label: t("pos.card"), icon: CreditCard },
     paypal: { label: "PayPal", icon: CreditCard },
   };
@@ -247,7 +247,7 @@ export default function RepairCenterServiceOrders() {
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettaglio Ordine {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogTitle>{t("serviceOrders.dettaglioOrdine")} {selectedOrder?.orderNumber}</DialogTitle>
             <DialogDescription>{t("utility.serviceOrderInfo")}</DialogDescription>
           </DialogHeader>
           {selectedOrder && (
@@ -266,7 +266,7 @@ export default function RepairCenterServiceOrders() {
                   <p>{selectedOrder.brand} {selectedOrder.model || "-"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">IMEI/Seriale</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t("serviceOrders.imeiSeriale")}</label>
                   <p>{selectedOrder.imei || selectedOrder.serial || "-"}</p>
                 </div>
                 <div>

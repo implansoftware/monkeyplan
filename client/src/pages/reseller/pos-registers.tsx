@@ -258,7 +258,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: (session) => {
       invalidatePosQueries();
-      toast({ title: t("pos.registerOpened"), description: "La sessione cassa è stata aperta con successo" });
+      toast({ title: t("pos.registerOpened"), description: t("pos.sessionOpenedSuccess") });
       setOpenSessionDialog({ register: null as any, open: false });
       setOpeningCash("");
       setOpeningNotes("");
@@ -279,7 +279,7 @@ export default function ResellerPosRegistersPage() {
     },
     onSuccess: () => {
       invalidatePosQueries();
-      toast({ title: t("pos.registerClosed"), description: "La sessione cassa è stata chiusa con successo" });
+      toast({ title: t("pos.registerClosed"), description: t("pos.sessionClosedSuccess") });
       setCloseSessionDialog({ session: null as any, register: null as any, open: false });
       setClosingCash("");
       setClosingNotes("");

@@ -103,9 +103,9 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/integrations/summary"] });
       if (data.success) {
-        toast({ title: "Connessione riuscita", description: `${integration.name} funziona correttamente` });
+        toast({ title: t("integrations.connectionSuccess"), description: t("integrations.worksCorrectly", { name: integration.name }) });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("integrations.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -114,7 +114,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
   });
 
   const formatDate = (date: string | null) => {
-    if (!date) return "Mai";
+    if (!date) return t("common.never");
     return new Date(date).toLocaleDateString("it-IT", {
       day: "2-digit",
       month: "short",
@@ -126,10 +126,10 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
 
   const getStatusBadge = () => {
     if (!integration.isConfigured) {
-      return <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3" /> Non configurata</Badge>;
+      return <Badge variant="outline" className="gap-1"><AlertTriangle className="h-3 w-3" /> {t("integrations.notConfigured")}</Badge>;
     }
     if (!integration.isActive) {
-      return <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> Disattiva</Badge>;
+      return <Badge variant="secondary" className="gap-1"><XCircle className="h-3 w-3" /> {t("integrations.inactive")}</Badge>;
     }
     if (integration.lastTestStatus === "success") {
       return <Badge className="gap-1 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20"><CheckCircle className="h-3 w-3" />{t("license.active")}</Badge>;
@@ -137,7 +137,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
     if (integration.lastTestStatus === "error") {
       return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />{t("common.error")}</Badge>;
     }
-    return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> Da testare</Badge>;
+    return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> {t("integrations.toTest")}</Badge>;
   };
 
   return (
@@ -165,22 +165,22 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
         {integration.isConfigured && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground">Ultimo test</p>
+              <p className="text-muted-foreground">{t("integrations.lastTest")}</p>
               <p className="font-medium">{formatDate(integration.lastTestAt)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">Ultima sync</p>
+              <p className="text-muted-foreground">{t("integrations.lastSync")}</p>
               <p className="font-medium">{formatDate(integration.lastSyncAt)}</p>
             </div>
             {integration.stats.ordersCount !== undefined && (
               <div>
-                <p className="text-muted-foreground">Ordini totali</p>
+                <p className="text-muted-foreground">{t("integrations.totalOrders")}</p>
                 <p className="font-medium">{integration.stats.ordersCount}</p>
               </div>
             )}
             {integration.stats.cartItemsCount !== undefined && integration.stats.cartItemsCount > 0 && (
               <div>
-                <p className="text-muted-foreground">Articoli nel carrello</p>
+                <p className="text-muted-foreground">{t("integrations.cartItems")}</p>
                 <p className="font-medium">{integration.stats.cartItemsCount}</p>
               </div>
             )}
@@ -191,7 +191,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
           <Link href={integration.settingsUrl}>
             <Button variant="outline" size="sm" data-testid={`button-settings-${integration.code}`}>
               <Settings className="h-4 w-4 mr-1" />
-              {integration.isConfigured ? t("settings.title") : "Configura"}
+              {integration.isConfigured ? t("settings.title") : t("integrations.configure")}
             </Button>
           </Link>
 

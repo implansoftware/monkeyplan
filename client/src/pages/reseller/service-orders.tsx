@@ -44,15 +44,18 @@ function getPaymentStatusLabels(t: (key: string) => string): Record<string, { la
   };
 }
 
-const paymentMethodLabels: Record<string, { label: string; icon: string }> = {
-  in_person: { label: t("serviceOrders.inStore"), icon: "banknote" },
-  bank_transfer: { label: "Bonifico", icon: "building" },
-};
+function getPaymentMethodLabels(t: (key: string) => string): Record<string, { label: string; icon: string }> {
+  return {
+    in_person: { label: t("serviceOrders.inStore"), icon: "banknote" },
+    bank_transfer: { label: t("serviceOrders.bankTransfer"), icon: "building" },
+  };
+}
 
 export default function ResellerServiceOrders() {
   const { t } = useTranslation();
   const statusLabels = getStatusLabels(t);
   const paymentStatusLabels = getPaymentStatusLabels(t);
+  const paymentMethodLabels = getPaymentMethodLabels(t);
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrderWithDetails | null>(null);
@@ -85,7 +88,7 @@ export default function ResellerServiceOrders() {
       setIsAcceptDialogOpen(false);
       setSelectedOrder(null);
       setAcceptForm({ repairCenterId: "", internalNotes: "" });
-      toast({ title: t("serviceOrders.orderAccepted"), description: "In attesa scelta consegna dal cliente" });
+      toast({ title: t("serviceOrders.orderAccepted"), description: t("serviceOrders.awaitingDeliveryChoice") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -99,7 +102,7 @@ export default function ResellerServiceOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
-      toast({ title: "Lavorazione avviata" });
+      toast({ title: t("serviceOrders.processingStarted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -141,7 +144,7 @@ export default function ResellerServiceOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/service-orders"] });
-      toast({ title: "Ricezione confermata", description: "Dispositivo ricevuto, lavorazione avviata" });
+      toast({ title: t("serviceOrders.receptionConfirmed"), description: t("serviceOrders.deviceReceivedProcessing") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });

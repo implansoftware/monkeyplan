@@ -956,13 +956,13 @@ export default function ResellerServiceCatalog() {
                   value={laborMinutes}
                   onChange={(e) => setLaborMinutes(e.target.value)}
                   className="pl-9"
-                  placeholder="Lascia vuoto per usare il default"
+                  placeholder={t("serviceCatalog.leaveEmptyForDefault")}
                   data-testid="input-labor-minutes"
                 />
               </div>
               {editingItem && (
                 <p className="text-xs text-muted-foreground">
-                  Tempo base: {editingItem.defaultLaborMinutes} minuti
+                  {t("serviceCatalog.baseTimeMinutes", { minutes: editingItem.defaultLaborMinutes })}
                 </p>
               )}
             </div>
@@ -979,7 +979,7 @@ export default function ResellerServiceCatalog() {
               disabled={savePriceMutation.isPending}
               data-testid="button-save-price"
             >
-              {savePriceMutation.isPending ? t("profile.saving") : "Salva Prezzo"}
+              {savePriceMutation.isPending ? t("profile.saving") : t("serviceCatalog.savePrice")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -989,12 +989,12 @@ export default function ResellerServiceCatalog() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingServiceItem ? "Modifica Voce" : "Nuova Voce di Listino"}
+              {editingServiceItem ? t("serviceCatalog.editItem") : t("serviceCatalog.newListItem")}
             </DialogTitle>
             <DialogDescription>
               {editingServiceItem 
-                ? "Modifica i dettagli della voce di listino" 
-                : "Crea una nuova voce di listino personalizzata per il tuo catalogo"}
+                ? t("serviceCatalog.editItemDesc") 
+                : t("serviceCatalog.newItemDesc")}
             </DialogDescription>
           </DialogHeader>
           

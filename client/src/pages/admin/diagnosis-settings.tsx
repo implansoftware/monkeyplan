@@ -21,9 +21,9 @@ import { useToast } from "@/hooks/use-toast";
 import type { DiagnosticFinding, DamagedComponentType, DeviceType } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-const formSchema = z.object({
+const baseFormSchema = z.object({
   id: z.string().optional(),
-  name: z.string().min(1, t("diagnosis.nameRequired")),
+  name: z.string().min(1),
   description: z.string().optional(),
   category: z.string().optional(),
   deviceTypeId: z.string().optional(),
@@ -31,10 +31,14 @@ const formSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof baseFormSchema>;
 
 export default function DiagnosisSettings() {
   const { t } = useTranslation();
+
+  const formSchema = baseFormSchema.extend({
+    name: z.string().min(1, t("diagnosis.nameRequired")),
+  });
   const [activeTab, setActiveTab] = useState("findings");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -253,13 +257,13 @@ export default function DiagnosisSettings() {
               <Settings className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold" data-testid="text-page-title">Impostazioni Diagnosi</h1>
-              <p className="text-muted-foreground text-sm">Gestisci problemi riscontrati e componenti danneggiati</p>
+              <h1 className="text-2xl font-bold" data-testid="text-page-title">{t("diagnosisSettings.title")}</h1>
+              <p className="text-muted-foreground text-sm">{t("diagnosisSettings.description")}</p>
             </div>
           </div>
           <Button onClick={handleOpenCreate} data-testid="button-create">
             <Plus className="h-4 w-4 mr-2" />
-            Aggiungi
+            {t("common.add")}
           </Button>
         </div>
       </div>
@@ -268,11 +272,11 @@ export default function DiagnosisSettings() {
         <TabsList>
           <TabsTrigger value="findings" className="gap-2" data-testid="tab-findings">
             <AlertTriangle className="h-4 w-4" />
-            Problemi Riscontrati ({findings?.length || 0})
+            {t("diagnosis.issuesFound")} ({findings?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="components" className="gap-2" data-testid="tab-components">
             <Wrench className="h-4 w-4" />
-            Componenti Danneggiati ({components?.length || 0})
+            {t("diagnosis.damagedComponents")} ({components?.length || 0})
           </TabsTrigger>
         </TabsList>
 
@@ -413,8 +417,8 @@ export default function DiagnosisSettings() {
             </DialogTitle>
             <DialogDescription>
               {activeTab === "findings" 
-                ? "I problemi diagnostici vengono mostrati durante la diagnosi delle riparazioni"
-                : "I componenti vengono mostrati per indicare parti danneggiate del dispositivo"
+                ? t("diagnosisSettings.findingsDialogDesc")
+                : t("diagnosisSettings.componentsDialogDesc")
               }
             </DialogDescription>
           </DialogHeader>
@@ -425,11 +429,11 @@ export default function DiagnosisSettings() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome *</FormLabel>
+                    <FormLabel>{t("diagnosisSettings.nameLabel")}</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 
-                        placeholder={activeTab === "findings" ? "es. Display danneggiato" : "es. Scheda madre"}
+                        placeholder={activeTab === "findings" ? t("diagnosisSettings.findingPlaceholder") : t("diagnosisSettings.componentPlaceholder")}
                         data-testid="input-name"
                       />
                     </FormControl>
@@ -543,7 +547,7 @@ export default function DiagnosisSettings() {
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>{t("common.cancel")}</Button>
                 <Button type="submit" disabled={isSaving} data-testid="button-save">
-                  {isSaving ? t("settings.savingRate") : "Salva"}
+                  {isSaving ? t("settings.savingRate") : t("common.save")}
                 </Button>
               </DialogFooter>
             </form>
@@ -556,13 +560,13 @@ export default function DiagnosisSettings() {
           <DialogHeader>
             <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare "{itemToDelete?.name}"? Questa azione non può essere annullata.
+              {t("common.confirmDeleteItemMessage", { name: itemToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>{t("common.cancel")}</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting} data-testid="button-confirm-delete">
-              {isDeleting ? t("admin.resellers.deleting") : "Elimina"}
+              {isDeleting ? t("admin.resellers.deleting") : t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

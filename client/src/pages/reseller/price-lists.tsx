@@ -68,9 +68,9 @@ export default function ResellerPriceLists() {
   });
 
   const customerTypeOptions = [
-    { value: "all", label: "Tutti i Clienti" },
-    { value: "private", label: "Solo Privati" },
-    { value: "company", label: "Solo Aziende" },
+    { value: "all", label: t("reseller.allCustomers") },
+    { value: "private", label: t("reseller.privateOnly") },
+    { value: "company", label: t("reseller.companyOnly") },
   ];
 
   const targetAudienceOptions = [
@@ -91,7 +91,7 @@ export default function ResellerPriceLists() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
-      toast({ title: t("products.priceListCreatedTitle"), description: "Il listino prezzi è stato creato con successo" });
+      toast({ title: t("products.priceListCreatedTitle"), description: t("reseller.priceListCreatedDesc") });
       setShowCreateDialog(false);
       setFormData({ name: "", description: "", targetAudience: "all", targetCustomerType: null, defaultVatRate: 22 });
     },
@@ -106,7 +106,7 @@ export default function ResellerPriceLists() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
-      toast({ title: "Listino aggiornato", description: "Le modifiche sono state salvate" });
+      toast({ title: t("reseller.priceListUpdated"), description: t("reseller.changesSaved") });
       setEditingList(null);
     },
     onError: (error: any) => {
@@ -120,7 +120,7 @@ export default function ResellerPriceLists() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
-      toast({ title: "Listino eliminato", description: "Il listino è stato eliminato" });
+      toast({ title: t("reseller.priceListDeleted"), description: t("reseller.priceListDeletedDesc") });
       setDeleteList(null);
     },
     onError: (error: any) => {
@@ -134,7 +134,7 @@ export default function ResellerPriceLists() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists"] });
-      toast({ title: "Listino predefinito", description: "Il listino è ora il predefinito" });
+      toast({ title: t("reseller.defaultPriceList"), description: t("reseller.priceListSetDefault") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -148,7 +148,7 @@ export default function ResellerPriceLists() {
 
   const handleCreateSubmit = () => {
     if (!formData.name.trim()) {
-      toast({ title: t("common.error"), description: "Il nome è obbligatorio", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.nameRequired"), variant: "destructive" });
       return;
     }
     createMutation.mutate({
@@ -181,7 +181,7 @@ export default function ResellerPriceLists() {
           <h1 className="text-2xl font-bold flex items-center gap-2" data-testid="text-page-title">
             <ListOrdered className="h-6 w-6 text-emerald-500" />{t("sidebar.items.priceLists")}</h1>
           <p className="text-muted-foreground mt-1">
-            Gestisci i tuoi listini prezzi personalizzati per prodotti e servizi
+            {t("reseller.managePriceLists")}
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-list">
@@ -194,10 +194,10 @@ export default function ResellerPriceLists() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Euro className="h-5 w-5 text-emerald-500" />
-                I Miei Listini
+                {t("reseller.myPriceLists")}
               </CardTitle>
               <CardDescription>
-                {filteredLists.length} listini trovati
+                {filteredLists.length} {t("reseller.priceListsFound")}
               </CardDescription>
             </div>
             <div className="relative w-full sm:w-64">
@@ -223,7 +223,7 @@ export default function ResellerPriceLists() {
             <div className="text-center py-12 text-muted-foreground">
               <ListOrdered className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t("products.noPriceListsFound")}</p>
-              <p className="text-sm">Crea il tuo primo listino prezzi per iniziare</p>
+              <p className="text-sm">{t("reseller.createFirstPriceList")}</p>
             </div>
           ) : (
             <Table>
@@ -231,7 +231,7 @@ export default function ResellerPriceLists() {
                 <TableRow>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.description")}</TableHead>
-                  <TableHead>Destinatari</TableHead>
+                  <TableHead>{t("reseller.recipients")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("common.creationDate")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -246,7 +246,7 @@ export default function ResellerPriceLists() {
                         {list.isDefault && (
                           <Badge variant="secondary" className="text-xs">
                             <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                            Predefinito
+                            {t("reseller.default")}
                           </Badge>
                         )}
                       </div>
@@ -258,22 +258,22 @@ export default function ResellerPriceLists() {
                       <div className="flex flex-col gap-1">
                         <Badge variant="outline" className="text-xs w-fit">
                           <Users className="h-3 w-3 mr-1" />
-                          {list.targetAudience === "all" && "Tutti"}
-                          {list.targetAudience === "sub_reseller" && "Sub-Rivenditori"}
-                          {list.targetAudience === "repair_center" && "Centri Riparazione"}
-                          {list.targetAudience === "customer" && "Clienti"}
-                          {list.targetAudience === "reseller" && "Rivenditori"}
+                          {list.targetAudience === "all" && t("common.allMasc")}
+                          {list.targetAudience === "sub_reseller" && t("admin.resellers.subResellers")}
+                          {list.targetAudience === "repair_center" && t("sidebar.items.repairCentersShort")}
+                          {list.targetAudience === "customer" && t("customers.title")}
+                          {list.targetAudience === "reseller" && t("sidebar.items.resellers")}
                         </Badge>
                         {list.targetAudience === "customer" && list.targetCustomerType && (
                           <Badge variant="secondary" className="text-xs w-fit">
-                            {list.targetCustomerType === "private" ? "Solo Privati" : "Solo Aziende"}
+                            {list.targetCustomerType === "private" ? t("reseller.privateOnly") : t("reseller.companyOnly")}
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={list.isActive ? "default" : "secondary"}>
-                        {list.isActive ? t("common.active") : "Disattivato"}
+                        {list.isActive ? t("common.active") : t("common.inactive")}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -336,17 +336,17 @@ export default function ResellerPriceLists() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuovo Listino Prezzi</DialogTitle>
+            <DialogTitle>{t("reseller.newPriceList")}</DialogTitle>
             <DialogDescription>
-              Crea un nuovo listino prezzi per i tuoi prodotti e servizi
+              {t("reseller.createPriceListDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nome Listino *</Label>
+              <Label htmlFor="name">{t("reseller.priceListName")} *</Label>
               <Input
                 id="name"
-                placeholder="es. Listino Retail, Listino VIP"
+                placeholder={t("reseller.priceListNamePlaceholder")}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 data-testid="input-name"
@@ -356,7 +356,7 @@ export default function ResellerPriceLists() {
               <Label htmlFor="description">{t("common.description")}</Label>
               <Textarea
                 id="description"
-                placeholder="Descrizione opzionale del listino..."
+                placeholder={t("reseller.optionalDescPlaceholder")}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 data-testid="input-description"
@@ -366,7 +366,7 @@ export default function ResellerPriceLists() {
               <Label htmlFor="targetAudience">
                 <span className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Destinatari
+                  {t("reseller.recipients")}
                 </span>
               </Label>
               <Select
@@ -376,7 +376,7 @@ export default function ResellerPriceLists() {
                 }
               >
                 <SelectTrigger className="w-full" data-testid="select-target-audience">
-                  <SelectValue placeholder="Seleziona destinatari..." />
+                  <SelectValue placeholder={t("reseller.selectRecipients")} />
                 </SelectTrigger>
                 <SelectContent>
                   {targetAudienceOptions.map((option) => (
@@ -387,12 +387,12 @@ export default function ResellerPriceLists() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Scegli chi potrà vedere e utilizzare questo listino prezzi
+                {t("reseller.recipientsHint")}
               </p>
             </div>
             {formData.targetAudience === "customer" && (
               <div className="space-y-2">
-                <Label htmlFor="targetCustomerType">Tipo Cliente</Label>
+                <Label htmlFor="targetCustomerType">{t("reseller.customerType")}</Label>
                 <Select
                   value={formData.targetCustomerType || "all"}
                   onValueChange={(value) => 
@@ -400,7 +400,7 @@ export default function ResellerPriceLists() {
                   }
                 >
                   <SelectTrigger className="w-full" data-testid="select-target-customer-type">
-                    <SelectValue placeholder="Seleziona tipo cliente..." />
+                    <SelectValue placeholder={t("reseller.selectCustomerType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {customerTypeOptions.map((option) => (
@@ -411,7 +411,7 @@ export default function ResellerPriceLists() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Limita questo listino a un tipo specifico di cliente
+                  {t("reseller.customerTypeHint")}
                 </p>
               </div>
             )}
@@ -419,7 +419,7 @@ export default function ResellerPriceLists() {
               <Label>
                 <span className="flex items-center gap-2">
                   <Percent className="h-4 w-4" />
-                  Aliquota IVA Default
+                  {t("reseller.defaultVatRate")}
                 </span>
               </Label>
               <Select
@@ -438,7 +438,7 @@ export default function ResellerPriceLists() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Aliquota IVA applicata di default agli articoli del listino
+                {t("reseller.vatRateHint")}
               </p>
             </div>
           </div>
@@ -449,7 +449,7 @@ export default function ResellerPriceLists() {
               disabled={createMutation.isPending}
               data-testid="button-submit-create"
             >
-              {createMutation.isPending ? t("pages.creating") : "Crea Listino"}
+              {createMutation.isPending ? t("pages.creating") : t("reseller.createPriceList")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -458,14 +458,14 @@ export default function ResellerPriceLists() {
       <Dialog open={!!editingList} onOpenChange={(open) => !open && setEditingList(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Listino</DialogTitle>
+            <DialogTitle>{t("reseller.editPriceList")}</DialogTitle>
             <DialogDescription>
-              Modifica le informazioni del listino prezzi
+              {t("reseller.editPriceListDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Nome Listino *</Label>
+              <Label htmlFor="edit-name">{t("reseller.priceListName")} *</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
@@ -486,7 +486,7 @@ export default function ResellerPriceLists() {
               <Label htmlFor="edit-targetAudience">
                 <span className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Destinatari
+                  {t("reseller.recipients")}
                 </span>
               </Label>
               <Select
@@ -496,7 +496,7 @@ export default function ResellerPriceLists() {
                 }
               >
                 <SelectTrigger className="w-full" data-testid="select-edit-target-audience">
-                  <SelectValue placeholder="Seleziona destinatari..." />
+                  <SelectValue placeholder={t("reseller.selectRecipients")} />
                 </SelectTrigger>
                 <SelectContent>
                   {targetAudienceOptions.map((option) => (
@@ -507,12 +507,12 @@ export default function ResellerPriceLists() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Scegli chi potrà vedere e utilizzare questo listino prezzi
+                {t("reseller.recipientsHint")}
               </p>
             </div>
             {formData.targetAudience === "customer" && (
               <div className="space-y-2">
-                <Label htmlFor="edit-targetCustomerType">Tipo Cliente</Label>
+                <Label htmlFor="edit-targetCustomerType">{t("reseller.customerType")}</Label>
                 <Select
                   value={formData.targetCustomerType || "all"}
                   onValueChange={(value) => 
@@ -520,7 +520,7 @@ export default function ResellerPriceLists() {
                   }
                 >
                   <SelectTrigger className="w-full" data-testid="select-edit-target-customer-type">
-                    <SelectValue placeholder="Seleziona tipo cliente..." />
+                    <SelectValue placeholder={t("reseller.selectCustomerType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {customerTypeOptions.map((option) => (
@@ -531,7 +531,7 @@ export default function ResellerPriceLists() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Limita questo listino a un tipo specifico di cliente
+                  {t("reseller.customerTypeHint")}
                 </p>
               </div>
             )}
@@ -539,7 +539,7 @@ export default function ResellerPriceLists() {
               <Label>
                 <span className="flex items-center gap-2">
                   <Percent className="h-4 w-4" />
-                  Aliquota IVA Default
+                  {t("reseller.defaultVatRate")}
                 </span>
               </Label>
               <Select
@@ -558,7 +558,7 @@ export default function ResellerPriceLists() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Aliquota IVA applicata di default agli articoli del listino
+                {t("reseller.vatRateHint")}
               </p>
             </div>
           </div>
@@ -580,8 +580,7 @@ export default function ResellerPriceLists() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("admin.teams.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare il listino "{deleteList?.name}"? 
-              Questa azione non può essere annullata.
+              {t("reseller.confirmDeletePriceList", { name: deleteList?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -112,7 +112,7 @@ export default function PriceListDetail() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Errore durante l'aggiornamento dell'aliquota.",
+        description: error.message || t("reseller.vatUpdateError"),
         variant: "destructive",
       });
     },
@@ -124,7 +124,7 @@ export default function PriceListDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
-      toast({ title: t("products.itemAddedTitle"), description: "Il prezzo è stato aggiunto al listino" });
+      toast({ title: t("products.itemAddedTitle"), description: t("reseller.priceAddedToList") });
       resetForm();
     },
     onError: (error: any) => {
@@ -138,7 +138,7 @@ export default function PriceListDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
-      toast({ title: "Voce aggiornata", description: "Il prezzo è stato aggiornato" });
+      toast({ title: t("reseller.itemUpdated"), description: t("reseller.priceUpdated") });
       setEditingItem(null);
     },
     onError: (error: any) => {
@@ -152,7 +152,7 @@ export default function PriceListDetail() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/price-lists", listId] });
-      toast({ title: t("products.itemDeletedTitle"), description: "Il prezzo è stato rimosso dal listino" });
+      toast({ title: t("products.itemDeletedTitle"), description: t("reseller.priceRemovedFromList") });
       setDeleteItem(null);
     },
     onError: (error: any) => {
@@ -172,7 +172,7 @@ export default function PriceListDetail() {
 
   const handleAddSubmit = () => {
     if (!selectedId || !priceCents) {
-      toast({ title: t("common.error"), description: "Seleziona un elemento e inserisci il prezzo", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("reseller.selectItemAndPrice"), variant: "destructive" });
       return;
     }
     
@@ -206,13 +206,13 @@ export default function PriceListDetail() {
   const getItemName = (item: PriceListItem) => {
     if (item.productId) {
       const product = products?.find(p => p.id === item.productId);
-      return product?.name || "Prodotto sconosciuto";
+      return product?.name || t("reseller.unknownProduct");
     }
     if (item.serviceItemId) {
       const service = services?.find(s => s.id === item.serviceItemId);
-      return service?.name || "Servizio sconosciuto";
+      return service?.name || t("reseller.unknownService");
     }
-    return "Sconosciuto";
+    return t("reseller.unknown");
   };
 
   const getItemType = (item: PriceListItem) => {
@@ -264,7 +264,7 @@ export default function PriceListDetail() {
   if (!priceList) {
     return (
       <div className="container mx-auto py-6 text-center">
-        <p className="text-muted-foreground">Listino non trovato</p>
+        <p className="text-muted-foreground">{t("reseller.priceListNotFound")}</p>
         <Link href="/reseller/price-lists">
           <Button variant="ghost">{t("products.backToPriceLists")}</Button>
         </Link>
@@ -309,7 +309,7 @@ export default function PriceListDetail() {
           </div>
           <Button onClick={() => setShowAddDialog(true)} data-testid="button-add-item">
             <Plus className="h-4 w-4 mr-2" />
-            Aggiungi Voce
+            {t("reseller.addItem")}
           </Button>
         </div>
       </div>
@@ -320,16 +320,16 @@ export default function PriceListDetail() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Euro className="h-5 w-5 text-emerald-500" />
-                Voci del Listino
+                {t("reseller.priceListItems")}
               </CardTitle>
               <CardDescription>
-                {filteredItems.length} voci nel listino
+                {filteredItems.length} {t("reseller.itemsInList")}
               </CardDescription>
             </div>
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca..."
+                placeholder={t("common.search")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -343,7 +343,7 @@ export default function PriceListDetail() {
             <div className="text-center py-12 text-muted-foreground">
               <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t("products.noPriceListItems")}</p>
-              <p className="text-sm">Aggiungi prodotti o servizi per definire i prezzi</p>
+              <p className="text-sm">{t("reseller.addProductsOrServices")}</p>
             </div>
           ) : (
             <Table>
@@ -352,8 +352,8 @@ export default function PriceListDetail() {
                   <TableHead className="w-[60px]">{t("common.photo")}</TableHead>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
-                  <TableHead className="text-right">Prezzo Originale</TableHead>
-                  <TableHead className="text-right">Prezzo Costo</TableHead>
+                  <TableHead className="text-right">{t("reseller.originalPrice")}</TableHead>
+                  <TableHead className="text-right">{t("reseller.costPrice")}</TableHead>
                   <TableHead className="text-right">{t("products.listPrice")}</TableHead>
                   <TableHead className="text-right">{t("common.vat")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
@@ -440,7 +440,7 @@ export default function PriceListDetail() {
           <DialogHeader>
             <DialogTitle>{t("products.addPriceListItem")}</DialogTitle>
             <DialogDescription>
-              Seleziona un prodotto o servizio e definisci il prezzo
+              {t("reseller.selectProductAndDefinePrice")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -466,7 +466,7 @@ export default function PriceListDetail() {
                     setSelectedProduct(product);
                     setSelectedService(null);
                   }}
-                  placeholder="Cerca prodotto per nome..."
+                  placeholder={t("reseller.searchProductByName")}
                 />
               ) : (
                 <SearchableServiceCombobox
@@ -475,7 +475,7 @@ export default function PriceListDetail() {
                     setSelectedService(service);
                     setSelectedProduct(null);
                   }}
-                  placeholder="Cerca servizio per nome..."
+                  placeholder={t("reseller.searchServiceByName")}
                 />
               )}
             </div>
@@ -498,11 +498,11 @@ export default function PriceListDetail() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{selectedProduct.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Prezzo originale: <span className="font-semibold text-foreground">{formatCurrency(selectedProduct.unitPrice)}</span>
+                        {t("reseller.originalPrice")}: <span className="font-semibold text-foreground">{formatCurrency(selectedProduct.unitPrice)}</span>
                       </p>
                       {selectedProduct.costPrice && (
                         <p className="text-xs text-muted-foreground">
-                          Costo: {formatCurrency(selectedProduct.costPrice)}
+                          {t("reseller.costPrice")}: {formatCurrency(selectedProduct.costPrice)}
                         </p>
                       )}
                     </div>
@@ -516,7 +516,7 @@ export default function PriceListDetail() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{selectedService.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Prezzo base: <span className="font-semibold text-foreground">{formatCurrency(selectedService.defaultPriceCents)}</span>
+                        {t("reseller.basePrice")}: <span className="font-semibold text-foreground">{formatCurrency(selectedService.defaultPriceCents)}</span>
                       </p>
                     </div>
                   </>
@@ -525,7 +525,7 @@ export default function PriceListDetail() {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="price">Prezzo Vendita *</Label>
+              <Label htmlFor="price">{t("reseller.sellingPrice")} *</Label>
               <Input
                 id="price"
                 type="number"
@@ -541,7 +541,7 @@ export default function PriceListDetail() {
               <Label>
                 <span className="flex items-center gap-2">
                   <Percent className="h-4 w-4" />
-                  Aliquota IVA (opzionale)
+                  {t("reseller.vatRateOptional")}
                 </span>
               </Label>
               <Select
@@ -549,10 +549,10 @@ export default function PriceListDetail() {
                 onValueChange={(value) => setSelectedVatRate(value === "default" ? null : Number(value))}
               >
                 <SelectTrigger data-testid="select-item-vat">
-                  <SelectValue placeholder="Usa default listino" />
+                  <SelectValue placeholder={t("reseller.useListDefault")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Usa default listino ({(priceList as any)?.defaultVatRate ?? 22}%)</SelectItem>
+                  <SelectItem value="default">{t("reseller.useListDefault")} ({(priceList as any)?.defaultVatRate ?? 22}%)</SelectItem>
                   {VAT_RATES.map((rate) => (
                     <SelectItem key={rate.value} value={String(rate.value)}>
                       {rate.label}
@@ -561,7 +561,7 @@ export default function PriceListDetail() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Lascia vuoto per usare l'aliquota default del listino
+                {t("reseller.vatRateHintDetail")}
               </p>
             </div>
           </div>
@@ -572,7 +572,7 @@ export default function PriceListDetail() {
               disabled={addItemMutation.isPending}
               data-testid="button-submit-add"
             >
-              {addItemMutation.isPending ? "Aggiunta..." : t("common.add")}
+              {addItemMutation.isPending ? t("reseller.adding") : t("common.add")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -581,14 +581,14 @@ export default function PriceListDetail() {
       <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifica Prezzo</DialogTitle>
+            <DialogTitle>{t("reseller.editPrice")}</DialogTitle>
             <DialogDescription>
-              Modifica il prezzo per questa voce del listino
+              {t("reseller.editPriceDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-price">Prezzo Vendita *</Label>
+              <Label htmlFor="edit-price">{t("reseller.sellingPriceRequired")} *</Label>
               <Input
                 id="edit-price"
                 type="number"
@@ -618,7 +618,7 @@ export default function PriceListDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("admin.teams.deleteConfirm")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler rimuovere questa voce dal listino?
+              {t("reseller.confirmRemoveFromList")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

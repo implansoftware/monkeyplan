@@ -52,15 +52,15 @@ export default function CustomerRepairs() {
     const descriptions: Record<string, string> = {
       pending: t("repairs.waitingForProcessing"),
       ingressato: t("repairs.deviceReceived"),
-      in_diagnosi: "I tecnici stanno analizzando il problema",
-      preventivo_emesso: "È stato preparato un preventivo per la riparazione",
+      in_diagnosi: t("customerPages.diagnosisTechnicians"),
+      preventivo_emesso: t("customerPages.quoteReady"),
       preventivo_accettato: t("repairs.quoteAccepted"),
       preventivo_rifiutato: t("repairs.quoteRejectedDesc"),
-      attesa_ricambi: "In attesa dei componenti necessari",
-      waiting_parts: "In attesa dei componenti necessari",
+      attesa_ricambi: t("customerPages.waitingParts"),
+      waiting_parts: t("customerPages.waitingParts"),
       in_riparazione: t("repairs.deviceInRepair"),
       in_progress: t("repairs.deviceInProgress"),
-      in_test: "Verifica del corretto funzionamento",
+      in_test: t("customerPages.testingRepair"),
       pronto_ritiro: t("repairs.readyForPickupDesc"),
       completed: t("repairs.repairCompleted"),
       consegnato: t("repairs.deviceDelivered"),
@@ -77,7 +77,7 @@ export default function CustomerRepairs() {
       { key: "in_diagnosi", label: t("repairs.diagnosis") },
       { key: "preventivo", label: t("repairs.quote") },
       { key: "in_riparazione", label: t("common.repair") },
-      { key: "pronto_ritiro", label: "Pronto" },
+      { key: "pronto_ritiro", label: t("customerPages.readyLabel") },
     ];
 
     const statusOrder: Record<string, number> = {
@@ -133,7 +133,7 @@ export default function CustomerRepairs() {
             <div>
               <h1 className="text-2xl font-bold text-white">{t("customerPages.leMieRiparazioni")}</h1>
               <p className="text-white/80 text-sm">
-                Monitora lo stato delle tue riparazioni in tempo reale
+                {t("customerPages.monitorRepairsRealtime")}
               </p>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function CustomerRepairs() {
             <Wrench className="h-16 w-16 mx-auto mb-4 opacity-20" />
             <h3 className="font-medium text-lg mb-2">{t("customers.nessunaRiparazione")}</h3>
             <p className="text-sm">
-              Non hai ancora richiesto riparazioni. Contatta un rivenditore per iniziare.
+              {t("customerPages.noRepairsYetDesc")}
             </p>
           </CardContent>
         </Card>
@@ -192,7 +192,7 @@ export default function CustomerRepairs() {
             <Search className="h-16 w-16 mx-auto mb-4 opacity-20" />
             <h3 className="font-medium text-lg mb-2">{t("common.noResults")}</h3>
             <p className="text-sm">
-              Nessuna riparazione corrisponde ai criteri di ricerca.
+              {t("customerPages.noRepairsMatchSearch")}
             </p>
           </CardContent>
         </Card>
@@ -202,7 +202,7 @@ export default function CustomerRepairs() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
-                Riparazioni in corso ({activeRepairs.length})
+                {t("customerPages.repairsInProgress")} ({activeRepairs.length})
               </h2>
               <div className="space-y-4">
                 {activeRepairs.map((repair) => {
@@ -220,7 +220,7 @@ export default function CustomerRepairs() {
                               {repair.status === "preventivo_emesso" && (
                                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                                   <AlertTriangle className="h-3 w-3 mr-1" />
-                                  Richiede azione
+                                  {t("customerPages.requiresAction")}
                                 </Badge>
                               )}
                             </div>
@@ -234,7 +234,7 @@ export default function CustomerRepairs() {
                           {(repair.estimatedCost || repair.quoteTotalAmount) && (
                             <div className="text-right shrink-0">
                               <div className="text-xs text-muted-foreground mb-1">
-                                {repair.quoteTotalAmount ? "Preventivo" : "Stima"}
+                                {repair.quoteTotalAmount ? t("customerPages.quote") : t("customerPages.estimate")}
                               </div>
                               <div className="text-xl font-bold text-primary">
                                 {formatCurrency(repair.quoteTotalAmount || repair.estimatedCost)}
@@ -291,7 +291,7 @@ export default function CustomerRepairs() {
                               onClick={() => setLocation(`/customer/repairs/${repair.id}`)}
                               data-testid={`button-view-detail-${repair.id}`}
                             >
-                              Dettagli
+                              {t("customerPages.detailsButton")}
                               <ArrowRight className="h-4 w-4 ml-2" />
                             </Button>
                           </div>
@@ -308,7 +308,7 @@ export default function CustomerRepairs() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-muted-foreground" />
-                Riparazioni completate ({completedRepairs.length})
+                {t("customerPages.completedRepairs")} ({completedRepairs.length})
               </h2>
               <div className="space-y-3">
                 {completedRepairs.map((repair) => (
@@ -342,7 +342,7 @@ export default function CustomerRepairs() {
                           onClick={() => setLocation(`/customer/repairs/${repair.id}`)}
                           data-testid={`button-view-completed-${repair.id}`}
                         >
-                          Dettagli
+                          {t("customerPages.detailsButton")}
                         </Button>
                       </div>
                     </CardContent>

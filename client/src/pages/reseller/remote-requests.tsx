@@ -21,17 +21,17 @@ import { useTranslation } from "react-i18next";
 function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
   return {
     pending: { label: t("hr.pending"), variant: "secondary" },
-    assigned: { label: "Assegnata", variant: "outline" },
+    assigned: { label: t("remoteRequests.assigned"), variant: "outline" },
     accepted: { label: t("remoteRequests.accepted"), variant: "default" },
     rejected: { label: t("common.rejected"), variant: "destructive" },
-    awaiting_shipment: { label: "Attesa spedizione", variant: "outline" },
+    awaiting_shipment: { label: t("remoteRequests.awaitingShipment"), variant: "outline" },
     in_transit: { label: t("shipping.inTransit"), variant: "default" },
     received: { label: t("repairs.status.received"), variant: "default" },
-    repair_created: { label: "Riparazione creata", variant: "default" },
+    repair_created: { label: t("reseller.repairCreated"), variant: "default" },
     cancelled: { label: t("common.cancelled"), variant: "destructive" },
-    quoted: { label: "Preventivo inviato", variant: "outline" },
-    quote_accepted: { label: "Preventivo accettato", variant: "default" },
-    quote_declined: { label: "Preventivo rifiutato", variant: "destructive" },
+    quoted: { label: t("reseller.quoteSent"), variant: "outline" },
+    quote_accepted: { label: t("reseller.quoteAccepted"), variant: "default" },
+    quote_declined: { label: t("reseller.quoteDeclined"), variant: "destructive" },
   };
 }
 
@@ -64,8 +64,8 @@ export default function ResellerRemoteRequests() {
       setSelectedRequest(null);
       setSelectedCenterId("");
       toast({
-        title: "Richiesta assegnata",
-        description: "La richiesta è stata assegnata al centro di riparazione",
+        title: t("reseller.requestAssigned"),
+        description: t("reseller.requestAssignedDesc"),
       });
     },
     onError: (error: Error) => {
@@ -115,10 +115,10 @@ export default function ResellerRemoteRequests() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-page-title">
-                Richieste di Riparazione Remota
+                {t("reseller.remoteRepairRequests")}
               </h1>
               <p className="text-sm text-white/80">
-                Supervisiona e assegna le richieste ai centri di riparazione
+                {t("reseller.superviseAndAssignRequests")}
               </p>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function ResellerRemoteRequests() {
         </Card>
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
-            <CardDescription>Assegnate</CardDescription>
+            <CardDescription>{t("reseller.assigned")}</CardDescription>
             <CardTitle className="text-3xl">{assignedRequests.length}</CardTitle>
           </CardHeader>
         </Card>
@@ -146,7 +146,7 @@ export default function ResellerRemoteRequests() {
         </Card>
         <Card className="rounded-2xl">
           <CardHeader className="pb-2">
-            <CardDescription>Completate</CardDescription>
+            <CardDescription>{t("common.completed")}</CardDescription>
             <CardTitle className="text-3xl">{completedRequests.length}</CardTitle>
           </CardHeader>
         </Card>
@@ -156,9 +156,9 @@ export default function ResellerRemoteRequests() {
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Package className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">Nessuna richiesta</h3>
+            <h3 className="text-lg font-medium">{t("reseller.noRequests")}</h3>
             <p className="text-muted-foreground text-center mt-2">
-              Non ci sono richieste di riparazione remota al momento.
+              {t("reseller.noRemoteRequestsAtMoment")}
             </p>
           </CardContent>
         </Card>
@@ -168,7 +168,7 @@ export default function ResellerRemoteRequests() {
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-yellow-500" />
-                Da Assegnare ({pendingRequests.length})
+                {t("reseller.toAssign")} ({pendingRequests.length})
               </h2>
               <div className="space-y-4">
                 {pendingRequests.map((request) => (
@@ -184,7 +184,7 @@ export default function ResellerRemoteRequests() {
                             {request.devices?.length > 0 && (
                               <Badge variant="secondary" className="text-xs">
                                 <Smartphone className="h-3 w-3 mr-1" />
-                                {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                                {t("reseller.devicesCount", { count: request.devices.length })}
                               </Badge>
                             )}
                           </CardTitle>
@@ -194,7 +194,7 @@ export default function ResellerRemoteRequests() {
                         </div>
                         <Button onClick={() => openAssignDialog(request)} data-testid={`button-assign-${request.id}`}>
                           <Building2 className="h-4 w-4 mr-2" />
-                          Assegna Centro
+                          {t("reseller.assignCenter")}
                         </Button>
                       </div>
                     </CardHeader>
@@ -208,7 +208,7 @@ export default function ResellerRemoteRequests() {
                                 <p className="text-sm font-medium">{device.deviceType}</p>
                               </div>
                               <div>
-                                <p className="text-xs text-muted-foreground">Marca / Modello</p>
+                                <p className="text-xs text-muted-foreground">{t("reseller.brandModel")}</p>
                                 <p className="text-sm font-medium">{device.brand} {device.model}</p>
                               </div>
                               <div>
@@ -223,7 +223,7 @@ export default function ResellerRemoteRequests() {
                               </div>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">Problema</p>
+                              <p className="text-xs text-muted-foreground">{t("reseller.problem")}</p>
                               <p className="text-sm">{device.issueDescription}</p>
                             </div>
                             {device.photos && device.photos.length > 0 && (
@@ -233,7 +233,7 @@ export default function ResellerRemoteRequests() {
                                 <div className="flex flex-wrap gap-1">
                                   {device.photos.map((photo: string, pi: number) => (
                                     <a key={pi} href={photo} target="_blank" rel="noopener noreferrer">
-                                      <img src={photo} alt={`Foto ${pi + 1}`} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
+                                      <img src={photo} alt={t("reseller.photoNumber", { number: pi + 1 })} className="w-16 h-16 object-cover rounded-md border hover:opacity-80 transition-opacity" />
                                     </a>
                                   ))}
                                 </div>
@@ -243,9 +243,9 @@ export default function ResellerRemoteRequests() {
                         ))}
                         {request.requestedCenterId && (
                           <div className="mt-2">
-                            <p className="text-sm text-muted-foreground">Centro Preferito</p>
+                            <p className="text-sm text-muted-foreground">{t("reseller.preferredCenter")}</p>
                             <p className="text-sm">
-                              {repairCenters?.find(c => c.id === request.requestedCenterId)?.name || "N/D"}
+                              {repairCenters?.find(c => c.id === request.requestedCenterId)?.name || t("common.nd")}
                             </p>
                           </div>
                         )}
@@ -261,7 +261,7 @@ export default function ResellerRemoteRequests() {
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-blue-500" />
-                Assegnate ({assignedRequests.length})
+                {t("reseller.assigned")} ({assignedRequests.length})
               </h2>
               <div className="space-y-4">
                 {assignedRequests.map((request) => (
@@ -276,7 +276,7 @@ export default function ResellerRemoteRequests() {
                           {request.devices?.length > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               <Smartphone className="h-3 w-3 mr-1" />
-                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                              {t("reseller.devicesCount", { count: request.devices.length })}
                             </Badge>
                           )}
                         </div>
@@ -284,7 +284,7 @@ export default function ResellerRemoteRequests() {
                           <span>{request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
-                            {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || "N/D"}
+                            {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || t("common.nd")}
                           </span>
                         </div>
                       </div>
@@ -299,7 +299,7 @@ export default function ResellerRemoteRequests() {
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <Truck className="h-5 w-5 text-green-500" />
-                In Lavorazione ({activeRequests.length})
+                {t("repairs.inProgress")} ({activeRequests.length})
               </h2>
               <div className="space-y-4">
                 {activeRequests.map((request) => (
@@ -314,7 +314,7 @@ export default function ResellerRemoteRequests() {
                           {request.devices?.length > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               <Smartphone className="h-3 w-3 mr-1" />
-                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                              {t("reseller.devicesCount", { count: request.devices.length })}
                             </Badge>
                           )}
                         </div>
@@ -322,7 +322,7 @@ export default function ResellerRemoteRequests() {
                           <span>{request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}</span>
                           <span className="text-muted-foreground">
                             <Building2 className="h-4 w-4 inline mr-1" />
-                            {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || "N/D"}
+                            {repairCenters?.find(c => c.userId === request.assignedCenterId)?.name || t("common.nd")}
                           </span>
                         </div>
                       </div>
@@ -337,7 +337,7 @@ export default function ResellerRemoteRequests() {
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <Check className="h-5 w-5 text-gray-500" />
-                Completate ({completedRequests.length})
+                {t("common.completed")} ({completedRequests.length})
               </h2>
               <div className="space-y-4">
                 {completedRequests.slice(0, 5).map((request) => (
@@ -352,7 +352,7 @@ export default function ResellerRemoteRequests() {
                           {request.devices?.length > 0 && (
                             <Badge variant="secondary" className="text-xs">
                               <Smartphone className="h-3 w-3 mr-1" />
-                              {request.devices.length} dispositiv{request.devices.length === 1 ? 'o' : 'i'}
+                              {t("reseller.devicesCount", { count: request.devices.length })}
                             </Badge>
                           )}
                         </div>
@@ -372,17 +372,17 @@ export default function ResellerRemoteRequests() {
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assegna Centro di Riparazione</DialogTitle>
+            <DialogTitle>{t("reseller.assignRepairCenter")}</DialogTitle>
             <DialogDescription>
-              Seleziona il centro a cui assegnare la richiesta {selectedRequest?.requestNumber}
+              {t("reseller.selectCenterForRequest", { number: selectedRequest?.requestNumber })}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAssign} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="centerId">Centro di Riparazione</Label>
+              <Label htmlFor="centerId">{t("repairs.repairCenter")}</Label>
               <Select value={selectedCenterId} onValueChange={setSelectedCenterId}>
                 <SelectTrigger data-testid="select-center">
-                  <SelectValue placeholder="Seleziona centro" />
+                  <SelectValue placeholder={t("reseller.selectCenterPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {repairCenters?.map((center) => (
@@ -399,7 +399,7 @@ export default function ResellerRemoteRequests() {
                 {assignMutation.isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  "Assegna"
+                  t("reseller.assign")
                 )}
               </Button>
             </DialogFooter>

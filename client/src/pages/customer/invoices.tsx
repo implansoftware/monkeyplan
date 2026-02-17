@@ -42,9 +42,9 @@ export default function CustomerInvoices() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "paid": return "Pagato";
-      case "pending": return "In Sospeso";
-      case "overdue": return "Scaduto";
+      case "paid": return t("customerPages.paymentStatusBadge");
+      case "pending": return t("customerPages.inSuspeso");
+      case "overdue": return t("customerPages.overdue");
       default: return status;
     }
   };
@@ -67,8 +67,8 @@ export default function CustomerInvoices() {
               <FileText className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Le Mie Fatture</h1>
-              <p className="text-white/80 text-sm">Visualizza lo storico delle tue fatture</p>
+              <h1 className="text-2xl font-bold text-white">{t("customerPages.myInvoices")}</h1>
+              <p className="text-white/80 text-sm">{t("customerPages.viewInvoiceHistory")}</p>
             </div>
           </div>
         </div>
@@ -89,7 +89,7 @@ export default function CustomerInvoices() {
                 <SelectContent>
                   <SelectItem value="all">{t("customerPages.tuttiGliStati")}</SelectItem>
                   <SelectItem value="pending">{t("common.pendingPayments")}</SelectItem>
-                  <SelectItem value="paid">Pagato</SelectItem>
+                  <SelectItem value="paid">{t("customerPages.paymentStatusBadge")}</SelectItem>
                   <SelectItem value="overdue">{t("standalone.expired")}</SelectItem>
                 </SelectContent>
               </Select>
@@ -108,7 +108,7 @@ export default function CustomerInvoices() {
                         format(dateRange.from, "dd MMM yyyy", { locale: it })
                       )
                     ) : (
-                      "Seleziona date"
+                      t("customerPages.selectDates")
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -136,8 +136,8 @@ export default function CustomerInvoices() {
               <h3 className="text-lg font-semibold mb-2">{t("invoices.nessunaFatturaTrovata")}</h3>
               <p className="text-muted-foreground max-w-md">
                 {invoices.length === 0 
-                  ? "Non hai ancora ricevuto fatture. Le fatture verranno visualizzate qui una volta emesse."
-                  : "Nessuna fattura corrisponde ai filtri selezionati. Prova a modificare i criteri di ricerca."
+                  ? t("customerPages.noInvoicesYetDesc")
+                  : t("customerPages.noInvoicesMatchFilter")
                 }
               </p>
             </div>
@@ -145,11 +145,11 @@ export default function CustomerInvoices() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>N. Fattura</TableHead>
-                  <TableHead>Data Emissione</TableHead>
-                  <TableHead className="text-right">Imponibile</TableHead>
-                  <TableHead className="text-right">IVA%</TableHead>
-                  <TableHead className="text-right">IVA</TableHead>
+                  <TableHead>{t("customerPages.invoiceNumber")}</TableHead>
+                  <TableHead>{t("customerPages.issueDate")}</TableHead>
+                  <TableHead className="text-right">{t("customerPages.taxableAmount")}</TableHead>
+                  <TableHead className="text-right">{t("customerPages.vatLabel")}%</TableHead>
+                  <TableHead className="text-right">{t("customerPages.vatLabel")}</TableHead>
                   <TableHead className="text-right">{t("common.total")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("utility.paymentDate")}</TableHead>
@@ -198,7 +198,7 @@ export default function CustomerInvoices() {
 
       {filteredInvoices.length > 0 && (
         <div className="text-sm text-muted-foreground text-center">
-          Totale fatture: {filteredInvoices.length}
+          {t("customerPages.totalInvoices")} {filteredInvoices.length}
         </div>
       )}
     </div>

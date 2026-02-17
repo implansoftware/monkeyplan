@@ -94,7 +94,7 @@ interface ServiceCatalogItem extends ServiceItem {
 export default function RepairCenterServiceCatalog() {
   const { t } = useTranslation();
   const SERVICE_CATEGORIES = [
-    { value: "display", label: "Display" },
+    { value: "display", label: t("spareParts.displayLcd") },
     { value: "batteria", label: t("settings.battery") },
     { value: "software", label: "Software" },
     { value: "hardware", label: "Hardware" },
@@ -492,12 +492,12 @@ export default function RepairCenterServiceCatalog() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Codice *</Label>
+              <Label htmlFor="code">{t("serviceCatalog.codiceRequired")}</Label>
               <Input
                 id="code"
                 value={itemCode}
                 onChange={(e) => setItemCode(e.target.value)}
-                placeholder="es. DISP-001"
+                placeholder={t("serviceCatalog.placeholderCode")}
                 disabled={!!editingItem}
                 data-testid="input-item-code"
               />
@@ -508,7 +508,7 @@ export default function RepairCenterServiceCatalog() {
                 id="name"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                placeholder="es. Sostituzione Display"
+                placeholder={t("serviceCatalog.placeholderName")}
                 data-testid="input-item-name"
               />
             </div>
@@ -552,7 +552,7 @@ export default function RepairCenterServiceCatalog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="labor">Tempo (min)</Label>
+                <Label htmlFor="labor">{t("serviceCatalog.tempoMin")}</Label>
                 <Input
                   id="labor"
                   type="number"

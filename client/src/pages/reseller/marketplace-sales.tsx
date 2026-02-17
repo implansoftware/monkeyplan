@@ -127,7 +127,7 @@ export default function ResellerMarketplaceSales() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("b2b.orderApproved"), description: "Lo stock è stato trasferito al magazzino dell'acquirente" });
+      toast({ title: t("b2b.orderApproved"), description: t("marketplace.stockTransferred") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/sales'] });
       setSelectedOrder(null);
       setSellerNotes("");
@@ -143,7 +143,7 @@ export default function ResellerMarketplaceSales() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: t("b2b.orderRejectedToast"), description: "L'acquirente è stato notificato" });
+      toast({ title: t("b2b.orderRejectedToast"), description: t("marketplace.buyerNotifiedRejection") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/sales'] });
       setRejectDialogOpen(false);
       setSelectedOrder(null);
@@ -429,7 +429,7 @@ export default function ResellerMarketplaceSales() {
                   data-testid="button-approve-order"
                 >
                   <ThumbsUp className="h-4 w-4 mr-2" />
-                  {approveMutation.isPending ? "Approvo..." : t("common.approve")}
+                  {approveMutation.isPending ? t("marketplace.approvingOrder") : t("common.approve")}
                 </Button>
               </>
             )}
@@ -502,7 +502,7 @@ export default function ResellerMarketplaceSales() {
             <div className="space-y-2">
               <Label>{t("shipping.carrier")}</Label>
               <Input 
-                placeholder="Es: BRT, GLS, DHL..."
+                placeholder={t("marketplace.carrierPlaceholder")}
                 value={trackingCarrier}
                 onChange={(e) => setTrackingCarrier(e.target.value)}
                 data-testid="input-tracking-carrier"

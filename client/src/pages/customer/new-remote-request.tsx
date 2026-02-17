@@ -209,7 +209,7 @@ function DeviceFormCard({
           <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-primary">{index + 1}</span>
           </div>
-          <span className="text-sm font-medium">Dispositivo {index + 1}</span>
+          <span className="text-sm font-medium">{t("customerPages.deviceLabel")} {index + 1}</span>
         </div>
         {total > 1 && (
           <Button
@@ -225,7 +225,7 @@ function DeviceFormCard({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Quale dispositivo vuoi riparare?</Label>
+        <Label className="text-xs text-muted-foreground">{t("customerPages.whichDeviceToRepair")}</Label>
         <DeviceModelAutocomplete
           value={device.productSearch}
           onChange={(updates) => onUpdate(updates)}
@@ -244,11 +244,11 @@ function DeviceFormCard({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Descrivi il problema</Label>
+        <Label className="text-xs text-muted-foreground">{t("customerPages.describeTheProblem")}</Label>
         <Textarea
           value={device.issueDescription}
           onChange={(e) => onUpdate({ issueDescription: e.target.value })}
-          placeholder="Cosa non funziona? Descrivi il difetto in dettaglio..."
+          placeholder={t("customerPages.whatIsWrong")}
           rows={3}
           data-testid={`input-issue-${index}`}
         />
@@ -266,16 +266,16 @@ function DeviceFormCard({
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">IMEI (opzionale)</Label>
+          <Label className="text-xs text-muted-foreground">{t("customerPages.imeiOptional")}</Label>
           <Input
             value={device.imei}
             onChange={(e) => onUpdate({ imei: e.target.value })}
-            placeholder="Codice IMEI"
+            placeholder={t("customerPages.imeiCode")}
             data-testid={`input-imei-${index}`}
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Seriale (opzionale)</Label>
+          <Label className="text-xs text-muted-foreground">{t("customerPages.serialOptional")}</Label>
           <Input
             value={device.serial}
             onChange={(e) => onUpdate({ serial: e.target.value })}
@@ -286,13 +286,13 @@ function DeviceFormCard({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Foto del difetto (opzionale, max 5)</Label>
+        <Label className="text-xs text-muted-foreground">{t("customerPages.defectPhotosOptional")}</Label>
         <div className="flex flex-wrap items-center gap-2">
           <label className="cursor-pointer" data-testid={`label-upload-photos-${index}`}>
             <input type="file" accept="image/*" multiple onChange={onPhotoChange} className="hidden" data-testid={`input-photos-${index}`} />
             <div className="flex items-center gap-1.5 px-3 py-1.5 border rounded-md text-sm text-muted-foreground">
               <Upload className="h-3.5 w-3.5" />
-              Carica foto
+              {t("customerPages.uploadPhotos")}
             </div>
           </label>
           {device.photoPreviewUrls.map((url, pi) => (
@@ -352,7 +352,7 @@ export default function NewRemoteRequest() {
   const handleDevicePhotoChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 5) {
-      toast({ title: "Troppi file", description: "Massimo 5 foto per dispositivo", variant: "destructive" });
+      toast({ title: t("customerPages.tooManyFiles"), description: t("customerPages.maxPhotosPerDevice"), variant: "destructive" });
       return;
     }
     const urls = files.map((f) => URL.createObjectURL(f));
@@ -395,7 +395,7 @@ export default function NewRemoteRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customer/remote-requests"] });
       devices.forEach((d) => d.photoPreviewUrls.forEach((u) => URL.revokeObjectURL(u)));
-      toast({ title: "Richiesta inviata", description: t("customerPages.laTuaRichiestaDiRiparazioneStataInviataCo") });
+      toast({ title: t("customerPages.requestSent"), description: t("customerPages.laTuaRichiestaDiRiparazioneStataInviataCo") });
       navigate("/customer/remote-requests");
     },
     onError: (error: Error) => {
@@ -406,13 +406,13 @@ export default function NewRemoteRequest() {
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (devices.length === 0) {
-      toast({ title: t("auth.error"), description: "Aggiungi almeno un dispositivo", variant: "destructive" });
+      toast({ title: t("auth.error"), description: t("customerPages.addAtLeastOneDevice"), variant: "destructive" });
       return;
     }
     for (const d of devices) {
       const hasDevice = (d.brand && d.model) || d.productSearch;
       if (!hasDevice || !d.issueDescription) {
-        toast({ title: "Dati mancanti", description: "Seleziona un dispositivo e descrivi il problema per ogni dispositivo", variant: "destructive" });
+        toast({ title: t("customerPages.missingData"), description: t("customerPages.selectDeviceAndDescribe"), variant: "destructive" });
         return;
       }
       if (d.quantity < 1) {
@@ -471,7 +471,7 @@ export default function NewRemoteRequest() {
         <div>
           <h1 className="text-xl font-bold" data-testid="text-page-title">{t("customerPages.nuovaRichiestaDiRiparazione")}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Aggiungi i dispositivi da riparare e descrivi il problema. Riceverai un preventivo dal centro di riparazione.
+            {t("customerPages.addFormDesc")}
           </p>
         </div>
       </div>
@@ -494,15 +494,15 @@ export default function NewRemoteRequest() {
 
         <Button type="button" variant="outline" className="w-full" onClick={addDevice} data-testid="button-add-device">
           <Plus className="h-4 w-4 mr-2" />
-          Aggiungi altro dispositivo
+          {t("customerPages.addAnotherDevice")}
         </Button>
 
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Note aggiuntive (opzionale)</Label>
+          <Label className="text-xs text-muted-foreground">{t("customerPages.additionalNotesOptional")}</Label>
           <Textarea
             value={customerNotes}
             onChange={(e) => setCustomerNotes(e.target.value)}
-            placeholder="Altre informazioni utili per il centro..."
+            placeholder={t("customerPages.otherInfoForCenter")}
             rows={2}
             data-testid="input-customer-notes"
           />
@@ -515,18 +515,18 @@ export default function NewRemoteRequest() {
             </p>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => navigate("/customer/remote-requests")} data-testid="button-cancel-request">
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={createMutation.isPending || isUploading} data-testid="button-submit-request">
                 {createMutation.isPending || isUploading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Invio in corso...
+                    {t("customerPages.sendingInProgress")}
                   </>
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Invia Richiesta
+                    {t("customerPages.sendRequest")}
                   </>
                 )}
               </Button>

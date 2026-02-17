@@ -1543,7 +1543,7 @@ export default function ResellerProducts() {
                           return (
                             <div key={stock.warehouseId} className="flex flex-wrap items-center gap-3 p-3 border rounded-md">
                               <Warehouse className="h-4 w-4 text-muted-foreground" />
-                              <span className="flex-1 font-medium">{warehouse?.name || "Magazzino"}</span>
+                              <span className="flex-1 font-medium">{warehouse?.name || t("products.warehouseFallback")}</span>
                               <Input
                                 type="number"
                                 min="0"

@@ -35,15 +35,15 @@ const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Goog
 export default function RepairCenterAccessoryCatalog() {
   const { t } = useTranslation();
   const ACCESSORY_TYPES = [
-    { value: "cover", label: "Cover/Custodie", icon: Shield },
-    { value: "pellicola", label: "Pellicole Protettive", icon: Shield },
-    { value: "caricatore", label: "Caricatori", icon: Battery },
-    { value: "cavo", label: "Cavi", icon: Cable },
-    { value: "powerbank", label: "Power Bank", icon: Battery },
-    { value: "auricolari", label: "Auricolari/Cuffie", icon: Headphones },
-    { value: "supporto", label: "Supporti", icon: Package },
-    { value: "adattatore", label: "Adattatori", icon: Cable },
-    { value: "memoria", label: "Schede Memoria", icon: Package },
+    { value: "cover", label: t("accessories.cover"), icon: Shield },
+    { value: "pellicola", label: t("accessories.pellicole"), icon: Shield },
+    { value: "caricatore", label: t("accessories.caricatori"), icon: Battery },
+    { value: "cavo", label: t("accessories.cavi"), icon: Cable },
+    { value: "powerbank", label: t("accessories.powerBank"), icon: Battery },
+    { value: "auricolari", label: t("accessories.auricolari"), icon: Headphones },
+    { value: "supporto", label: t("accessories.supporti"), icon: Package },
+    { value: "adattatore", label: t("accessories.adattatori"), icon: Cable },
+    { value: "memoria", label: t("accessories.schedeMemoria"), icon: Package },
     { value: "altro", label: t("common.more"), icon: Package },
   ];
   const [searchQuery, setSearchQuery] = useState("");
@@ -91,7 +91,7 @@ export default function RepairCenterAccessoryCatalog() {
     localStorage.setItem('rc-b2b-cart', JSON.stringify(newCart));
     toast({
       title: t("catalog.addedToCart"),
-      description: `${accessory.name} x${quantity} aggiunto al carrello B2B`,
+      description: t("accessories.aggiuntoAlCarrelloB2B", { name: accessory.name, quantity }),
     });
     setBuyDialogOpen(false);
   };
@@ -129,7 +129,7 @@ export default function RepairCenterAccessoryCatalog() {
             {cartItemCount > 0 && (
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" onClick={() => window.location.href = '/repair-center/b2b-catalog'} data-testid="button-view-cart">
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Carrello ({cartItemCount}) - {formatPrice(cartTotal)}
+                {t("accessories.carrello")} ({cartItemCount}) - {formatPrice(cartTotal)}
               </Button>
             )}
           </div>
@@ -260,11 +260,11 @@ export default function RepairCenterAccessoryCatalog() {
                           {acc.availableForPurchase ? (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                               <Package className="h-3 w-3 mr-1" />
-                              {acc.resellerStock} disponibili
+                              {t("accessories.disponibili", { count: acc.resellerStock })}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                              Non disponibile
+                              {t("accessories.nonDisponibile")}
                             </Badge>
                           )}
                         </TableCell>
@@ -312,7 +312,7 @@ export default function RepairCenterAccessoryCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
-              Dettagli Accessorio
+              {t("accessories.dettagliAccessorio")}
             </DialogTitle>
           </DialogHeader>
           {selectedAccessory && (
@@ -347,14 +347,14 @@ export default function RepairCenterAccessoryCatalog() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Specifiche</h4>
+                  <h4 className="font-semibold mb-2">{t("accessories.specifiche")}</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Materiale:</span>
+                      <span className="text-muted-foreground">{t("accessories.materiale")}</span>
                       <span>{selectedAccessory.specs?.material || "N/D"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Colore:</span>
+                      <span className="text-muted-foreground">{t("accessories.colore")}</span>
                       <span>{selectedAccessory.specs?.color || selectedAccessory.color || "N/D"}</span>
                     </div>
                     <div className="flex justify-between">
@@ -376,7 +376,7 @@ export default function RepairCenterAccessoryCatalog() {
                       ))}
                     </div>
                   ) : (
-                    <span className="text-muted-foreground text-sm">Non specificata</span>
+                    <span className="text-muted-foreground text-sm">{t("accessories.nonSpecificata")}</span>
                   )}
                 </div>
               </div>
@@ -398,7 +398,7 @@ export default function RepairCenterAccessoryCatalog() {
                 setBuyDialogOpen(true);
               }}>
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Aggiungi al Carrello
+                {t("accessories.aggiungiAlCarrello")}
               </Button>
             )}
           </DialogFooter>
@@ -410,7 +410,7 @@ export default function RepairCenterAccessoryCatalog() {
           <DialogHeader>
             <DialogTitle>{t("accessories.aggiungiAlCarrelloB2B")}</DialogTitle>
             <DialogDescription>
-              Aggiungi questo accessorio al tuo ordine B2B
+              {t("accessories.aggiungiAccessorioOrdineB2B")}
             </DialogDescription>
           </DialogHeader>
           {selectedAccessory && (
@@ -419,7 +419,7 @@ export default function RepairCenterAccessoryCatalog() {
                 <h4 className="font-medium">{selectedAccessory.name}</h4>
                 <p className="text-sm text-muted-foreground">{selectedAccessory.brand} - {getTypeInfo(selectedAccessory.specs?.accessoryType).label}</p>
                 <p className="text-lg font-bold mt-2">{formatPrice(selectedAccessory.b2bPrice)}</p>
-                <p className="text-sm text-muted-foreground">Disponibili: {selectedAccessory.resellerStock}</p>
+                <p className="text-sm text-muted-foreground">{t("accessories.disponibili", { count: selectedAccessory.resellerStock })}</p>
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <span className="text-sm font-medium">{t("accessories.quantit")}</span>

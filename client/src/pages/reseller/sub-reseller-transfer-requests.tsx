@@ -141,7 +141,7 @@ export default function SubResellerTransferRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
-      toast({ title: t("auth.requestSent"), description: "La richiesta di interscambio è stata inviata al reseller padre" });
+      toast({ title: t("auth.requestSent"), description: t("reseller.transferRequestSentDesc") });
       setShowNewRequestDialog(false);
       resetWizard();
     },
@@ -156,7 +156,7 @@ export default function SubResellerTransferRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
-      toast({ title: "Richiesta Annullata", description: "La richiesta è stata annullata" });
+      toast({ title: t("reseller.requestCancelled"), description: t("reseller.requestCancelledDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -170,7 +170,7 @@ export default function SubResellerTransferRequestsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/sub-reseller/transfer-requests"] });
       queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
-      toast({ title: "Ricezione Confermata", description: "Gli articoli sono stati aggiunti al tuo magazzino" });
+      toast({ title: t("reseller.receptionConfirmed"), description: t("reseller.itemsAddedToWarehouse") });
       setShowReceiveDialog(false);
       setSelectedRequest(null);
       setReceiveItems([]);
@@ -235,7 +235,7 @@ export default function SubResellerTransferRequestsPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white" data-testid="text-title">{t("sidebar.sections.transfers")}</h1>
-              <p className="text-sm text-white/80">Richiedi prodotti dal magazzino del reseller padre</p>
+              <p className="text-sm text-white/80">{t("reseller.requestProductsFromParent")}</p>
             </div>
           </div>
           <Button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" onClick={() => setShowNewRequestDialog(true)} data-testid="button-new-request">
@@ -249,11 +249,11 @@ export default function SubResellerTransferRequestsPage() {
       }}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
             <DialogHeader>
-              <DialogTitle>Nuova Richiesta Interscambio</DialogTitle>
+              <DialogTitle>{t("reseller.newTransferRequest")}</DialogTitle>
               <DialogDescription>
-                {wizardStep === 1 && "Cerca il prodotto che vuoi richiedere"}
-                {wizardStep === 2 && "Seleziona il magazzino da cui richiedere"}
-                {wizardStep === 3 && "Conferma quantità e invia richiesta"}
+                {wizardStep === 1 && t("reseller.searchProductToRequest")}
+                {wizardStep === 2 && t("reseller.selectSourceWarehouse")}
+                {wizardStep === 3 && t("reseller.confirmAndSendRequest")}
               </DialogDescription>
             </DialogHeader>
 
@@ -281,7 +281,7 @@ export default function SubResellerTransferRequestsPage() {
                     <div className="relative flex-1">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Cerca prodotto per nome, SKU o marca..."
+                        placeholder={t("reseller.searchProductBySku")}
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
                         className="pl-10"
@@ -310,8 +310,8 @@ export default function SubResellerTransferRequestsPage() {
                   {!isSearching && searchResults.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p>Nessun prodotto disponibile trovato</p>
-                      <p className="text-sm">Prova a modificare i criteri di ricerca</p>
+                      <p>{t("reseller.noAvailableProductsFound")}</p>
+                      <p className="text-sm">{t("reseller.tryModifyingSearch")}</p>
                     </div>
                   )}
 
@@ -360,10 +360,10 @@ export default function SubResellerTransferRequestsPage() {
                                 </div>
                                 <div className="text-right">
                                   <Badge variant="secondary">
-                                    {totalStock} disponibili
+                                    {totalStock} {t("reseller.available")}
                                   </Badge>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {Array.from(new Set(item.warehouses.map(w => w.ownerName))).filter(Boolean).join(', ') || `${item.warehouses.length} magazzin${item.warehouses.length === 1 ? 'o' : 'i'}`}
+                                    {Array.from(new Set(item.warehouses.map(w => w.ownerName))).filter(Boolean).join(', ') || t("reseller.warehousesCount", { count: item.warehouses.length })}
                                   </p>
                                 </div>
                               </div>
@@ -400,7 +400,7 @@ export default function SubResellerTransferRequestsPage() {
                     </CardContent>
                   </Card>
 
-                  <Label>Seleziona il magazzino sorgente</Label>
+                  <Label>{t("reseller.selectSourceWarehouse")}</Label>
                   <div className="grid gap-2">
                     {selectedProduct.warehouses.map((wh) => (
                       <Card
@@ -459,7 +459,7 @@ export default function SubResellerTransferRequestsPage() {
                             {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.warehouseName}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            Disponibili: {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.quantity}
+                            {t("reseller.available")}: {selectedProduct.warehouses.find(w => w.warehouseId === selectedWarehouse)?.quantity}
                           </p>
                         </div>
                       </div>
@@ -467,7 +467,7 @@ export default function SubResellerTransferRequestsPage() {
                   </Card>
 
                   <div className="space-y-2">
-                    <Label>Quantità richiesta</Label>
+                    <Label>{t("reseller.requestedQuantity")}</Label>
                     <Input
                       type="number"
                       min={1}
@@ -479,11 +479,11 @@ export default function SubResellerTransferRequestsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Note (opzionale)</Label>
+                    <Label>{t("reseller.notesOptional")}</Label>
                     <Textarea
                       value={requestNotes}
                       onChange={(e) => setRequestNotes(e.target.value)}
-                      placeholder="Note aggiuntive per la richiesta..."
+                      placeholder={t("reseller.additionalNotes")}
                       data-testid="input-request-notes"
                     />
                   </div>
@@ -528,7 +528,7 @@ export default function SubResellerTransferRequestsPage() {
                   disabled={createRequestMutation.isPending || requestQuantity < 1 || !selectedWarehouse || !selectedProduct}
                   data-testid="button-submit-request"
                 >
-                  {createRequestMutation.isPending ? t("pages.sending") : "Invia Richiesta"}
+                  {createRequestMutation.isPending ? t("pages.sending") : t("reseller.sendRequest")}
                 </Button>
               )}
             </DialogFooter>
@@ -539,7 +539,7 @@ export default function SubResellerTransferRequestsPage() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca per numero richiesta o prodotto..."
+            placeholder={t("reseller.searchByRequestOrProduct")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -614,21 +614,21 @@ export default function SubResellerTransferRequestsPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Data:</span>{" "}
+                      <span className="text-muted-foreground">{t("common.date")}:</span>{" "}
                       {new Date(request.createdAt).toLocaleDateString('it-IT')}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Articoli:</span>{" "}
-                      {request.items.length} prodotti
+                      <span className="text-muted-foreground">{t("reseller.items")}:</span>{" "}
+                      {request.items.length} {t("reseller.products")}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Da:</span>{" "}
-                      {request.sourceWarehouse?.name || "Magazzino Reseller Padre"}
+                      <span className="text-muted-foreground">{t("reseller.from")}:</span>{" "}
+                      {request.sourceWarehouse?.name || t("reseller.parentResellerWarehouse")}
                     </div>
                   </div>
                   {request.rejectionReason && (
                     <div className="mt-2 p-2 bg-destructive/10 rounded text-sm text-destructive">
-                      Motivo rifiuto: {request.rejectionReason}
+                      {t("reseller.rejectionReason")}: {request.rejectionReason}
                     </div>
                   )}
                 </CardContent>
@@ -641,28 +641,28 @@ export default function SubResellerTransferRequestsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettagli Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("reseller.requestDetails")} {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Stato:</span>{" "}
+                  <span className="text-muted-foreground">{t("common.status")}:</span>{" "}
                   <Badge className={statusConfig[selectedRequest.status]?.color}>
                     {statusConfig[selectedRequest.status]?.label}
                   </Badge>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Data creazione:</span>{" "}
+                  <span className="text-muted-foreground">{t("common.creationDate")}:</span>{" "}
                   {new Date(selectedRequest.createdAt).toLocaleDateString('it-IT')}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Magazzino sorgente:</span>{" "}
-                  {selectedRequest.sourceWarehouse?.name || "N/A"}
+                  <span className="text-muted-foreground">{t("reseller.sourceWarehouse")}:</span>{" "}
+                  {selectedRequest.sourceWarehouse?.name || t("common.na")}
                 </div>
                 {selectedRequest.notes && (
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Note:</span>{" "}
+                    <span className="text-muted-foreground">{t("common.notes")}:</span>{" "}
                     {selectedRequest.notes}
                   </div>
                 )}
@@ -673,12 +673,12 @@ export default function SubResellerTransferRequestsPage() {
                 <div className="space-y-2">
                   {selectedRequest.items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                      <span>{item.product?.name || "Prodotto"}</span>
+                      <span>{item.product?.name || t("common.product")}</span>
                       <div className="flex flex-wrap items-center gap-4 text-sm">
-                        <span>Richiesti: {item.requestedQuantity}</span>
-                        {item.approvedQuantity !== null && <span>Approvati: {item.approvedQuantity}</span>}
-                        {item.shippedQuantity !== null && <span>Spediti: {item.shippedQuantity}</span>}
-                        {item.receivedQuantity !== null && <span>Ricevuti: {item.receivedQuantity}</span>}
+                        <span>{t("reseller.requested")}: {item.requestedQuantity}</span>
+                        {item.approvedQuantity !== null && <span>{t("reseller.approved")}: {item.approvedQuantity}</span>}
+                        {item.shippedQuantity !== null && <span>{t("reseller.shipped")}: {item.shippedQuantity}</span>}
+                        {item.receivedQuantity !== null && <span>{t("reseller.received")}: {item.receivedQuantity}</span>}
                       </div>
                     </div>
                   ))}
@@ -697,14 +697,14 @@ export default function SubResellerTransferRequestsPage() {
           {selectedRequest && (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Conferma la quantità ricevuta per ogni articolo:
+                {t("reseller.confirmReceivedQuantity")}:
               </p>
               {selectedRequest.items.map((item, index) => (
                 <div key={item.id} className="flex flex-wrap items-center gap-4 p-3 border rounded">
                   <div className="flex-1">
                     <p className="font-medium">{item.product?.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      Spediti: {item.shippedQuantity}
+                      {t("reseller.shipped")}: {item.shippedQuantity}
                     </p>
                   </div>
                   <div className="w-24">
@@ -735,7 +735,7 @@ export default function SubResellerTransferRequestsPage() {
               disabled={receiveRequestMutation.isPending}
               data-testid="button-confirm-receive"
             >
-              {receiveRequestMutation.isPending ? "Conferma..." : t("b2b.confirmReceipt")}
+              {receiveRequestMutation.isPending ? t("reseller.confirming") : t("b2b.confirmReceipt")}
             </Button>
           </DialogFooter>
         </DialogContent>

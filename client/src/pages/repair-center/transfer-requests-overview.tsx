@@ -470,10 +470,10 @@ export default function RepairCenterTransferRequestsOverviewPage() {
           <SelectContent>
             <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
             <SelectItem value="pending">{t("common.pending")}</SelectItem>
-            <SelectItem value="approved">Approvate</SelectItem>
-            <SelectItem value="shipped">Spedite</SelectItem>
-            <SelectItem value="received">Ricevute</SelectItem>
-            <SelectItem value="rejected">Rifiutate</SelectItem>
+            <SelectItem value="approved">{t("transfers.approvate")}</SelectItem>
+            <SelectItem value="shipped">{t("transfers.spedite")}</SelectItem>
+            <SelectItem value="received">{t("transfers.ricevute")}</SelectItem>
+            <SelectItem value="rejected">{t("transfers.rifiutate")}</SelectItem>
             <SelectItem value="cancelled">{t("invoices.annullate")}</SelectItem>
           </SelectContent>
         </Select>
@@ -483,14 +483,14 @@ export default function RepairCenterTransferRequestsOverviewPage() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="active" className="gap-2" data-testid="tab-rc-active">
             <Send className="h-4 w-4" />
-            Attive
+            {t("transfers.attive")}
             {(stats?.totalActive || 0) > 0 && (
               <Badge variant="secondary" className="ml-1">{stats?.totalActive}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-2" data-testid="tab-rc-history">
             <History className="h-4 w-4" />
-            Storico
+            {t("transfers.storico")}
           </TabsTrigger>
         </TabsList>
 
@@ -584,10 +584,10 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                     <thead className="bg-muted">
                       <tr>
                         <th className="text-left p-2">{t("common.product")}</th>
-                        <th className="text-right p-2">Richiesti</th>
-                        <th className="text-right p-2 hidden md:table-cell">Approvati</th>
-                        <th className="text-right p-2 hidden md:table-cell">Spediti</th>
-                        <th className="text-right p-2 hidden md:table-cell">Ricevuti</th>
+                        <th className="text-right p-2">{t("transfers.requested")}</th>
+                        <th className="text-right p-2 hidden md:table-cell">{t("repairs.status.approved")}</th>
+                        <th className="text-right p-2 hidden md:table-cell">{t("transfers.shipped")}</th>
+                        <th className="text-right p-2 hidden md:table-cell">{t("transfers.received")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -598,7 +598,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                               {item.product?.imageUrl ? (
                                 <img 
                                   src={item.product.imageUrl} 
-                                  alt={item.product?.name || "Prodotto"} 
+                                  alt={item.product?.name || t("common.product")} 
                                   className="w-10 h-10 object-cover rounded-md border"
                                 />
                               ) : (
@@ -607,7 +607,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                                 </div>
                               )}
                               <div>
-                                <span className="font-medium">{item.product?.name || 'Prodotto'}</span>
+                                <span className="font-medium">{item.product?.name || t("common.product")}</span>
                                 {item.product?.sku && (
                                   <span className="text-muted-foreground text-xs block">SKU: {item.product.sku}</span>
                                 )}
@@ -645,8 +645,8 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                   <thead className="bg-muted">
                     <tr>
                       <th className="text-left p-2">{t("common.product")}</th>
-                      <th className="text-right p-2">Spediti</th>
-                      <th className="text-right p-2">Ricevuti</th>
+                      <th className="text-right p-2">{t("transfers.shipped")}</th>
+                      <th className="text-right p-2">{t("transfers.received")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -657,7 +657,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                             {item.product?.imageUrl ? (
                               <img 
                                 src={item.product.imageUrl} 
-                                alt={item.product?.name || "Prodotto"} 
+                                alt={item.product?.name || t("common.product")} 
                                 className="w-10 h-10 object-cover rounded-md border"
                               />
                             ) : (
@@ -665,7 +665,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                                 <Package className="w-5 h-5 text-muted-foreground" />
                               </div>
                             )}
-                            <span className="font-medium">{item.product?.name || 'Prodotto'}</span>
+                            <span className="font-medium">{item.product?.name || t("common.product")}</span>
                           </div>
                         </td>
                         <td className="text-right p-2">{item.shippedQuantity || item.approvedQuantity || item.requestedQuantity}</td>
@@ -945,7 +945,7 @@ export default function RepairCenterTransferRequestsOverviewPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Note (opzionale)</Label>
+                  <Label>{t("transfers.noteOpzionale")}</Label>
                   <Textarea
                     value={requestNotes}
                     onChange={(e) => setRequestNotes(e.target.value)}

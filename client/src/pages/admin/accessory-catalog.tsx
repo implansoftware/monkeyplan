@@ -85,14 +85,40 @@ const CONDITION_OPTIONS = [
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "Anker", "Belkin", "Spigen", "OtterBox", "Universale", "Altro"];
 
 const COLOR_OPTIONS = [
-  "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
-  "Verde", "Rosso", "Giallo", "Arancione", "Rosa", "Viola", "Marrone", 
-  "Trasparente", "Multicolore", "Altro"
+  { value: "Nero", labelKey: "colors.black" },
+  { value: "Bianco", labelKey: "colors.white" },
+  { value: "Argento", labelKey: "colors.silver" },
+  { value: "Grigio", labelKey: "colors.grey" },
+  { value: "Oro", labelKey: "colors.gold" },
+  { value: "Oro Rosa", labelKey: "colors.roseGold" },
+  { value: "Blu", labelKey: "colors.blue" },
+  { value: "Blu Notte", labelKey: "colors.nightBlue" },
+  { value: "Verde", labelKey: "colors.green" },
+  { value: "Rosso", labelKey: "colors.red" },
+  { value: "Giallo", labelKey: "colors.yellow" },
+  { value: "Arancione", labelKey: "colors.orange" },
+  { value: "Rosa", labelKey: "colors.pink" },
+  { value: "Viola", labelKey: "colors.purple" },
+  { value: "Marrone", labelKey: "colors.brown" },
+  { value: "Trasparente", labelKey: "colors.transparent" },
+  { value: "Multicolore", labelKey: "colors.multicolor" },
+  { value: "Altro", labelKey: "common.other" },
 ];
 
 const MATERIAL_OPTIONS = [
-  "Silicone", "TPU", "Plastica", "Policarbonato", "Pelle", "Pelle sintetica",
-  "Vetro temperato", "Metallo", "Alluminio", "Tessuto", "Legno", "Carbonio", "Altro"
+  { value: "Silicone", labelKey: "products.materialSilicone" },
+  { value: "TPU", labelKey: "products.materialTPU" },
+  { value: "Plastica", labelKey: "products.materialPlastic" },
+  { value: "Policarbonato", labelKey: "products.materialPolycarbonate" },
+  { value: "Pelle", labelKey: "products.materialLeather" },
+  { value: "Pelle sintetica", labelKey: "products.materialSyntheticLeather" },
+  { value: "Vetro temperato", labelKey: "products.materialTemperedGlass" },
+  { value: "Metallo", labelKey: "products.materialMetal" },
+  { value: "Alluminio", labelKey: "products.materialAluminum" },
+  { value: "Tessuto", labelKey: "products.materialFabric" },
+  { value: "Legno", labelKey: "products.materialWood" },
+  { value: "Carbonio", labelKey: "products.materialCarbon" },
+  { value: "Altro", labelKey: "common.other" },
 ];
 
 export default function AdminAccessoryCatalog() {
@@ -384,7 +410,7 @@ export default function AdminAccessoryCatalog() {
   const addEditStock = (warehouseId: string) => {
     const wh = warehouses.find(w => w.id === warehouseId);
     if (wh && !editStock.find(s => s.warehouseId === warehouseId)) {
-      const ownerName = wh.owner?.fullName || wh.owner?.username || 'Sistema';
+      const ownerName = wh.owner?.fullName || wh.owner?.username || t("common.system");
       setEditStock([...editStock, { 
         warehouseId, 
         warehouseName: wh.name, 
@@ -712,9 +738,9 @@ export default function AdminAccessoryCatalog() {
         const data = await response.json();
         const stockEntries = data.stocks.map((ws: any) => ({
           warehouseId: ws.warehouseId,
-          warehouseName: ws.warehouse?.name || 'Sconosciuto',
+          warehouseName: ws.warehouse?.name || t("common.unknown"),
           ownerType: ws.warehouse?.ownerType || 'admin',
-          ownerName: ws.warehouse?.ownerName || 'Sistema',
+          ownerName: ws.warehouse?.ownerName || t("common.system"),
           quantity: ws.quantity,
           originalQuantity: ws.quantity,
           location: ws.location || "",
@@ -1036,8 +1062,8 @@ export default function AdminAccessoryCatalog() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ACCESSORY_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    {ACCESSORY_TYPES.map((at) => (
+                      <SelectItem key={at.value} value={at.value}>{t(at.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1063,7 +1089,7 @@ export default function AdminAccessoryCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {CONDITION_OPTIONS.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1079,7 +1105,7 @@ export default function AdminAccessoryCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {COLOR_OPTIONS.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1092,7 +1118,7 @@ export default function AdminAccessoryCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {MATERIAL_OPTIONS.map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                      <SelectItem key={m.value} value={m.value}>{t(m.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1122,7 +1148,7 @@ export default function AdminAccessoryCatalog() {
                       data-testid="button-new-brand"
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      Brand
+                      {t("products.brand")}
                     </Button>
                     <Button
                       type="button"
@@ -1132,16 +1158,16 @@ export default function AdminAccessoryCatalog() {
                       data-testid="button-new-model"
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      Modello
+                      {t("products.model")}
                     </Button>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  Seleziona i brand e modelli di dispositivo con cui questo accessorio è compatibile
+                  {t("products.selectBrandsAndModelsDesc")}
                 </p>
                 <ScrollArea className="h-64 border rounded-md p-2">
                   {deviceBrands.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-2">Nessun brand di dispositivo disponibile</p>
+                    <p className="text-sm text-muted-foreground p-2">{t("products.noBrandsAvailable")}</p>
                   ) : (
                     <div className="space-y-1">
                       {deviceBrands.map((brand) => {
@@ -1166,7 +1192,7 @@ export default function AdminAccessoryCatalog() {
                                 <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-0' : '-rotate-90'}`} />
                                 <span className="font-medium">{brand.name}</span>
                                 {hasBrandOnlyCompatibility && (
-                                  <Badge variant="outline" className="ml-2 text-xs">Tutti i modelli</Badge>
+                                  <Badge variant="outline" className="ml-2 text-xs">{t("products.allModels")}</Badge>
                                 )}
                               </button>
                               <Button
@@ -1197,7 +1223,7 @@ export default function AdminAccessoryCatalog() {
                                   );
                                 })}
                                 {models.length === 0 && (
-                                  <p className="text-xs text-muted-foreground italic">Nessun modello. Clicca + per aggiungerne uno.</p>
+                                  <p className="text-xs text-muted-foreground italic">{t("products.noModelsClickAdd")}</p>
                                 )}
                               </div>
                             )}
@@ -1214,7 +1240,7 @@ export default function AdminAccessoryCatalog() {
                       const model = c.deviceModelId ? deviceModels.find(m => m.id === c.deviceModelId) : null;
                       return (
                         <Badge key={idx} variant="secondary">
-                          {brand?.name}{model ? ` - ${model.modelName}` : ' (tutti)'}
+                          {brand?.name}{model ? ` - ${model.modelName}` : ` (${t("common.allMasc")})`}
                         </Badge>
                       );
                     })}
@@ -1356,7 +1382,7 @@ export default function AdminAccessoryCatalog() {
                   </div>
                 ) : editStock.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessuna giacenza. Seleziona un magazzino per aggiungere quantità.
+                    {t("warehouse.noStockSelectWarehouse")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1392,11 +1418,11 @@ export default function AdminAccessoryCatalog() {
                               />
                             </div>
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                              <Label className="text-xs text-muted-foreground">{t("warehouse.location")}</Label>
                               <Input
                                 value={stock.location}
                                 onChange={(e) => updateEditStockLocation(stock.warehouseId, e.target.value)}
-                                placeholder="es. Scaffale A3"
+                                placeholder={t("warehouse.locationPlaceholder")}
                                 data-testid={`edit-input-location-${stock.warehouseId}`}
                               />
                             </div>
@@ -1410,7 +1436,7 @@ export default function AdminAccessoryCatalog() {
                 // Create mode: show initialStock
                 initialStock.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Nessuna quantità iniziale. Seleziona un magazzino per aggiungere.
+                    {t("warehouse.noInitialStock")}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1450,11 +1476,11 @@ export default function AdminAccessoryCatalog() {
                               />
                             </div>
                             <div className="flex-1">
-                              <Label className="text-xs text-muted-foreground">Ubicazione</Label>
+                              <Label className="text-xs text-muted-foreground">{t("warehouse.location")}</Label>
                               <Input
                                 value={stock.location}
                                 onChange={(e) => updateInitialStockLocation(stock.warehouseId, e.target.value)}
-                                placeholder="es. Scaffale A3"
+                                placeholder={t("warehouse.locationPlaceholder")}
                                 data-testid={`input-location-${stock.warehouseId}`}
                               />
                             </div>
@@ -1546,7 +1572,7 @@ export default function AdminAccessoryCatalog() {
                       data-testid="button-select-image"
                     >
                       <ImagePlus className="mr-2 h-4 w-4" />
-                      Seleziona immagine
+                      {t("products.selectImage")}
                     </Button>
                     {editingAccessory && imageFile && (
                       <Button
@@ -1557,10 +1583,10 @@ export default function AdminAccessoryCatalog() {
                         data-testid="button-upload-image"
                       >
                         {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Carica immagine
+                        {t("products.uploadImage")}
                       </Button>
                     )}
-                    <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
+                    <p className="text-xs text-muted-foreground">{t("products.imageFormats")}</p>
                   </div>
                 </div>
               </div>
@@ -1568,7 +1594,7 @@ export default function AdminAccessoryCatalog() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSubmit}
@@ -1587,12 +1613,12 @@ export default function AdminAccessoryCatalog() {
           <DialogHeader>
             <DialogTitle>{t("common.confirmDelete")}</DialogTitle>
             <DialogDescription>
-              Sei sicuro di voler eliminare "{accessoryToDelete?.name}"? Questa azione non può essere annullata.
+              {t("common.confirmDeleteItemMessage", { name: accessoryToDelete?.name })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} data-testid="button-cancel-delete">
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               variant="destructive"
@@ -1601,7 +1627,7 @@ export default function AdminAccessoryCatalog() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Elimina
+              {t("common.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1627,11 +1653,11 @@ export default function AdminAccessoryCatalog() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setNewBrandDialogOpen(false)}>
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={!newBrandName.trim() || createBrandMutation.isPending} data-testid="button-create-brand">
                 {createBrandMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crea Brand
+                {t("products.createBrand")}
               </Button>
             </DialogFooter>
           </form>
@@ -1647,7 +1673,7 @@ export default function AdminAccessoryCatalog() {
           </DialogHeader>
           <form onSubmit={handleCreateModel} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="new-model-brand">Brand</Label>
+              <Label htmlFor="new-model-brand">{t("products.brand")}</Label>
               <Select value={newModelBrandId} onValueChange={setNewModelBrandId}>
                 <SelectTrigger data-testid="select-new-model-brand">
                   <SelectValue placeholder={t("products.selectBrand")} />
@@ -1671,11 +1697,11 @@ export default function AdminAccessoryCatalog() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setNewModelDialogOpen(false)}>
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={!newModelName.trim() || !newModelBrandId || createModelMutation.isPending} data-testid="button-create-model">
                 {createModelMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Crea Modello
+                {t("products.createModel")}
               </Button>
             </DialogFooter>
           </form>
@@ -1688,10 +1714,10 @@ export default function AdminAccessoryCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Assegna a Rivenditore
+              {t("products.assignToReseller")}
             </DialogTitle>
             <DialogDescription>
-              Assegna "{accessoryToAssign?.name}" a uno o più rivenditori con prezzi personalizzati.
+              {t("products.assignDescription", { name: accessoryToAssign?.name })}
             </DialogDescription>
           </DialogHeader>
 
@@ -1787,14 +1813,14 @@ export default function AdminAccessoryCatalog() {
               >
                 {assignMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <UserPlus className="mr-2 h-4 w-4" />
-                Assegna
+                {t("products.assign")}
               </Button>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setAssignDialogOpen(false)} data-testid="button-close-assign">
-              Chiudi
+              {t("common.close")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -39,9 +39,9 @@ type WarrantyItem = {
 
 function getCoverageLabels(t: (key: string, opts?: any) => string): Record<string, string> {
   return {
-    basic: "Base",
+    basic: t("warranties.basic"),
     extended: t("warranties.extended"),
-    full: "Completa",
+    full: t("warranties.full"),
   };
 }
 
@@ -243,8 +243,8 @@ export default function RepairCenterWarranties() {
             <p className="text-lg font-medium">{t("warranties.noWarrantiesFound")}</p>
             <p className="text-sm text-muted-foreground">
               {search || statusFilter !== "all"
-                ? "Prova a modificare i filtri di ricerca"
-                : "Le garanzie offerte ai clienti appariranno qui"}
+                ? t("warranties.tryModifyFilters")
+                : t("warranties.warrantiesWillAppearHere")}
             </p>
           </CardContent>
         </Card>
@@ -329,7 +329,7 @@ export default function RepairCenterWarranties() {
                       {w.status === "offered" && (
                         <div className="flex items-center gap-2 p-2 rounded-md text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                           <Clock className="h-3.5 w-3.5 shrink-0" />
-                          <span>Offerta inviata il {format(new Date(w.offeredAt), "dd/MM/yyyy", { locale: it })}</span>
+                          <span>{t("warranties.offertaInviataIl")} {format(new Date(w.offeredAt), "dd/MM/yyyy", { locale: it })}</span>
                         </div>
                       )}
                     </div>
@@ -381,11 +381,11 @@ export default function RepairCenterWarranties() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="notes">Note (opzionale)</Label>
+              <Label htmlFor="notes">{t("warranties.noteOpzionale")}</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Eventuali note sulla garanzia..."
+                placeholder={t("warranties.placeholderNotes")}
                 data-testid="textarea-warranty-notes"
               />
             </div>

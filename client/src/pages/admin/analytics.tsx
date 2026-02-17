@@ -108,7 +108,7 @@ export default function AdminAnalytics() {
     },
     {
       title: t("dashboard.avgRepairTime"),
-      value: overview?.avgRepairTime ? `${overview.avgRepairTime.toFixed(1)} giorni` : "0 giorni",
+      value: overview?.avgRepairTime ? `${overview.avgRepairTime.toFixed(1)} ${t("common.days")}` : `0 ${t("common.days")}`,
       icon: Clock,
       color: "text-chart-2",
       bgColor: "bg-chart-2/10",
@@ -137,9 +137,9 @@ export default function AdminAnalytics() {
   ];
 
   const repairStatusData = overview ? [
-    { name: 'Attive', value: overview.activeRepairs },
-    { name: 'Completate', value: overview.completedRepairs },
-    { name: 'Totali', value: overview.totalRepairs - overview.activeRepairs - overview.completedRepairs },
+    { name: t("analytics.active"), value: overview.activeRepairs },
+    { name: t("analytics.completed"), value: overview.completedRepairs },
+    { name: t("analytics.otherStatuses"), value: overview.totalRepairs - overview.activeRepairs - overview.completedRepairs },
   ] : [];
 
   return (
@@ -157,7 +157,7 @@ export default function AdminAnalytics() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight" data-testid="heading-analytics">{t("sidebar.items.analytics")}</h1>
               <p className="text-sm text-muted-foreground">
-                Panoramica dettagliata delle performance e dei KPI
+                {t("analytics.performanceOverview")}
               </p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function AdminAnalytics() {
               onClick={() => setPeriod('week')}
               data-testid="button-period-week"
             >
-              Settimana
+              {t("reports.week")}
             </Button>
             <Button
               variant={period === 'month' ? 'default' : 'outline'}
@@ -176,7 +176,7 @@ export default function AdminAnalytics() {
               onClick={() => setPeriod('month')}
               data-testid="button-period-month"
             >
-              Mese
+              {t("reports.month")}
             </Button>
             <Button
               variant={period === 'year' ? 'default' : 'outline'}
@@ -184,7 +184,7 @@ export default function AdminAnalytics() {
               onClick={() => setPeriod('year')}
               data-testid="button-period-year"
             >
-              Anno
+              {t("analytics.year")}
             </Button>
           </div>
         </div>
@@ -227,16 +227,16 @@ export default function AdminAnalytics() {
                   <XAxis dataKey="period" />
                   <YAxis tickFormatter={(value) => `€${(value / 100).toFixed(0)}`} />
                   <Tooltip 
-                    formatter={(value: any) => [`€${(value / 100).toFixed(2)}`, 'Fatturato']}
-                    labelFormatter={(label) => `Periodo: ${label}`}
+                    formatter={(value: any) => [`€${(value / 100).toFixed(2)}`, t("analytics.revenue")]}
+                    labelFormatter={(label) => `${t("analytics.periodLabel")}: ${label}`}
                   />
                   <Legend />
-                  <Line type="monotone" dataKey="revenue" stroke={CHART_COLORS[0]} strokeWidth={2} name="Fatturato" />
+                  <Line type="monotone" dataKey="revenue" stroke={CHART_COLORS[0]} strokeWidth={2} name={t("analytics.revenue")} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nessun dato disponibile per il periodo selezionato
+                {t("analytics.noDataForPeriod")}
               </div>
             )}
           </CardContent>
@@ -272,7 +272,7 @@ export default function AdminAnalytics() {
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nessuna riparazione disponibile
+                {t("analytics.noRepairsAvailable")}
               </div>
             )}
           </CardContent>
@@ -295,13 +295,13 @@ export default function AdminAnalytics() {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="totalRepairs" fill={CHART_COLORS[0]} name="Riparazioni Totali" />
-                  <Bar dataKey="completedRepairs" fill={CHART_COLORS[1]} name="Completate" />
+                  <Bar dataKey="totalRepairs" fill={CHART_COLORS[0]} name={t("analytics.totalRepairs")} />
+                  <Bar dataKey="completedRepairs" fill={CHART_COLORS[1]} name={t("analytics.completed")} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nessun centro di riparazione disponibile
+                {t("analytics.noCentersAvailable")}
               </div>
             )}
           </CardContent>
@@ -322,12 +322,12 @@ export default function AdminAnalytics() {
                   <YAxis dataKey="name" type="category" width={100} />
                   <Tooltip />
                   <Legend />
-                  <Bar dataKey="usageCount" fill={CHART_COLORS[2]} name="Utilizzi" />
+                  <Bar dataKey="usageCount" fill={CHART_COLORS[2]} name={t("analytics.usageCount")} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                Nessun prodotto disponibile
+                {t("analytics.noProductsAvailable")}
               </div>
             )}
           </CardContent>

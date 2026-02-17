@@ -84,15 +84,15 @@ interface StaffPermission {
   canDelete: boolean;
 }
 
-const staffFormSchema = z.object({
-  username: z.string().min(3, t("team.usernameMustBe3Chars")),
-  email: z.string().email(t("team.emailInvalid")),
-  fullName: z.string().min(2, t("team.fullNameRequired")),
+const baseStaffFormSchema = z.object({
+  username: z.string().min(3),
+  email: z.string().email(),
+  fullName: z.string().min(2),
   phone: z.string().optional(),
-  password: z.string().min(6, t("team.passwordMustBe6Chars")).optional(),
+  password: z.string().min(6).optional(),
 });
 
-type StaffFormValues = z.infer<typeof staffFormSchema>;
+type StaffFormValues = z.infer<typeof baseStaffFormSchema>;
 
 type FilterType = "all" | "active" | "inactive";
 type EntityType = "own" | "sub-reseller" | "repair-center";
@@ -117,6 +117,7 @@ export default function ResellerTeam() {
   const [localSubResellerIds, setLocalSubResellerIds] = useState<string[]>([]);
   const { toast } = useToast();
 
+  const staffFormSchema = baseStaffFormSchema;
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
     defaultValues: {

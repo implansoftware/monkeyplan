@@ -120,9 +120,9 @@ export default function PosSessionsPage() {
   const avgPerSession = stats.totalSessions > 0 ? Math.round(stats.totalRevenue / stats.totalSessions) : 0;
 
   const getRegisterName = (registerId: string | null) => {
-    if (!registerId) return "Cassa Principale";
+    if (!registerId) return t("pos.mainRegister");
     const register = registers.find(r => r.id === registerId);
-    return register?.name || "Cassa";
+    return register?.name || t("pos.register");
   };
 
   const handleExport = async (format: 'csv' | 'xlsx' | 'pdf') => {
@@ -408,19 +408,19 @@ export default function PosSessionsPage() {
                     {session.totalCashSales !== null && session.totalCashSales > 0 && (
                       <div className="flex flex-wrap items-center gap-1">
                         <Banknote className="h-4 w-4 text-green-600" />
-                        <span>Contanti: {formatCurrency(session.totalCashSales)}</span>
+                        <span>{t("pos.contanti")}: {formatCurrency(session.totalCashSales)}</span>
                       </div>
                     )}
                     {session.totalCardSales !== null && session.totalCardSales > 0 && (
                       <div className="flex flex-wrap items-center gap-1">
                         <Receipt className="h-4 w-4 text-blue-600" />
-                        <span>Carta: {formatCurrency(session.totalCardSales)}</span>
+                        <span>{t("pos.carta")}: {formatCurrency(session.totalCardSales)}</span>
                       </div>
                     )}
                     {session.totalRefunds !== null && session.totalRefunds > 0 && (
                       <div className="flex flex-wrap items-center gap-1 text-destructive">
                         <AlertTriangle className="h-4 w-4" />
-                        <span>Rimborsi: {formatCurrency(session.totalRefunds)}</span>
+                        <span>{t("pos.rimborsi")}: {formatCurrency(session.totalRefunds)}</span>
                       </div>
                     )}
                   </div>
@@ -455,7 +455,7 @@ export default function PosSessionsPage() {
             ))}
             {filteredSessions.length === 0 && (
               <p className="text-center text-muted-foreground py-8">
-                Nessuna sessione trovata per il periodo selezionato
+                {t("pos.nessunaSessioneTrovata")}
               </p>
             )}
           </div>

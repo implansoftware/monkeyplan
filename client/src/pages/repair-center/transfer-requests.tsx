@@ -497,7 +497,7 @@ export default function RepairCenterTransferRequestsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Note (opzionale)</Label>
+                    <Label>{t("transfers.noteOpzionale")}</Label>
                     <Textarea
                       value={requestNotes}
                       onChange={(e) => setRequestNotes(e.target.value)}
@@ -647,21 +647,21 @@ export default function RepairCenterTransferRequestsPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Data:</span>{" "}
+                      <span className="text-muted-foreground">{t("common.date")}:</span>{" "}
                       {new Date(request.createdAt).toLocaleDateString('it-IT')}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Articoli:</span>{" "}
-                      {request.items.length} prodotti
+                      <span className="text-muted-foreground">{t("transfers.articoli")}:</span>{" "}
+                      {request.items.length} {t("sidebar.items.products")}
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Da:</span>{" "}
-                      {request.sourceWarehouse?.name || "Magazzino Reseller"}
+                      <span className="text-muted-foreground">{t("transfers.from")}:</span>{" "}
+                      {request.sourceWarehouse?.name || t("transfers.resellerWarehouse")}
                     </div>
                   </div>
                   {request.rejectionReason && (
                     <div className="mt-2 p-2 bg-destructive/10 rounded text-sm text-destructive">
-                      Motivo rifiuto: {request.rejectionReason}
+                      {t("transfers.rejectionReason")}: {request.rejectionReason}
                     </div>
                   )}
                 </CardContent>
@@ -674,7 +674,7 @@ export default function RepairCenterTransferRequestsPage() {
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Dettagli Richiesta {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("transfers.dettagliRichiesta")} {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
@@ -711,19 +711,19 @@ export default function RepairCenterTransferRequestsPage() {
               
               {selectedRequest.notes && (
                 <div>
-                  <Label>Note:</Label>
+                  <Label>{t("transfers.note")}</Label>
                   <p className="text-sm mt-1">{selectedRequest.notes}</p>
                 </div>
               )}
 
               <div>
-                <Label>Articoli:</Label>
+                <Label>{t("transfers.articoli")}</Label>
                 <div className="mt-2 border rounded-md overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted">
                       <tr>
                         <th className="text-left p-2">{t("common.product")}</th>
-                        <th className="text-center p-2">Richiesto</th>
+                        <th className="text-center p-2">{t("transfers.requested")}</th>
                         <th className="text-center p-2 hidden md:table-cell">{t("repairs.status.approved")}</th>
                         <th className="text-center p-2 hidden md:table-cell">{t("b2b.status.shipped")}</th>
                         <th className="text-center p-2 hidden md:table-cell">{t("repairs.status.received")}</th>
@@ -737,7 +737,7 @@ export default function RepairCenterTransferRequestsPage() {
                               {item.product?.imageUrl ? (
                                 <img 
                                   src={item.product.imageUrl} 
-                                  alt={item.product?.name || "Prodotto"} 
+                                  alt={item.product?.name || t("common.product")} 
                                   className="w-10 h-10 object-cover rounded-md border"
                                 />
                               ) : (
@@ -746,7 +746,7 @@ export default function RepairCenterTransferRequestsPage() {
                                 </div>
                               )}
                               <div>
-                                <p className="font-medium">{item.product?.name || "Prodotto"}</p>
+                                <p className="font-medium">{item.product?.name || t("common.product")}</p>
                                 {item.product?.sku && (
                                   <p className="text-xs text-muted-foreground">SKU: {item.product.sku}</p>
                                 )}
@@ -771,7 +771,7 @@ export default function RepairCenterTransferRequestsPage() {
       <Dialog open={showReceiveDialog} onOpenChange={setShowReceiveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conferma Ricezione - {selectedRequest?.requestNumber}</DialogTitle>
+            <DialogTitle>{t("transfers.confermaRicezione")} - {selectedRequest?.requestNumber}</DialogTitle>
           </DialogHeader>
           {selectedRequest && (
             <div className="space-y-4">
@@ -785,7 +785,7 @@ export default function RepairCenterTransferRequestsPage() {
                       {item.product?.imageUrl ? (
                         <img 
                           src={item.product.imageUrl} 
-                          alt={item.product?.name || "Prodotto"} 
+                          alt={item.product?.name || t("common.product")} 
                           className="w-10 h-10 object-cover rounded-md border"
                         />
                       ) : (
@@ -794,9 +794,9 @@ export default function RepairCenterTransferRequestsPage() {
                         </div>
                       )}
                       <div>
-                        <p className="font-medium">{item.product?.name || "Prodotto"}</p>
+                        <p className="font-medium">{item.product?.name || t("common.product")}</p>
                         <p className="text-sm text-muted-foreground">
-                          Spedito: {item.shippedQuantity || 0}
+                          {t("transfers.shipped")}: {item.shippedQuantity || 0}
                         </p>
                       </div>
                     </div>

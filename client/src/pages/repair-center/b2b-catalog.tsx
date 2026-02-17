@@ -138,7 +138,7 @@ export default function RepairCenterB2BCatalog() {
         maxQty: item.resellerStock,
       }]);
     }
-    toast({ title: "Aggiunto al carrello", description: item.product.name });
+    toast({ title: t("cart.addedToCart"), description: item.product.name });
   };
 
   const updateCartQuantity = (productId: string, delta: number) => {
@@ -387,16 +387,16 @@ export default function RepairCenterB2BCatalog() {
           
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Imponibile:</span>
+              <span className="text-muted-foreground">{t("b2b.imponibile")}:</span>
               <span>{formatPrice(cartVatSummary.subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">IVA:</span>
+              <span className="text-muted-foreground">{t("b2b.iva")}:</span>
               <span>{formatPrice(cartVatSummary.vatAmount)}</span>
             </div>
             {selectedShippingCost > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Spedizione:</span>
+                <span className="text-muted-foreground">{t("b2b.spedizione")}:</span>
                 <span>{formatPrice(selectedShippingCost)}</span>
               </div>
             )}
@@ -409,7 +409,7 @@ export default function RepairCenterB2BCatalog() {
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Metodo di Spedizione</Label>
+              <Label>{t("b2b.metodoSpedizione")}</Label>
               {shippingMethodsLoading ? (
                 <div className="h-10 bg-muted animate-pulse rounded" />
               ) : !shippingMethods || shippingMethods.length === 0 ? (
@@ -433,7 +433,7 @@ export default function RepairCenterB2BCatalog() {
             </div>
 
             <div className="space-y-2">
-              <Label>Metodo di Pagamento</Label>
+              <Label>{t("b2b.metodoPagamento")}</Label>
               {paymentConfigLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : !paymentConfig?.hasAnyMethod ? (
@@ -461,7 +461,7 @@ export default function RepairCenterB2BCatalog() {
             </div>
             
             <div className="space-y-2">
-              <Label>Note Ordine</Label>
+              <Label>{t("b2b.noteOrdine")}</Label>
               <Textarea
                 placeholder={t("b2b.optionalOrderNotes")}
                 value={notes}
@@ -519,7 +519,7 @@ export default function RepairCenterB2BCatalog() {
                   setCheckoutOpen(false);
                   setCart([]);
                   setNotes("");
-                  toast({ title: "Ordine completato", description: "Pagamento ricevuto con successo" });
+                  toast({ title: t("cart.orderCompleted"), description: t("cart.paymentReceived") });
                 }}
                 onError={(error) => {
                   toast({ title: t("auth.error"), description: error, variant: "destructive" });

@@ -35,7 +35,7 @@ type ReturnWithItems = RcB2bReturn & {
 export default function RepairCenterB2BReturns() {
   const { t } = useTranslation();
   const statusLabels: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-    requested: { label: "Richiesto", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400", icon: Clock },
+    requested: { label: t("b2b.requested"), color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400", icon: Clock },
     approved: { label: t("repairs.status.approved"), color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400", icon: CheckCircle },
     awaiting_shipment: { label: t("b2b.inAttesaSpedizione"), color: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400", icon: Package },
     shipped: { label: t("b2b.status.shipped"), color: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400", icon: Truck },
@@ -205,11 +205,11 @@ export default function RepairCenterB2BReturns() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t("common.allMasc")}</SelectItem>
-                  <SelectItem value="requested">Richiesti</SelectItem>
-                  <SelectItem value="approved">Approvati</SelectItem>
-                  <SelectItem value="shipped">Spediti</SelectItem>
+                  <SelectItem value="requested">{t("returns.richiesti")}</SelectItem>
+                  <SelectItem value="approved">{t("returns.approvati")}</SelectItem>
+                  <SelectItem value="shipped">{t("returns.spediti")}</SelectItem>
                   <SelectItem value="completed">{t("common.completed")}</SelectItem>
-                  <SelectItem value="rejected">Rifiutati</SelectItem>
+                  <SelectItem value="rejected">{t("returns.rifiutati")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -236,7 +236,7 @@ export default function RepairCenterB2BReturns() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Numero Reso</TableHead>
+                    <TableHead>{t("returns.numeroReso")}</TableHead>
                     <TableHead className="hidden md:table-cell">{t("warehouse.requestDate")}</TableHead>
                     <TableHead className="hidden lg:table-cell">{t("common.reason")}</TableHead>
                     <TableHead className="text-right hidden md:table-cell">{t("common.amount")}</TableHead>
@@ -439,7 +439,7 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registra Spedizione Reso</DialogTitle>
+          <DialogTitle>{t("returns.registraSpedizioneReso")}</DialogTitle>
           <DialogDescription>
             Inserisci i dati di spedizione per il reso {returnDoc?.returnNumber}
           </DialogDescription>
@@ -450,12 +450,12 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
             <Input 
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
-              placeholder="Es: BRT, DHL, GLS..."
+              placeholder={t("b2b.placeholderCarrier")}
               data-testid="input-carrier"
             />
           </div>
           <div>
-            <Label>Numero Tracking</Label>
+            <Label>{t("returns.numeroTracking")}</Label>
             <Input 
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
@@ -570,7 +570,7 @@ function CreateReturnDialog({ open, onClose, orders, reasonLabels }: {
           </div>
 
           <div>
-            <Label>Motivo del Reso</Label>
+            <Label>{t("returns.motivoReso")}</Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger data-testid="select-reason">
                 <SelectValue placeholder={t("b2b.selezionaMotivo")} />
@@ -595,7 +595,7 @@ function CreateReturnDialog({ open, onClose, orders, reasonLabels }: {
 
           {orderItems.length > 0 && (
             <div>
-              <Label>Articoli da Rendere</Label>
+              <Label>{t("returns.articoliDaRendere")}</Label>
               <div className="border rounded-lg mt-2">
                 <Table>
                   <TableHeader>

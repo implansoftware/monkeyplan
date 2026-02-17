@@ -31,11 +31,11 @@ type SupplierOrderWithDetails = {
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     draft: t("common.draft"),
-    sent: "Inviato",
+    sent: t("supplierOrders.inviato"),
     confirmed: t("common.confirmed"),
-    shipped: "Spedito",
-    partially_received: "Parziale",
-    received: "Ricevuto",
+    shipped: t("supplierOrders.spedito"),
+    partially_received: t("supplierOrders.parziale"),
+    received: t("supplierOrders.ricevuto"),
     cancelled: t("common.cancelled"),
   };
 }
@@ -99,12 +99,12 @@ export default function RepairCenterSupplierOrders() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight" data-testid="text-page-title">{t("admin.permissions.supplierOrders")}</h1>
-              <p className="text-emerald-100">Gestione ordini a fornitori</p>
+              <p className="text-emerald-100">{t("supplierOrders.gestioneOrdiniFornitore")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30" data-testid="badge-orders-count">
-              {orders.length} ordini
+              {orders.length} {t("supplierOrders.ordini")}
             </Badge>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function RepairCenterSupplierOrders() {
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4 space-y-0 pb-4">
           <CardTitle className="flex flex-wrap items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            I Miei Ordini
+            {t("supplierOrders.iMieiOrdini")}
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative w-full sm:w-64">
@@ -147,7 +147,7 @@ export default function RepairCenterSupplierOrders() {
             <div className="text-center py-12 text-muted-foreground">
               <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t("common.noSalesOrdersFound")}</p>
-              <p className="text-sm mt-1">Gli ordini ricambi ai fornitori appariranno qui</p>
+              <p className="text-sm mt-1">{t("supplierOrders.ordiniApparirannoQui")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">

@@ -48,7 +48,7 @@ import { useTranslation } from "react-i18next";
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     draft: t("invoices.draft"),
-    sent: "Inviato",
+    sent: t("standalone.sent"),
     accepted: t("standalone.accepted"),
     rejected: t("b2b.status.cancelled"),
     expired: t("standalone.expired"),
@@ -167,7 +167,7 @@ export default function StandaloneQuotesList() {
                   <Input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Cerca per numero, cliente, dispositivo..."
+                    placeholder={t("standalone.searchPlaceholder")}
                     className="pl-9"
                     data-testid="input-search-quotes"
                   />
@@ -181,7 +181,7 @@ export default function StandaloneQuotesList() {
                   <SelectContent>
                     <SelectItem value="all">{t("common.allMasc")}</SelectItem>
                     <SelectItem value="draft">{t("invoices.draft")}</SelectItem>
-                    <SelectItem value="sent">Inviato</SelectItem>
+                    <SelectItem value="sent">{t("standalone.sent")}</SelectItem>
                     <SelectItem value="accepted">{t("standalone.accepted")}</SelectItem>
                     <SelectItem value="rejected">{t("b2b.status.cancelled")}</SelectItem>
                     <SelectItem value="expired">{t("standalone.expired")}</SelectItem>
@@ -191,7 +191,7 @@ export default function StandaloneQuotesList() {
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
                   <X className="h-4 w-4 mr-1" />
-                  Cancella
+                  {t("standalone.clearFilters")}
                 </Button>
               )}
             </div>
@@ -203,11 +203,11 @@ export default function StandaloneQuotesList() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 space-y-3">
             <FileText className="h-12 w-12 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">Nessun preventivo</h3>
+            <h3 className="text-lg font-semibold">{t("standalone.noQuotes")}</h3>
             <p className="text-sm text-muted-foreground text-center max-w-md">
               {hasActiveFilters
-                ? "Nessun preventivo trovato con i filtri selezionati."
-                : "Crea il tuo primo preventivo standalone per iniziare."}
+                ? t("standalone.noQuotesFiltered")
+                : t("standalone.createFirstQuote")}
             </p>
             {!hasActiveFilters && (
               <Link href={`${basePath}/standalone-quotes/new`}>
@@ -305,7 +305,7 @@ export default function StandaloneQuotesList() {
                                 a.click();
                                 document.body.removeChild(a);
                                 URL.revokeObjectURL(url);
-                                toast({ title: "PDF scaricato" });
+                                toast({ title: t("standalone.pdfDownloaded") });
                               })
                               .catch((err: any) => {
                                 toast({ title: t("common.error"), description: err.message, variant: "destructive" });

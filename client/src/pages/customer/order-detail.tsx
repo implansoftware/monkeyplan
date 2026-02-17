@@ -30,13 +30,13 @@ function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     pending: t("common.waiting"),
     confirmed: t("common.confirmed"),
-    processing: "In elaborazione",
-    ready_to_ship: "Pronto per spedizione",
-    shipped: "Spedito",
+    processing: t("customerPages.processing"),
+    ready_to_ship: t("customerPages.readyToShip"),
+    shipped: t("customerPages.shipped"),
     delivered: t("common.delivered"),
     completed: t("common.completed"),
     cancelled: t("common.cancelled"),
-    refunded: "Rimborsato"
+    refunded: t("customerPages.refunded")
   };
 }
 
@@ -55,9 +55,9 @@ const statusColors: Record<string, string> = {
 function getPaymentStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     pending: t("common.waiting"),
-    partial: "Parziale",
-    paid: "Pagato",
-    refunded: "Rimborsato"
+    partial: t("customerPages.partial"),
+    paid: t("customerPages.paid"),
+    refunded: t("customerPages.refunded")
   };
 }
 
@@ -73,7 +73,7 @@ export default function CustomerOrderDetail() {
     queryKey: ['/api/my-orders', orderId],
     queryFn: async () => {
       const res = await fetch(`/api/my-orders/${orderId}`);
-      if (!res.ok) throw new Error("Ordine non trovato");
+      if (!res.ok) throw new Error(t("customerPages.ordineNonTrovato"));
       return res.json();
     },
     enabled: !!orderId
@@ -116,13 +116,13 @@ export default function CustomerOrderDetail() {
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => setLocation("/customer/orders")} data-testid="button-back">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Torna agli ordini
+          {t("customerPages.backToOrders")}
         </Button>
         <Card>
           <CardContent className="p-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
             <h3 className="text-lg font-semibold mb-2">{t("customerPages.ordineNonTrovato")}</h3>
-            <p className="text-muted-foreground">L'ordine richiesto non esiste o non hai accesso</p>
+            <p className="text-muted-foreground">{t("customerPages.orderNotFoundDesc")}</p>
           </CardContent>
         </Card>
       </div>
@@ -144,7 +144,7 @@ export default function CustomerOrderDetail() {
             data-testid="button-back-header"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Torna agli ordini
+            {t("customerPages.backToOrders")}
           </Button>
           <div className="flex flex-wrap items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
@@ -162,7 +162,7 @@ export default function CustomerOrderDetail() {
                   {statusLabels[order.status] || order.status}
                 </Badge>
               </div>
-              <p className="text-white/80 text-sm">Effettuato il {formatDate(order.createdAt)}</p>
+              <p className="text-white/80 text-sm">{t("customerPages.placedOn")} {formatDate(order.createdAt)}</p>
             </div>
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function CustomerOrderDetail() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Riepilogo ordine
+              {t("customerPages.orderSummary")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -210,7 +210,7 @@ export default function CustomerOrderDetail() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("customerPages.statoPagamento")}</span>
                   <Badge variant={payments.some(p => p.status === "completed") ? "default" : "secondary"}>
-                    {payments.some(p => p.status === "completed") ? "Pagato" : t("common.waiting")}
+                    {payments.some(p => p.status === "completed") ? t("customerPages.paid") : t("common.waiting")}
                   </Badge>
                 </div>
                 {payments[0]?.method && (
@@ -228,7 +228,7 @@ export default function CustomerOrderDetail() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              Indirizzo di spedizione
+              {t("customerPages.shippingAddress")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -240,7 +240,7 @@ export default function CustomerOrderDetail() {
                 {order.shippingCountry && <p>{order.shippingCountry}</p>}
               </div>
             ) : (
-              <p className="text-muted-foreground">Ritiro in sede</p>
+              <p className="text-muted-foreground">{t("customerPages.pickupInStore")}</p>
             )}
           </CardContent>
         </Card>
@@ -250,7 +250,7 @@ export default function CustomerOrderDetail() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Articoli ordinati ({items.length})
+            {t("customerPages.orderedItems")} ({items.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -282,7 +282,7 @@ export default function CustomerOrderDetail() {
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <span className="text-muted-foreground">{t("common.qty")}: {item.quantity}</span>
-                  <span className="text-muted-foreground">{formatPrice(item.unitPrice)} cad.</span>
+                  <span className="text-muted-foreground">{formatPrice(item.unitPrice)} {t("customerPages.eachLabel")}</span>
                   <span className="font-medium">{formatPrice(item.totalPrice)}</span>
                 </div>
               </div>
@@ -296,7 +296,7 @@ export default function CustomerOrderDetail() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5" />
-              Spedizioni
+              {t("customerPages.shipmentsLabel")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -328,7 +328,7 @@ export default function CustomerOrderDetail() {
                   )}
                   {shipment.pickedUpAt && (
                     <p className="text-sm text-muted-foreground">
-                      Spedito il {formatDate(shipment.pickedUpAt)}
+                      {t("customerPages.shippedOn")} {formatDate(shipment.pickedUpAt)}
                     </p>
                   )}
                 </div>
@@ -343,7 +343,7 @@ export default function CustomerOrderDetail() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Pagamenti
+              {t("customerPages.paymentsLabel")}
             </CardTitle>
           </CardHeader>
           <CardContent>

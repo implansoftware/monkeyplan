@@ -235,7 +235,7 @@ export default function RepairCenterSettings() {
 
   const uploadLogoMutation = useMutation({
     mutationFn: async (file: File) => {
-      if (!settings?.id) throw new Error("Centro non trovato");
+      if (!settings?.id) throw new Error(t("settings.centroNonTrovato"));
       const formData = new FormData();
       formData.append("logo", file);
       const response = await fetch(`/api/repair-centers/${settings.id}/logo`, {
@@ -245,7 +245,7 @@ export default function RepairCenterSettings() {
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Errore durante l'upload del logo");
+        throw new Error(error.message || t("settings.erroreUploadLogo"));
       }
       return response.json();
     },
@@ -269,7 +269,7 @@ export default function RepairCenterSettings() {
 
   const deleteLogoMutation = useMutation({
     mutationFn: async () => {
-      if (!settings?.id) throw new Error("Centro non trovato");
+      if (!settings?.id) throw new Error(t("settings.centroNonTrovato"));
       return apiRequest('DELETE', `/api/repair-centers/${settings.id}/logo`);
     },
     onSuccess: () => {
@@ -350,7 +350,7 @@ export default function RepairCenterSettings() {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/payment-config'] });
       toast({
         title: t("pos.configSaved"),
-        description: "I metodi di pagamento sono stati aggiornati.",
+        description: t("settings.metodiPagamentoAggiornati"),
       });
     },
     onError: (error: Error) => {
@@ -422,7 +422,7 @@ export default function RepairCenterSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings/hourly-rate'] });
       toast({
-        title: "Tariffa oraria salvata",
+        title: t("settings.tariffaOrariaSalvata"),
         description: t("settings.laConfigurazioneDellaTariffaOrariaStataAgg"),
       });
     },
@@ -443,7 +443,7 @@ export default function RepairCenterSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/repair-center/settings/sla-thresholds'] });
       toast({
-        title: "Soglie SLA salvate",
+        title: t("settings.soglieSLASalvate"),
         description: t("settings.laConfigurazioneDelleSoglieSLAStataAggiorn"),
       });
     },
@@ -494,16 +494,16 @@ export default function RepairCenterSettings() {
 
   const getStripeStatusBadge = () => {
     if (!stripeStatus?.connected) {
-      return <Badge variant="secondary">Non connesso</Badge>;
+      return <Badge variant="secondary">{t("settings.nonConnesso")}</Badge>;
     }
     
     switch (stripeStatus.status) {
       case 'active':
         return <Badge className="bg-green-500/10 text-green-600 dark:text-green-400">{t("common.active")}</Badge>;
       case 'onboarding':
-        return <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">Onboarding in corso</Badge>;
+        return <Badge className="bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">{t("settings.onboardingInCorso")}</Badge>;
       case 'restricted':
-        return <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400">Richiede azioni</Badge>;
+        return <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400">{t("settings.richiedeAzioni")}</Badge>;
       case 'disabled':
         return <Badge variant="destructive">{t("common.disabled")}</Badge>;
       default:
@@ -595,31 +595,31 @@ export default function RepairCenterSettings() {
             <TabsList className="mb-4 w-full max-w-full overflow-x-auto flex-nowrap justify-start">
               <TabsTrigger value="general" data-testid="tab-general">
                 <Building2 className="h-4 w-4 mr-2" />
-                Generale
+                {t("settings.generale")}
               </TabsTrigger>
               <TabsTrigger value="contact" data-testid="tab-contact">
                 <Phone className="h-4 w-4 mr-2" />
-                Contatti
+                {t("settings.contatti")}
               </TabsTrigger>
               <TabsTrigger value="hours" data-testid="tab-hours">
                 <Clock className="h-4 w-4 mr-2" />
-                Orari
+                {t("settings.orari")}
               </TabsTrigger>
               <TabsTrigger value="fiscal" data-testid="tab-fiscal">
                 <FileText className="h-4 w-4 mr-2" />
-                Dati Fiscali
+                {t("settings.datiFiscali")}
               </TabsTrigger>
               <TabsTrigger value="payments" data-testid="tab-payments">
                 <CreditCard className="h-4 w-4 mr-2" />
-                Pagamenti
+                {t("settings.pagamenti")}
               </TabsTrigger>
               <TabsTrigger value="shipping" data-testid="tab-shipping">
                 <Truck className="h-4 w-4 mr-2" />
-                Consegna
+                {t("settings.consegna")}
               </TabsTrigger>
               <TabsTrigger value="rates" data-testid="tab-rates">
                 <Euro className="h-4 w-4 mr-2" />
-                Tariffe
+                {t("settings.tariffe")}
               </TabsTrigger>
               <TabsTrigger value="sla" data-testid="tab-sla">
                 <Target className="h-4 w-4 mr-2" />
@@ -632,7 +632,7 @@ export default function RepairCenterSettings() {
                 <CardHeader>
                   <CardTitle>{t("admin.resellerDetail.basicInfo")}</CardTitle>
                   <CardDescription>
-                    Le informazioni principali del tuo centro di riparazione
+                    {t("settings.informazioniPrincipali")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -644,7 +644,7 @@ export default function RepairCenterSettings() {
                         <FormItem>
                           <FormLabel>{t("admin.repairCenters.centerName")}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Nome del centro" data-testid="input-name" />
+                            <Input {...field} placeholder={t("settings.nomeCentro")} data-testid="input-name" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -675,7 +675,7 @@ export default function RepairCenterSettings() {
                       <FormItem>
                         <FormLabel>{t("common.description")}</FormLabel>
                         <FormControl>
-                          <Textarea {...field} value={field.value || ''} placeholder="Descrivi il tuo centro di riparazione..." className="min-h-[100px]" data-testid="input-description" />
+                          <Textarea {...field} value={field.value || ''} placeholder={t("settings.placeholderDescription")} className="min-h-[100px]" data-testid="input-description" />
                         </FormControl>
                         <FormDescription>
                           {t("settings.descriptionVisibleToCustomers")}
@@ -697,7 +697,7 @@ export default function RepairCenterSettings() {
                           <FormControl>
                             <div className="relative">
                               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input {...field} placeholder="Via Roma, 1" className="pl-10" data-testid="input-address" />
+                              <Input {...field} placeholder={t("settings.placeholderAddress")} className="pl-10" data-testid="input-address" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -711,7 +711,7 @@ export default function RepairCenterSettings() {
                         <FormItem>
                           <FormLabel>{t("profile.citta")}</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Milano" data-testid="input-city" />
+                            <Input {...field} placeholder={t("settings.placeholderCity")} data-testid="input-city" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -740,7 +740,7 @@ export default function RepairCenterSettings() {
                         <FormItem>
                           <FormLabel>{t("profile.provincia")}</FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ''} placeholder="MI" data-testid="input-provincia" />
+                            <Input {...field} value={field.value || ''} placeholder={t("settings.placeholderProvincia")} data-testid="input-provincia" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -871,10 +871,10 @@ export default function RepairCenterSettings() {
                       <FormItem>
                         <FormLabel>{t("common.internalNotes")}</FormLabel>
                         <FormControl>
-                          <Textarea {...field} value={field.value || ''} placeholder="Note visibili solo agli operatori..." className="min-h-[80px]" data-testid="input-notes" />
+                          <Textarea {...field} value={field.value || ''} placeholder={t("settings.placeholderInternalNotes")} className="min-h-[80px]" data-testid="input-notes" />
                         </FormControl>
                         <FormDescription>
-                          Queste note sono visibili solo al personale interno
+                          {t("settings.internalNotesOnly")}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -887,9 +887,9 @@ export default function RepairCenterSettings() {
             <TabsContent value="contact" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Informazioni di Contatto</CardTitle>
+                  <CardTitle>{t("settings.informazioniContatto")}</CardTitle>
                   <CardDescription>
-                    Email e telefono per i clienti e per uso interno
+                    {t("settings.emailTelefonoDescrizione")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -906,7 +906,7 @@ export default function RepairCenterSettings() {
                               <Input {...field} placeholder="+39 02 1234567" className="pl-10" data-testid="input-phone" />
                             </div>
                           </FormControl>
-                          <FormDescription>Per uso interno</FormDescription>
+                          <FormDescription>{t("settings.perUsoInterno")}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -923,7 +923,7 @@ export default function RepairCenterSettings() {
                               <Input {...field} value={field.value || ''} placeholder="+39 02 7654321" className="pl-10" data-testid="input-public-phone" />
                             </div>
                           </FormControl>
-                          <FormDescription>Visibile ai clienti</FormDescription>
+                          <FormDescription>{t("settings.visibileAiClienti")}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -936,14 +936,14 @@ export default function RepairCenterSettings() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Gestionale</FormLabel>
+                          <FormLabel>{t("settings.emailGestionale")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input {...field} type="email" placeholder="gestione@centro.it" className="pl-10" data-testid="input-email" />
+                              <Input {...field} type="email" placeholder={t("settings.placeholderManagementEmail")} className="pl-10" data-testid="input-email" />
                             </div>
                           </FormControl>
-                          <FormDescription>Per uso interno</FormDescription>
+                          <FormDescription>{t("settings.perUsoInterno")}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -953,14 +953,14 @@ export default function RepairCenterSettings() {
                       name="publicEmail"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email Pubblica</FormLabel>
+                          <FormLabel>{t("settings.emailPubblica")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input {...field} value={field.value || ''} type="email" placeholder="info@centro.it" className="pl-10" data-testid="input-public-email" />
+                              <Input {...field} value={field.value || ''} type="email" placeholder={t("settings.placeholderPublicEmail")} className="pl-10" data-testid="input-public-email" />
                             </div>
                           </FormControl>
-                          <FormDescription>Visibile ai clienti</FormDescription>
+                          <FormDescription>{t("settings.visibileAiClienti")}</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -977,7 +977,7 @@ export default function RepairCenterSettings() {
                         name="socialLinks.facebook"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Facebook</FormLabel>
+                            <FormLabel>{t("settings.facebook")}</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -993,7 +993,7 @@ export default function RepairCenterSettings() {
                         name="socialLinks.instagram"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Instagram</FormLabel>
+                            <FormLabel>{t("settings.instagram")}</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1009,7 +1009,7 @@ export default function RepairCenterSettings() {
                         name="socialLinks.linkedin"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>LinkedIn</FormLabel>
+                            <FormLabel>{t("settings.linkedin")}</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Linkedin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1025,7 +1025,7 @@ export default function RepairCenterSettings() {
                         name="socialLinks.twitter"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Twitter / X</FormLabel>
+                            <FormLabel>{t("settings.twitterX")}</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Twitter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1045,9 +1045,9 @@ export default function RepairCenterSettings() {
             <TabsContent value="hours" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Orari di Apertura</CardTitle>
+                  <CardTitle>{t("settings.orariApertura")}</CardTitle>
                   <CardDescription>
-                    Configura gli orari di apertura del centro per ogni giorno della settimana
+                    {t("settings.configuraOrariDescrizione")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1071,7 +1071,7 @@ export default function RepairCenterSettings() {
                                   />
                                 </FormControl>
                                 <Label className="text-sm text-muted-foreground">
-                                  {field.value ? 'Aperto' : 'Chiuso'}
+                                  {field.value ? t("settings.aperto") : t("settings.chiuso")}
                                 </Label>
                               </FormItem>
                             )}
@@ -1176,7 +1176,7 @@ export default function RepairCenterSettings() {
                         <FormItem>
                           <FormLabel>{t("auth.companyName")}</FormLabel>
                           <FormControl>
-                            <Input {...field} value={field.value || ''} placeholder="Centro Riparazioni S.r.l." data-testid="input-ragione-sociale" />
+                            <Input {...field} value={field.value || ''} placeholder={t("settings.placeholderCompanyName")} data-testid="input-ragione-sociale" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1216,7 +1216,7 @@ export default function RepairCenterSettings() {
                       name="codiceUnivoco"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Codice Univoco SDI</FormLabel>
+                          <FormLabel>{t("settings.codiceUnivocoSDI")}</FormLabel>
                           <FormControl>
                             <Input {...field} value={field.value || ''} placeholder="ABC1234" maxLength={7} data-testid="input-codice-univoco" />
                           </FormControl>
@@ -1234,11 +1234,11 @@ export default function RepairCenterSettings() {
                       name="iban"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>IBAN</FormLabel>
+                          <FormLabel>{t("profile.iban")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input {...field} value={field.value || ''} placeholder="IT60X0542811101000000123456" className="pl-10" data-testid="input-iban" />
+                              <Input {...field} value={field.value || ''} placeholder={t("settings.placeholderIban")} className="pl-10" data-testid="input-iban" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -1250,11 +1250,11 @@ export default function RepairCenterSettings() {
                       name="pec"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>PEC</FormLabel>
+                          <FormLabel>{t("common.pec")}</FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input {...field} value={field.value || ''} type="email" placeholder="centro@pec.it" className="pl-10" data-testid="input-pec" />
+                              <Input {...field} value={field.value || ''} type="email" placeholder={t("settings.placeholderPec")} className="pl-10" data-testid="input-pec" />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -1276,9 +1276,9 @@ export default function RepairCenterSettings() {
                         <CreditCard className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <CardTitle>Configurazione Pagamenti</CardTitle>
+                        <CardTitle>{t("settings.configurazionePagamenti")}</CardTitle>
                         <CardDescription>
-                          Gestisci i metodi di pagamento per ricevere i pagamenti dai tuoi clienti
+                          {t("settings.gestisciMetodiPagamento")}
                         </CardDescription>
                       </div>
                     </div>
@@ -1326,7 +1326,7 @@ export default function RepairCenterSettings() {
                                   <p className="text-sm text-muted-foreground">
                                     {paymentConfigData.parentConfig.bankTransferEnabled ? (
                                       <span className="flex items-center gap-1 text-green-600">
-                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                        <CheckCircle className="h-3 w-3" /> {t("common.active")}
                                       </span>
                                     ) : (
                                       <span className="text-muted-foreground">{t("admin.resellerDetail.notActive")}</span>
@@ -1341,7 +1341,7 @@ export default function RepairCenterSettings() {
                                   <p className="text-sm text-muted-foreground">
                                     {paymentConfigData.parentConfig.stripeEnabled ? (
                                       <span className="flex items-center gap-1 text-green-600">
-                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                        <CheckCircle className="h-3 w-3" /> {t("common.active")}
                                       </span>
                                     ) : (
                                       <span className="text-muted-foreground">{t("admin.resellerDetail.notActive")}</span>
@@ -1356,7 +1356,7 @@ export default function RepairCenterSettings() {
                                   <p className="text-sm text-muted-foreground">
                                     {paymentConfigData.parentConfig.paypalEnabled ? (
                                       <span className="flex items-center gap-1 text-green-600">
-                                        <CheckCircle className="h-3 w-3" /> Attivo
+                                        <CheckCircle className="h-3 w-3" /> {t("common.active")}
                                       </span>
                                     ) : (
                                       <span className="text-muted-foreground">{t("admin.resellerDetail.notActive")}</span>
@@ -1390,7 +1390,7 @@ export default function RepairCenterSettings() {
                               {isLoadingStripe ? (
                                 <div className="flex items-center gap-2">
                                   <Loader2 className="h-4 w-4 animate-spin" />
-                                  <span>Verifica stato connessione...</span>
+                                  <span>{t("settings.verificaStatoConnessione")}</span>
                                 </div>
                               ) : stripeStatus?.connected ? (
                                 <div className="space-y-4">
@@ -1532,9 +1532,9 @@ export default function RepairCenterSettings() {
                                         name="accountHolder"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Intestatario Conto</FormLabel>
+                                            <FormLabel>{t("settings.intestatarioConto")}</FormLabel>
                                             <FormControl>
-                                              <Input {...field} value={field.value || ''} placeholder="Nome Cognome o Ragione Sociale" data-testid="input-account-holder" />
+                                              <Input {...field} value={field.value || ''} placeholder={t("settings.placeholderAccountHolder")} data-testid="input-account-holder" />
                                             </FormControl>
                                             <FormMessage />
                                           </FormItem>
@@ -1547,7 +1547,7 @@ export default function RepairCenterSettings() {
                                           <FormItem>
                                             <FormLabel>{t("settings.nomeBanca")}</FormLabel>
                                             <FormControl>
-                                              <Input {...field} value={field.value || ''} placeholder="Es. UniCredit" data-testid="input-bank-name" />
+                                              <Input {...field} value={field.value || ''} placeholder={t("settings.placeholderBankName")} data-testid="input-bank-name" />
                                             </FormControl>
                                             <FormMessage />
                                           </FormItem>
@@ -1558,9 +1558,9 @@ export default function RepairCenterSettings() {
                                         name="iban"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>IBAN</FormLabel>
+                                            <FormLabel>{t("profile.iban")}</FormLabel>
                                             <FormControl>
-                                              <Input {...field} value={field.value || ''} placeholder="IT60X0542811101000000123456" data-testid="input-payment-iban" />
+                                              <Input {...field} value={field.value || ''} placeholder={t("settings.placeholderIban")} data-testid="input-payment-iban" />
                                             </FormControl>
                                             <FormMessage />
                                           </FormItem>
@@ -1571,7 +1571,7 @@ export default function RepairCenterSettings() {
                                         name="bic"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>BIC/SWIFT</FormLabel>
+                                            <FormLabel>{t("settings.bicSwift")}</FormLabel>
                                             <FormControl>
                                               <Input {...field} value={field.value || ''} placeholder="UNCRITMMXXX" data-testid="input-bic" />
                                             </FormControl>
@@ -1593,7 +1593,7 @@ export default function RepairCenterSettings() {
                                     <div>
                                       <CardTitle className="text-lg">Stripe API Keys</CardTitle>
                                       <CardDescription>
-                                        Configura le tue chiavi API Stripe per pagamenti con carta
+                                        {t("settings.configureStripeKeys")}
                                       </CardDescription>
                                     </div>
                                   </div>
@@ -1605,9 +1605,9 @@ export default function RepairCenterSettings() {
                                     render={({ field }) => (
                                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                                         <div className="space-y-0.5">
-                                          <FormLabel className="text-base">Abilita Stripe</FormLabel>
+                                          <FormLabel className="text-base">{t("settings.enableStripe")}</FormLabel>
                                           <FormDescription>
-                                            Permetti ai clienti di pagare con carta di credito
+                                            {t("settings.enableStripeDesc")}
                                           </FormDescription>
                                         </div>
                                         <FormControl>
@@ -1628,7 +1628,7 @@ export default function RepairCenterSettings() {
                                         name="stripePublishableKey"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Publishable Key</FormLabel>
+                                            <FormLabel>{t("settings.publishableKey")}</FormLabel>
                                             <FormControl>
                                               <Input 
                                                 placeholder="pk_live_... o pk_test_..." 
@@ -1649,7 +1649,7 @@ export default function RepairCenterSettings() {
                                         name="stripeSecretKey"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Secret Key</FormLabel>
+                                            <FormLabel>{t("settings.secretKey")}</FormLabel>
                                             <FormControl>
                                               <Input 
                                                 type="password"
@@ -1722,7 +1722,7 @@ export default function RepairCenterSettings() {
                                           <FormControl>
                                             <div className="relative">
                                               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                              <Input {...field} value={field.value || ''} type="email" placeholder="pagamenti@tuaemail.it" className="pl-10" data-testid="input-paypal-email" />
+                                              <Input {...field} value={field.value || ''} type="email" placeholder={t("settings.placeholderPaypalEmail")} className="pl-10" data-testid="input-paypal-email" />
                                             </div>
                                           </FormControl>
                                           <FormMessage />
@@ -1736,7 +1736,7 @@ export default function RepairCenterSettings() {
                                         name="paypalClientId"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Client ID</FormLabel>
+                                            <FormLabel>{t("settings.clientId")}</FormLabel>
                                             <FormControl>
                                               <Input 
                                                 placeholder="AVz..." 
@@ -1746,7 +1746,7 @@ export default function RepairCenterSettings() {
                                               />
                                             </FormControl>
                                             <FormDescription>
-                                              Il Client ID del tuo account PayPal Developer
+                                              {t("settings.paypalClientIdDesc")}
                                             </FormDescription>
                                             <FormMessage />
                                           </FormItem>
@@ -1757,7 +1757,7 @@ export default function RepairCenterSettings() {
                                         name="paypalClientSecret"
                                         render={({ field }) => (
                                           <FormItem>
-                                            <FormLabel>Client Secret</FormLabel>
+                                            <FormLabel>{t("settings.clientSecret")}</FormLabel>
                                             <FormControl>
                                               <Input 
                                                 type="password"
@@ -1769,8 +1769,8 @@ export default function RepairCenterSettings() {
                                             </FormControl>
                                             <FormDescription>
                                               {paymentConfigData?.ownConfig?.hasPaypalSecret 
-                                                ? "Lascia vuoto per mantenere il valore esistente"
-                                                : "Richiesto per abilitare PayPal SDK"
+                                                ? t("settings.leaveEmptyToKeep")
+                                                : t("settings.requiredForPaypal")
                                               }
                                             </FormDescription>
                                             <FormMessage />
@@ -1781,7 +1781,7 @@ export default function RepairCenterSettings() {
                                     <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground space-y-2">
                                       <p className="font-medium text-foreground">{t("settings.paypalInstructions")}</p>
                                       <ol className="list-decimal list-inside space-y-1">
-                                        <li>Accedi a <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
+                                        <li>{t("settings.paypalStep1")} <a href="https://developer.paypal.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">developer.paypal.com</a></li>
                                         <li>{t("settings.paypalStep2")}</li>
                                         <li>{t("settings.paypalStep3")}</li>
                                         <li>{t("settings.paypalStep4")}</li>
@@ -1799,12 +1799,12 @@ export default function RepairCenterSettings() {
                                   {updatePaymentMutation.isPending ? (
                                     <>
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                      Salvataggio...
+                                      {t("common.saving")}
                                     </>
                                   ) : (
                                     <>
                                       <Save className="h-4 w-4 mr-2" />
-                                      Salva Configurazione Pagamenti
+                                      {t("settings.savePaymentConfig")}
                                     </>
                                   )}
                                 </Button>
@@ -1824,10 +1824,10 @@ export default function RepairCenterSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Truck className="h-5 w-5" />
-                    Metodi di Consegna
+                    {t("settings.deliveryMethods")}
                   </CardTitle>
                   <CardDescription>
-                    Configura le opzioni di spedizione e ritiro. I metodi del tuo reseller sono ereditati automaticamente
+                    {t("settings.deliveryMethodsDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1847,10 +1847,10 @@ export default function RepairCenterSettings() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Euro className="h-5 w-5" />
-                    Tariffa Oraria Manodopera
+                    {t("settings.hourlyLaborRate")}
                   </CardTitle>
                   <CardDescription>
-                    Configura la tariffa oraria per il calcolo dei costi di manodopera
+                    {t("settings.hourlyLaborRateDesc")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -1875,9 +1875,9 @@ export default function RepairCenterSettings() {
                             data-testid="switch-hourly-rate-use-parent"
                           />
                           <div>
-                            <Label className="text-base font-medium">Usa tariffa Reseller</Label>
+                            <Label className="text-base font-medium">{t("settings.useResellerRate")}</Label>
                             <p className="text-sm text-muted-foreground">
-                              Eredita automaticamente la tariffa oraria dal tuo Reseller
+                              {t("settings.useResellerRateDesc")}
                             </p>
                           </div>
                         </div>
@@ -1886,8 +1886,8 @@ export default function RepairCenterSettings() {
                             variant={hourlyRateData.source === 'own' ? 'default' : 'secondary'}
                             data-testid="badge-hourly-rate-source"
                           >
-                            {hourlyRateData.source === 'own' ? 'Personalizzata' : 
-                             hourlyRateData.source === 'reseller' ? 'Dal Reseller' : 'Default'}
+                            {hourlyRateData.source === 'own' ? t("settings.customized") : 
+                             hourlyRateData.source === 'reseller' ? t("settings.fromReseller") : t("common.default")}
                           </Badge>
                         )}
                       </div>
@@ -1897,7 +1897,7 @@ export default function RepairCenterSettings() {
                           <div className="flex items-center gap-2 mb-2">
                             <Info className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                              Stai usando una tariffa personalizzata per questo centro
+                              {t("settings.usingCustomRate")}
                             </span>
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1927,7 +1927,7 @@ export default function RepairCenterSettings() {
                             </div>
                             <div className="flex items-end">
                               <div className="p-3 rounded-lg bg-muted">
-                                <p className="text-sm font-medium text-muted-foreground">Tariffa corrente</p>
+                                <p className="text-sm font-medium text-muted-foreground">{t("settings.currentRate")}</p>
                                 <p className="text-2xl font-bold" data-testid="text-hourly-rate-value">
                                   {((hourlyRateData?.hourlyRateCents ?? 3500) / 100).toFixed(2)} EUR/ora
                                 </p>
@@ -2039,7 +2039,7 @@ export default function RepairCenterSettings() {
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Warning (ore)</Label>
+                                  <Label className="text-xs text-muted-foreground">{t("settings.warningHours")}</Label>
                                   <Input
                                     type="number"
                                     min="1"
@@ -2065,7 +2065,7 @@ export default function RepairCenterSettings() {
                                   />
                                 </div>
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">Critical (ore)</Label>
+                                  <Label className="text-xs text-muted-foreground">{t("settings.criticalHours")}</Label>
                                   <Input
                                     type="number"
                                     min="1"
@@ -2107,12 +2107,12 @@ export default function RepairCenterSettings() {
               {updateMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Salvataggio...
+                  {t("common.saving")}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Salva Impostazioni
+                  {t("settings.saveSettings")}
                 </>
               )}
             </Button>

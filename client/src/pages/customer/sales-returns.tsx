@@ -19,16 +19,16 @@ import type { SalesOrderReturn, SalesOrder } from "@shared/schema";
 
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
-    requested: "Richiesto",
+    requested: t("common.requested"),
     approved: t("common.approved"),
-    rejected: "Rifiutato",
-    shipped: "Spedito",
-    received: "Ricevuto",
-    refunded: "Rimborsato",
-    partially_refunded: "Rimborsato parzialmente",
+    rejected: t("common.rejected"),
+    shipped: t("customerPages.shipped"),
+    received: t("common.received"),
+    refunded: t("customerPages.refunded"),
+    partially_refunded: t("common.partiallyRefunded"),
     cancelled: t("common.cancelled"),
-    awaiting_shipment: "In attesa di spedizione",
-    inspecting: "In ispezione"
+    awaiting_shipment: t("common.awaitingShipment"),
+    inspecting: t("common.inspecting")
   };
 }
 
@@ -47,12 +47,12 @@ const statusColors: Record<string, "default" | "secondary" | "destructive" | "ou
 
 function getReasonLabels(t: (key: string) => string): Record<string, string> {
   return {
-    defective: "Prodotto difettoso",
-    wrong_item: "Articolo errato",
-    not_as_described: "Non conforme alla descrizione",
-    changed_mind: "Ripensamento",
+    defective: t("customerPages.defectiveProduct"),
+    wrong_item: t("customerPages.wrongItem"),
+    not_as_described: t("customerPages.notAsDescribed"),
+    changed_mind: t("customerPages.changedMind"),
     damaged_in_transit: t("common.damagedInTransport"),
-    other: "Altro motivo"
+    other: t("customerPages.otherReason")
   };
 }
 
@@ -107,7 +107,7 @@ export default function CustomerSalesReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Richiesta di reso inviata", description: "Riceverai una risposta a breve" });
+      toast({ title: t("customerPages.returnRequestSent"), description: t("customerPages.willReceiveResponseShortly") });
       queryClient.invalidateQueries({ queryKey: ['/api/sales-returns'] });
       queryClient.invalidateQueries({ queryKey: ['/api/my-orders'] });
       setShowNewReturnDialog(false);
@@ -124,7 +124,7 @@ export default function CustomerSalesReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Reso annullato" });
+      toast({ title: t("customerPages.returnCancelled") });
       queryClient.invalidateQueries({ queryKey: ['/api/sales-returns'] });
       setShowDetailDialog(false);
     },
@@ -161,7 +161,7 @@ export default function CustomerSalesReturns() {
   
   const handleCreateReturn = () => {
     if (!newReturnData.orderId || !newReturnData.reason) {
-      toast({ title: "Compila tutti i campi obbligatori", variant: "destructive" });
+      toast({ title: t("customerPages.fillAllRequiredFields"), variant: "destructive" });
       return;
     }
     createMutation.mutate(newReturnData);
@@ -193,13 +193,13 @@ export default function CustomerSalesReturns() {
               <RotateCcw className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white" data-testid="text-returns-title">I miei resi</h1>
+              <h1 className="text-2xl font-bold text-white" data-testid="text-returns-title">{t("customerPages.myReturns")}</h1>
               <p className="text-white/80 text-sm">{t("customerPages.gestisciLeTueRichiesteDiReso")}</p>
             </div>
           </div>
           <Button onClick={() => setShowNewReturnDialog(true)} data-testid="button-new-return">
             <Plus className="h-4 w-4 mr-2" />
-            Richiedi reso
+            {t("customerPages.requestReturn")}
           </Button>
         </div>
       </div>
@@ -238,7 +238,7 @@ export default function CustomerSalesReturns() {
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Approvati</p>
+                <p className="text-sm text-muted-foreground">{t("customerPages.approved")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-approved">{stats.approved}</p>
               </div>
             </div>
@@ -264,11 +264,11 @@ export default function CustomerSalesReturns() {
           <CardContent className="p-12 text-center">
             <RotateCcw className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">{t("customerPages.nessunReso")}</h3>
-            <p className="text-muted-foreground mb-4">Non hai ancora richiesto resi</p>
+            <p className="text-muted-foreground mb-4">{t("customerPages.noReturnsYetDesc")}</p>
             {eligibleOrders.length > 0 && (
               <Button onClick={() => setShowNewReturnDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Richiedi il tuo primo reso
+                {t("customerPages.requestFirstReturn")}
               </Button>
             )}
           </CardContent>
@@ -297,12 +297,12 @@ export default function CustomerSalesReturns() {
                     
                     <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                       <span>{reasonLabels[ret.reason || ''] || ret.reason}</span>
-                      <span>Richiesto il {formatDate(ret.createdAt)}</span>
+                      <span>{t("customerPages.requestedOn")} {formatDate(ret.createdAt)}</span>
                     </div>
                     
                     {ret.refundAmount && (
                       <p className="text-sm font-medium text-green-600">
-                        Rimborso: {formatPrice(ret.refundAmount)}
+                        {t("customerPages.refundLabel")} {formatPrice(ret.refundAmount)}
                       </p>
                     )}
                   </div>
@@ -354,7 +354,7 @@ export default function CustomerSalesReturns() {
               
               {selectedReturn.customerNotes && (
                 <div>
-                  <Label className="text-muted-foreground text-sm">Le tue note</Label>
+                  <Label className="text-muted-foreground text-sm">{t("customerPages.yourNotesLabel")}</Label>
                   <p className="mt-1 p-2 bg-muted rounded text-sm">{selectedReturn.customerNotes}</p>
                 </div>
               )}
@@ -367,7 +367,7 @@ export default function CustomerSalesReturns() {
                     <div>
                       <p className="font-medium text-blue-900 dark:text-blue-100">{t("b2b.returnApproved")}</p>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Spedisci il prodotto all'indirizzo indicato dal venditore.
+                        {t("customerPages.returnApprovedShipProduct")}
                       </p>
                     </div>
                   </div>
@@ -379,7 +379,7 @@ export default function CustomerSalesReturns() {
                   <div className="flex items-start gap-3">
                     <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
                     <div>
-                      <p className="font-medium text-green-900 dark:text-green-100">Rimborso completato</p>
+                      <p className="font-medium text-green-900 dark:text-green-100">{t("customerPages.refundCompleted")}</p>
                       <p className="text-sm text-green-700 dark:text-green-300">
                         {t("returns.refundProcessedAmount", { amount: formatPrice(selectedReturn.refundAmount) })}
                       </p>
@@ -397,11 +397,11 @@ export default function CustomerSalesReturns() {
                 disabled={cancelMutation.isPending}
                 data-testid="button-cancel-return"
               >
-                {cancelMutation.isPending ? "Annullamento..." : t("transfers.cancelRequest")}
+                {cancelMutation.isPending ? t("customerPages.cancelling") : t("transfers.cancelRequest")}
               </Button>
             )}
             <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
-              Chiudi
+              {t("customerPages.close")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -410,9 +410,9 @@ export default function CustomerSalesReturns() {
       <Dialog open={showNewReturnDialog} onOpenChange={setShowNewReturnDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Richiedi un reso</DialogTitle>
+            <DialogTitle>{t("customerPages.requestReturnTitle")}</DialogTitle>
             <DialogDescription>
-              Compila il modulo per richiedere il reso di un ordine
+              {t("customerPages.requestReturnDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -420,7 +420,7 @@ export default function CustomerSalesReturns() {
               <Label>{t("customerPages.ordine")}</Label>
               {eligibleOrders.length === 0 ? (
                 <div className="p-4 bg-muted rounded-lg text-center text-sm text-muted-foreground">
-                  Non hai ordini idonei per il reso
+                  {t("customerPages.noEligibleOrders")}
                 </div>
               ) : (
                 <Select 
@@ -442,7 +442,7 @@ export default function CustomerSalesReturns() {
             </div>
             
             <div>
-              <Label>Motivo del reso *</Label>
+              <Label>{t("customerPages.returnReasonLabel")}</Label>
               <Select 
                 value={newReturnData.reason} 
                 onValueChange={(v) => setNewReturnData(prev => ({ ...prev, reason: v }))}
@@ -451,22 +451,22 @@ export default function CustomerSalesReturns() {
                   <SelectValue placeholder={t("customerPages.selezionaUnMotivo")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="defective">Prodotto difettoso</SelectItem>
-                  <SelectItem value="wrong_item">Articolo errato</SelectItem>
-                  <SelectItem value="not_as_described">Non conforme alla descrizione</SelectItem>
-                  <SelectItem value="changed_mind">Ripensamento</SelectItem>
-                  <SelectItem value="damaged_in_transit">Danneggiato durante il trasporto</SelectItem>
-                  <SelectItem value="other">Altro motivo</SelectItem>
+                  <SelectItem value="defective">{t("customerPages.defectiveProduct")}</SelectItem>
+                  <SelectItem value="wrong_item">{t("customerPages.wrongItem")}</SelectItem>
+                  <SelectItem value="not_as_described">{t("customerPages.notAsDescribed")}</SelectItem>
+                  <SelectItem value="changed_mind">{t("customerPages.changedMind")}</SelectItem>
+                  <SelectItem value="damaged_in_transit">{t("customerPages.damagedInTransitOption")}</SelectItem>
+                  <SelectItem value="other">{t("customerPages.otherReason")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
             <div>
-              <Label>Descrivi il problema</Label>
+              <Label>{t("customerPages.describeTheProblem")}</Label>
               <Textarea 
                 value={newReturnData.customerNotes}
                 onChange={(e) => setNewReturnData(prev => ({ ...prev, customerNotes: e.target.value }))}
-                placeholder="Fornisci dettagli sul motivo del reso..."
+                placeholder={t("customerPages.provideReturnDetails")}
                 rows={4}
                 data-testid="textarea-customer-notes"
               />
@@ -474,14 +474,14 @@ export default function CustomerSalesReturns() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNewReturnDialog(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button 
               onClick={handleCreateReturn}
               disabled={createMutation.isPending || eligibleOrders.length === 0}
               data-testid="button-submit-return"
             >
-              {createMutation.isPending ? "Invio..." : "Invia richiesta"}
+              {createMutation.isPending ? t("customerPages.sending") : t("customerPages.submitRequestButton")}
             </Button>
           </DialogFooter>
         </DialogContent>
