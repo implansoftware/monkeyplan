@@ -158,7 +158,7 @@ export default function MobilesentrixOrdersPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/reseller/mobilesentrix/catalog">
             <Button variant="outline" data-testid="button-back-catalog">
-              <ArrowLeft className="h-4 w-4 mr-2" />{t("shop.catalog")}</Button>
+              <ArrowLeft className="h-4 w-4 mr-2" />{t("shop.catalogTitle")}</Button>
           </Link>
           <Link href="/reseller/mobilesentrix/cart">
             <Button variant="outline" data-testid="button-view-cart">

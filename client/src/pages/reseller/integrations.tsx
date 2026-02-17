@@ -200,7 +200,7 @@ function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
               {integration.catalogUrl && (
                 <Link href={integration.catalogUrl}>
                   <Button variant="outline" size="sm" data-testid={`button-catalog-${integration.code}`}>
-                    <Package className="h-4 w-4 mr-1" />{t("shop.catalog")}</Button>
+                    <Package className="h-4 w-4 mr-1" />{t("shop.catalogTitle")}</Button>
                 </Link>
               )}
               {integration.cartUrl && (
