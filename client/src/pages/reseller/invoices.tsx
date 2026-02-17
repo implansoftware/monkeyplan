@@ -328,7 +328,7 @@ export default function ResellerInvoices() {
                   </Popover>
                   <Button variant="outline" onClick={handleExport} disabled={isExporting} data-testid="button-export-csv">
                     <Download className="h-4 w-4 mr-2" />
-                    {isExporting ? t("pages.exporting") : "Esporta CSV"}
+                    {isExporting ? t("pages.exporting") : t("common.exportCsv")}
                   </Button>
                 </div>
               </div>

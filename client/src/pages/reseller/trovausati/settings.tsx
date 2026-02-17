@@ -84,7 +84,7 @@ export default function TrovausatiSettingsPage() {
       setMarketplaceApiKey("");
       setStoresApiKey("");
       setMarketplaceId("");
-      toast({ title: "Credenziali salvate", description: "Le credenziali TrovaUsati sono state configurate" });
+      toast({ title: t("integrations.credentialsSaved"), description: t("integrations.credentialsConfigured") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -108,7 +108,7 @@ export default function TrovausatiSettingsPage() {
       setMarketplaceApiKey("");
       setStoresApiKey("");
       setShowEditCredential(false);
-      toast({ title: "Credenziali aggiornate", description: "Le credenziali TrovaUsati sono state aggiornate" });
+      toast({ title: t("integrations.credentialsUpdated"), description: t("integrations.credentialsHaveBeenUpdated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -141,9 +141,9 @@ export default function TrovausatiSettingsPage() {
       setMarketplaceTestResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
       if (data.success) {
-        toast({ title: "Connessione Marketplace riuscita", description: "La connessione al Marketplace B2B funziona" });
+        toast({ title: t("integrations.marketplaceConnectionSuccess"), description: t("integrations.marketplaceConnectionWorks") });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("integrations.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -161,9 +161,9 @@ export default function TrovausatiSettingsPage() {
       setStoresTestResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/credentials"] });
       if (data.success) {
-        toast({ title: "Connessione Valutatore riuscita", description: "La connessione al Valutatore funziona" });
+        toast({ title: t("integrations.valuatorConnectionSuccess"), description: t("integrations.valuatorConnectionWorks") });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("integrations.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -185,7 +185,7 @@ export default function TrovausatiSettingsPage() {
       setNewShopId("");
       setNewShopName("");
       setShowAddShop(false);
-      toast({ title: "Negozio aggiunto", description: "Il negozio TrovaUsati è stato configurato" });
+      toast({ title: t("integrations.shopAdded"), description: t("integrations.shopConfigured") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -198,7 +198,7 @@ export default function TrovausatiSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trovausati/shops"] });
-      toast({ title: "Negozio rimosso" });
+      toast({ title: t("integrations.shopRemoved") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -229,8 +229,8 @@ export default function TrovausatiSettingsPage() {
               <Settings className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Configurazione TrovaUsati</h1>
-              <p className="text-sm text-muted-foreground">Gestisci le credenziali per Marketplace B2B e Valutatore dispositivi</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("integrations.configurationTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("integrations.manageCredentialsForMarketplace")}</p>
             </div>
           </div>
         </div>
@@ -241,17 +241,17 @@ export default function TrovausatiSettingsPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
-              Configurazione Iniziale
+              {t("integrations.initialSetup")}
             </CardTitle>
             <CardDescription>
-              Configura le API Key di TrovaUsati. Puoi configurare una o entrambe le API.
+              {t("integrations.configureApiKeys")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Nessuna credenziale configurata. Inserisci almeno una API Key per iniziare.
+                {t("integrations.noCredentialsAlert")}
               </AlertDescription>
             </Alert>
 
@@ -259,17 +259,17 @@ export default function TrovausatiSettingsPage() {
               <div className="space-y-4 p-4 border rounded-lg">
                 <div className="flex flex-wrap items-center gap-2">
                   <ShoppingBag className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold">Marketplace B2B</h3>
+                  <h3 className="font-semibold">{t("integrations.marketplaceB2B")}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Per acquisto dispositivi usati e ordini B2B
+                  {t("integrations.forPurchasingDevices")}
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="marketplaceApiKey">Token API Marketplace</Label>
+                  <Label htmlFor="marketplaceApiKey">{t("integrations.marketplaceApiToken")}</Label>
                   <Input
                     id="marketplaceApiKey"
                     type="password"
-                    placeholder="Inserisci il token API Marketplace"
+                    placeholder={t("integrations.enterMarketplaceToken")}
                     value={marketplaceApiKey}
                     onChange={(e) => setMarketplaceApiKey(e.target.value)}
                     data-testid="input-marketplace-api-key"
@@ -280,17 +280,17 @@ export default function TrovausatiSettingsPage() {
               <div className="space-y-4 p-4 border rounded-lg">
                 <div className="flex flex-wrap items-center gap-2">
                   <Tag className="h-5 w-5 text-green-600" />
-                  <h3 className="font-semibold">Valutatore / Negozi</h3>
+                  <h3 className="font-semibold">{t("integrations.valuatorStores")}</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Per valutazioni dispositivi, coupon e trade-in
+                  {t("integrations.forDeviceValuations")}
                 </p>
                 <div className="space-y-2">
-                  <Label htmlFor="storesApiKey">Token API Valutatore</Label>
+                  <Label htmlFor="storesApiKey">{t("integrations.valuatorApiToken")}</Label>
                   <Input
                     id="storesApiKey"
                     type="password"
-                    placeholder="Inserisci il token API Valutatore"
+                    placeholder={t("integrations.enterValuatorToken")}
                     value={storesApiKey}
                     onChange={(e) => setStoresApiKey(e.target.value)}
                     data-testid="input-stores-api-key"
@@ -300,10 +300,10 @@ export default function TrovausatiSettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="marketplaceId">Marketplace ID (opzionale)</Label>
+              <Label htmlFor="marketplaceId">{t("integrations.marketplaceIdOptional")}</Label>
               <Input
                 id="marketplaceId"
-                placeholder="ID del marketplace se disponibile"
+                placeholder={t("integrations.marketplaceIdPlaceholder")}
                 value={marketplaceId}
                 onChange={(e) => setMarketplaceId(e.target.value)}
                 data-testid="input-marketplace-id"
@@ -318,7 +318,7 @@ export default function TrovausatiSettingsPage() {
               {saveCredentialsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
-              Salva Credenziali
+              {t("integrations.saveCreds")}
             </Button>
           </CardContent>
         </Card>
@@ -327,12 +327,12 @@ export default function TrovausatiSettingsPage() {
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="marketplace" className="flex flex-wrap items-center gap-2" data-testid="tab-marketplace">
               <ShoppingBag className="h-4 w-4" />
-              Marketplace B2B
+              {t("integrations.marketplaceB2B")}
               {hasMarketplaceKey && <Badge variant={credential.isActive ? "default" : "secondary"} className="ml-1 text-xs">{credential.isActive ? "ON" : "OFF"}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="valutatore" className="flex flex-wrap items-center gap-2" data-testid="tab-valutatore">
               <Tag className="h-4 w-4" />
-              Valutatore
+              {t("integrations.valuations")}
               {hasStoresKey && <Badge variant={credential.storesIsActive ? "default" : "secondary"} className="ml-1 text-xs">{credential.storesIsActive ? "ON" : "OFF"}</Badge>}
             </TabsTrigger>
           </TabsList>
@@ -343,7 +343,7 @@ export default function TrovausatiSettingsPage() {
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
                     <ShoppingBag className="h-5 w-5 text-blue-600" />
-                    API Marketplace B2B
+                    {t("integrations.apiMarketplaceB2B")}
                   </div>
                   {hasMarketplaceKey && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -357,7 +357,7 @@ export default function TrovausatiSettingsPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Token per acquisto dispositivi usati e gestione ordini B2B sul marketplace TrovaUsati
+                  {t("integrations.tokenForPurchasing")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -367,7 +367,7 @@ export default function TrovausatiSettingsPage() {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <AlertDescription className="flex items-center justify-between">
                         <span>
-                          Token Marketplace configurato
+                          {t("integrations.marketplaceTokenConfigured")}
                           {credential.lastTestResult && (
                             <Badge variant={credential.lastTestResult === "success" ? "default" : "destructive"} className="ml-2">
                               {credential.lastTestResult === "success" ? t("common.working") : t("common.error")}
@@ -383,7 +383,7 @@ export default function TrovausatiSettingsPage() {
                           }}
                           data-testid="button-update-marketplace"
                         >
-                          Modifica Token
+                          {t("integrations.editToken")}
                         </Button>
                       </AlertDescription>
                     </Alert>
@@ -399,7 +399,7 @@ export default function TrovausatiSettingsPage() {
                         ) : (
                           <RefreshCcw className="h-4 w-4 mr-2" />
                         )}
-                        Testa Connessione
+                        {t("integrations.testConnectionBtn")}
                       </Button>
                     </div>
 
@@ -418,7 +418,7 @@ export default function TrovausatiSettingsPage() {
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="flex items-center justify-between">
-                      <span>Token Marketplace non configurato</span>
+                      <span>{t("integrations.marketplaceTokenNotConfigured")}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -428,7 +428,7 @@ export default function TrovausatiSettingsPage() {
                         }}
                         data-testid="button-add-marketplace"
                       >
-                        Configura
+                        {t("integrations.configure")}
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -443,7 +443,7 @@ export default function TrovausatiSettingsPage() {
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
                     <Tag className="h-5 w-5 text-green-600" />
-                    API Valutatore / Negozi
+                    {t("integrations.apiValuatorStores")}
                   </div>
                   {hasStoresKey && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -457,7 +457,7 @@ export default function TrovausatiSettingsPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Token per valutazioni dispositivi, gestione coupon e operazioni trade-in in negozio
+                  {t("integrations.tokenForValuations")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -467,7 +467,7 @@ export default function TrovausatiSettingsPage() {
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <AlertDescription className="flex items-center justify-between">
                         <span>
-                          Token Valutatore configurato
+                          {t("integrations.valuatorTokenConfigured")}
                           {credential.storesLastTestResult && (
                             <Badge variant={credential.storesLastTestResult === "success" ? "default" : "destructive"} className="ml-2">
                               {credential.storesLastTestResult === "success" ? t("common.working") : t("common.error")}
@@ -483,7 +483,7 @@ export default function TrovausatiSettingsPage() {
                           }}
                           data-testid="button-update-stores"
                         >
-                          Modifica Token
+                          {t("integrations.editToken")}
                         </Button>
                       </AlertDescription>
                     </Alert>
@@ -499,7 +499,7 @@ export default function TrovausatiSettingsPage() {
                         ) : (
                           <RefreshCcw className="h-4 w-4 mr-2" />
                         )}
-                        Testa Connessione
+                        {t("integrations.testConnectionBtn")}
                       </Button>
                     </div>
 
@@ -518,7 +518,7 @@ export default function TrovausatiSettingsPage() {
                   <Alert>
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="flex items-center justify-between">
-                      <span>Token Valutatore non configurato</span>
+                      <span>{t("integrations.valuatorTokenNotConfigured")}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -528,7 +528,7 @@ export default function TrovausatiSettingsPage() {
                         }}
                         data-testid="button-add-stores"
                       >
-                        Configura
+                        {t("integrations.configure")}
                       </Button>
                     </AlertDescription>
                   </Alert>
@@ -543,10 +543,10 @@ export default function TrovausatiSettingsPage() {
                     <div>
                       <CardTitle className="flex flex-wrap items-center gap-2">
                         <Store className="h-5 w-5" />
-                        Negozi TrovaUsati
+                        {t("integrations.shopsTitle")}
                       </CardTitle>
                       <CardDescription>
-                        Configura i negozi per le operazioni in-store e coupon
+                        {t("integrations.configureShopsForInStore")}
                       </CardDescription>
                     </div>
                     <Dialog open={showAddShop} onOpenChange={setShowAddShop}>
@@ -556,27 +556,27 @@ export default function TrovausatiSettingsPage() {
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Aggiungi Negozio TrovaUsati</DialogTitle>
+                          <DialogTitle>{t("integrations.addShop")}</DialogTitle>
                           <DialogDescription>
-                            Inserisci l'ID del negozio TrovaUsati da associare
+                            {t("integrations.enterShopId")}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                           <div className="space-y-2">
-                            <Label htmlFor="shopId">Shop ID *</Label>
+                            <Label htmlFor="shopId">{t("integrations.shopIdRequired")}</Label>
                             <Input
                               id="shopId"
-                              placeholder="Es. 12345"
+                              placeholder={t("integrations.shopIdPlaceholder")}
                               value={newShopId}
                               onChange={(e) => setNewShopId(e.target.value)}
                               data-testid="input-new-shop-id"
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="shopName">Nome negozio (opzionale)</Label>
+                            <Label htmlFor="shopName">{t("integrations.shopNameOptional")}</Label>
                             <Input
                               id="shopName"
-                              placeholder="Es. Negozio Principale"
+                              placeholder={t("integrations.shopNamePlaceholder")}
                               value={newShopName}
                               onChange={(e) => setNewShopName(e.target.value)}
                               data-testid="input-new-shop-name"
@@ -593,7 +593,7 @@ export default function TrovausatiSettingsPage() {
                             {addShopMutation.isPending ? (
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             ) : null}
-                            Aggiungi
+                            {t("common.add")}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -607,7 +607,7 @@ export default function TrovausatiSettingsPage() {
                     </div>
                   ) : shops.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      Nessun negozio configurato. Aggiungi un negozio per utilizzare le funzionalità in-store.
+                      {t("integrations.noShopsConfigured")}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -621,7 +621,7 @@ export default function TrovausatiSettingsPage() {
                             <Store className="h-5 w-5 text-muted-foreground" />
                             <div>
                               <div className="font-medium">
-                                {shop.shopName || `Negozio ${shop.shopId}`}
+                                {shop.shopName || t("integrations.shopLabel", { id: shop.shopId })}
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 Shop ID: {shop.shopId}
@@ -630,7 +630,7 @@ export default function TrovausatiSettingsPage() {
                             {shop.isActive ? (
                               <Badge variant="default">{t("common.active")}</Badge>
                             ) : (
-                              <Badge variant="secondary">Disattivo</Badge>
+                              <Badge variant="secondary">{t("integrations.inactive")}</Badge>
                             )}
                           </div>
                           <Button
@@ -658,10 +658,10 @@ export default function TrovausatiSettingsPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <ExternalLink className="h-5 w-5" />
-              Link Rapidi
+              {t("integrations.quickLinks")}
             </CardTitle>
             <CardDescription>
-              Accedi rapidamente alle funzionalità TrovaUsati
+              {t("integrations.quickLinksDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -674,7 +674,7 @@ export default function TrovausatiSettingsPage() {
                 data-testid="link-marketplace"
               >
                 <ShoppingBag className="h-6 w-6" />
-                <span>Marketplace B2B</span>
+                <span>{t("integrations.marketplaceB2B")}</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -684,7 +684,7 @@ export default function TrovausatiSettingsPage() {
                 data-testid="link-valuations"
               >
                 <Tag className="h-6 w-6" />
-                <span>Valutazioni</span>
+                <span>{t("integrations.valuations")}</span>
               </Button>
               <Button 
                 variant="outline" 
@@ -694,7 +694,7 @@ export default function TrovausatiSettingsPage() {
                 data-testid="link-coupons"
               >
                 <CheckCircle className="h-6 w-6" />
-                <span>Coupon GDS</span>
+                <span>{t("integrations.couponGDS")}</span>
               </Button>
             </div>
           </CardContent>
@@ -705,33 +705,33 @@ export default function TrovausatiSettingsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editTab === "marketplace" ? "Modifica Token Marketplace" : "Modifica Token Valutatore"}
+              {editTab === "marketplace" ? t("integrations.editMarketplaceToken") : t("integrations.editValuatorToken")}
             </DialogTitle>
             <DialogDescription>
               {editTab === "marketplace" 
-                ? "Aggiorna il token API per il Marketplace B2B"
-                : "Aggiorna il token API per il Valutatore/Negozi"}
+                ? t("integrations.updateMarketplaceToken")
+                : t("integrations.updateValuatorToken")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {editTab === "marketplace" ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="editMarketplaceApiKey">Token API Marketplace</Label>
+                  <Label htmlFor="editMarketplaceApiKey">{t("integrations.editMarketplaceApiKey")}</Label>
                   <Input
                     id="editMarketplaceApiKey"
                     type="password"
-                    placeholder="Inserisci nuovo token (vuoto = mantieni)"
+                    placeholder={t("integrations.keepEmptyToRetain")}
                     value={marketplaceApiKey}
                     onChange={(e) => setMarketplaceApiKey(e.target.value)}
                     data-testid="input-edit-marketplace-api-key"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="editMarketplaceId">Marketplace ID</Label>
+                  <Label htmlFor="editMarketplaceId">{t("integrations.editMarketplaceId")}</Label>
                   <Input
                     id="editMarketplaceId"
-                    placeholder="ID marketplace"
+                    placeholder={t("integrations.marketplaceIdPlaceholder")}
                     value={marketplaceId || credential?.marketplaceId || ""}
                     onChange={(e) => setMarketplaceId(e.target.value)}
                     data-testid="input-edit-marketplace-id"
@@ -740,11 +740,11 @@ export default function TrovausatiSettingsPage() {
               </>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="editStoresApiKey">Token API Valutatore</Label>
+                <Label htmlFor="editStoresApiKey">{t("integrations.editStoresApiKey")}</Label>
                 <Input
                   id="editStoresApiKey"
                   type="password"
-                  placeholder="Inserisci nuovo token (vuoto = mantieni)"
+                  placeholder={t("integrations.keepEmptyToRetain")}
                   value={storesApiKey}
                   onChange={(e) => setStoresApiKey(e.target.value)}
                   data-testid="input-edit-stores-api-key"
@@ -767,7 +767,7 @@ export default function TrovausatiSettingsPage() {
               {updateCredentialsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
-              Aggiorna
+              {t("integrations.updateBtn")}
             </Button>
           </DialogFooter>
         </DialogContent>

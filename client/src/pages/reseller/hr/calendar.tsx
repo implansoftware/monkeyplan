@@ -96,7 +96,7 @@ export default function HrCalendar() {
   const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
-  const dayLabels = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  const dayLabels = [t("hr.daySun"), t("hr.dayMon"), t("hr.dayTue"), t("hr.dayWed"), t("hr.dayThu"), t("hr.dayFri"), t("hr.daySat")];
 
   return (
     <div className="space-y-6" data-testid="page-hr-calendar">
@@ -111,14 +111,14 @@ export default function HrCalendar() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white" data-testid="text-calendar-title">{t("sidebar.items.teamCalendar")}</h1>
-                <p className="text-white/80">Visualizzazione assenze e ferie del team</p>
+                <p className="text-white/80">{t("hr.teamAbsenceView")}</p>
               </div>
             </div>
           </div>
           <Link href="/reseller/hr">
             <Button variant="secondary" data-testid="button-back-to-hr">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna a HR
+              {t("hr.backToHR")}
             </Button>
           </Link>
         </div>
@@ -143,13 +143,13 @@ export default function HrCalendar() {
             <Filter className="h-4 w-4 text-muted-foreground" />
             <Select value={selectedEntity} onValueChange={setSelectedEntity} data-testid="select-entity-filter">
               <SelectTrigger className="w-full sm:w-[250px]" data-testid="trigger-entity-filter">
-                <SelectValue placeholder="Filtra per entità" />
+                <SelectValue placeholder={t("hr.filterByEntity")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all" data-testid="option-all">
                   <div className="flex flex-wrap items-center gap-2">
                     <Users className="h-4 w-4" />
-                    Tutti (gerarchia completa)
+                    {t("hr.allHierarchy")}
                   </div>
                 </SelectItem>
                 {entities.filter(e => e.type === "reseller").length > 0 && (
@@ -252,7 +252,7 @@ export default function HrCalendar() {
                         })}
                         {events.length > 3 && (
                           <div className="text-xs text-muted-foreground px-1">
-                            +{events.length - 3} altri
+                            +{events.length - 3} {t("hr.others")}
                           </div>
                         )}
                       </div>
@@ -270,12 +270,12 @@ export default function HrCalendar() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-emerald-600" />
-              Ferie Prossime
+              {t("hr.upcomingVacations")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {calendarData.filter(e => e.type === 'vacation').slice(0, 3).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nessuna ferie programmata</p>
+              <p className="text-sm text-muted-foreground">{t("hr.noScheduledVacations")}</p>
             ) : (
               <div className="space-y-2">
                 {calendarData.filter(e => e.type === 'vacation').slice(0, 3).map((event, idx) => (
@@ -293,18 +293,18 @@ export default function HrCalendar() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Thermometer className="h-4 w-4 text-red-600" />
-              Malattie in Corso
+              {t("hr.activeSickLeaves")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {calendarData.filter(e => e.type === 'sick').length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nessuna malattia in corso</p>
+              <p className="text-sm text-muted-foreground">{t("hr.noActiveSickLeave")}</p>
             ) : (
               <div className="space-y-2">
                 {calendarData.filter(e => e.type === 'sick').slice(0, 3).map((event, idx) => (
                   <div key={idx} className="text-sm flex justify-between">
                     <span>{event.userName}</span>
-                    <Badge variant="destructive" className="text-xs">In malattia</Badge>
+                    <Badge variant="destructive" className="text-xs">{t("hr.onSickLeave")}</Badge>
                   </div>
                 ))}
               </div>
@@ -316,7 +316,7 @@ export default function HrCalendar() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Users className="h-4 w-4 text-blue-600" />
-              Disponibilità Oggi
+              {t("hr.todayAvailability")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -326,7 +326,7 @@ export default function HrCalendar() {
               return (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Assenti oggi</span>
+                    <span className="text-sm">{t("hr.absentToday")}</span>
                     <Badge variant={absentCount > 0 ? "secondary" : "outline"}>{absentCount}</Badge>
                   </div>
                   {todayEvents.slice(0, 2).map((event, idx) => (

@@ -327,7 +327,7 @@ export default function AllWarehousesPage() {
             </div>
           ) : filteredWarehouses.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nessun magazzino trovato
+              {t("warehouse.noWarehouseFound")}
             </div>
           ) : (
             <Table>
@@ -469,7 +469,7 @@ export default function AllWarehousesPage() {
                       </div>
                     ) : warehouseStock.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
-                        Nessun prodotto in stock
+                        {t("warehouse.noProductInStock")}
                       </div>
                     ) : (
                       (() => {
@@ -485,7 +485,7 @@ export default function AllWarehousesPage() {
                         });
                         return filteredStock.length === 0 ? (
                           <div className="text-center py-8 text-muted-foreground">
-                            Nessun prodotto trovato per "{stockSearchTerm}"
+                            {t("warehouse.noProductFoundFor", { term: stockSearchTerm })}
                           </div>
                         ) : (
                           <Table>
@@ -549,7 +549,7 @@ export default function AllWarehousesPage() {
                       </div>
                     ) : warehouseMovements.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
-                        Nessun movimento registrato
+                        {t("warehouse.noMovementRecorded")}
                       </div>
                     ) : (
                       <Table>
@@ -682,7 +682,7 @@ export default function AllWarehousesPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <ArrowLeftRight className="h-5 w-5" />
-              Trasferisci Prodotto
+              {t("warehouse.transferProduct")}
             </DialogTitle>
           </DialogHeader>
           {transferItem && (

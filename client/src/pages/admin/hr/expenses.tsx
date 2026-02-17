@@ -209,10 +209,10 @@ export default function AdminExpensesPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Receipt className="h-6 w-6" />
-            Note Spese (Admin)
+            {t("hr.expensesAdmin")}
           </h1>
           <p className="text-muted-foreground">
-            Visualizzazione globale di tutte le note spese
+            {t("hr.globalExpenseView")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -225,7 +225,7 @@ export default function AdminExpensesPage() {
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" />
-            Aggiorna
+            {t("common.refresh")}
           </Button>
         </div>
       </div>
@@ -308,7 +308,7 @@ export default function AdminExpensesPage() {
                               size="icon"
                               variant="ghost"
                               onClick={() => downloadReceiptMutation.mutate(rep.id)}
-                              title={`Scarica: ${rep.receiptFileName}`}
+                              title={`${t("common.download")}: ${rep.receiptFileName}`}
                               data-testid={`button-download-receipt-${rep.id}`}
                             >
                               <Download className="h-4 w-4 text-emerald-600" />
@@ -385,7 +385,7 @@ export default function AdminExpensesPage() {
           <DialogHeader>
             <DialogTitle>{t("hr.editExpense")}</DialogTitle>
             <DialogDescription>
-              Modifica i dettagli della nota spese
+              {t("hr.editExpenseDetails")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -399,7 +399,7 @@ export default function AdminExpensesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Importo Totale (€)</Label>
+              <Label>{t("hr.totalAmountEur")}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -422,7 +422,7 @@ export default function AdminExpensesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
               {editMutation.isPending ? t("settings.savingRate") : t("common.save")}

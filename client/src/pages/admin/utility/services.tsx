@@ -23,14 +23,16 @@ import { useTranslation } from "react-i18next";
 
 type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "altro";
 
-const categoryLabels: Record<ServiceCategory, string> = {
-  fisso: "fisso",
-  mobile: "mobile",
-  centralino: "centralino",
-  luce: "luce",
-  gas: "gas",
-  altro: "altro",
-};
+function getCategoryLabels(t: (key: string) => string): Record<ServiceCategory, string> {
+  return {
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
+    altro: t("common.other"),
+  };
+}
 
 const categoryColors: Record<ServiceCategory, string> = {
   fisso: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
@@ -51,6 +53,7 @@ const formatCurrency = (cents: number | null) => {
 
 export default function AdminUtilityServices() {
   const { t } = useTranslation();
+  const categoryLabels = getCategoryLabels(t);
   const [searchQuery, setSearchQuery] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -190,8 +193,8 @@ export default function AdminUtilityServices() {
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Listino Servizi Utility</h1>
-              <p className="text-sm text-muted-foreground">Gestisci il catalogo servizi dei fornitori</p>
+              <h1 className="text-2xl font-bold tracking-tight">{t("utility.servicesCatalog")}</h1>
+              <p className="text-sm text-muted-foreground">{t("utility.manageServicesCatalog")}</p>
             </div>
           </div>
         </div>
@@ -235,7 +238,7 @@ export default function AdminUtilityServices() {
           </div>
           <Button onClick={handleNewService} data-testid="button-new-service">
             <Plus className="h-4 w-4 mr-2" />
-            Nuovo Servizio
+            {t("utility.newServiceBtn")}
           </Button>
         </CardHeader>
         <CardContent>
@@ -248,9 +251,9 @@ export default function AdminUtilityServices() {
           ) : filteredServices.length === 0 ? (
             <div className="text-center py-8">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessun servizio trovato</p>
+              <p className="text-muted-foreground">{t("utility.noServiceFound")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Aggiungi servizi al listino per utilizzarli nelle pratiche
+                {t("utility.addServicesToUseInPractices")}
               </p>
             </div>
           ) : (
@@ -331,7 +334,7 @@ export default function AdminUtilityServices() {
                             variant="ghost" 
                             size="icon"
                             onClick={() => {
-                              if (confirm("Sei sicuro di voler eliminare questo servizio?")) {
+                              if (confirm(t("utility.confirmDeleteServiceMsg"))) {
                                 deleteMutation.mutate(service.id);
                               }
                             }}
@@ -358,8 +361,8 @@ export default function AdminUtilityServices() {
             </DialogTitle>
             <DialogDescription>
               {editingService 
-                ? "Modifica i dettagli del servizio."
-                : "Aggiungi un nuovo servizio al listino."}
+                ? t("utility.editServiceDesc")
+                : t("utility.addNewServiceToCatalog")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -414,7 +417,7 @@ export default function AdminUtilityServices() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="name">Nome Servizio *</Label>
+                <Label htmlFor="name">{t("utility.serviceNameLabel")}</Label>
                 <Input
                   id="name"
                   name="name"
@@ -440,7 +443,7 @@ export default function AdminUtilityServices() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="monthlyPriceCents">Prezzo Mensile (EUR)</Label>
+                <Label htmlFor="monthlyPriceCents">{t("utility.monthlyPriceEur")}</Label>
                 <Input
                   id="monthlyPriceCents"
                   name="monthlyPriceCents"
@@ -454,7 +457,7 @@ export default function AdminUtilityServices() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="activationFeeCents">Costo Attivazione (EUR)</Label>
+                <Label htmlFor="activationFeeCents">{t("utility.activationCostEur")}</Label>
                 <Input
                   id="activationFeeCents"
                   name="activationFeeCents"
@@ -471,7 +474,7 @@ export default function AdminUtilityServices() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="commissionPercent">Commissione %</Label>
+                <Label htmlFor="commissionPercent">{t("utility.commissionPercentLabel")}</Label>
                 <Input
                   id="commissionPercent"
                   name="commissionPercent"
@@ -483,7 +486,7 @@ export default function AdminUtilityServices() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="commissionFixed">Commissione Fissa (EUR)</Label>
+                <Label htmlFor="commissionFixed">{t("utility.fixedCommissionEur")}</Label>
                 <Input
                   id="commissionFixed"
                   name="commissionFixed"
@@ -497,7 +500,7 @@ export default function AdminUtilityServices() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="commissionOneTime">Una Tantum (EUR)</Label>
+                <Label htmlFor="commissionOneTime">{t("utility.oneTimeEur")}</Label>
                 <Input
                   id="commissionOneTime"
                   name="commissionOneTime"
@@ -514,7 +517,7 @@ export default function AdminUtilityServices() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contractMonths">Durata Contratto (mesi)</Label>
+                <Label htmlFor="contractMonths">{t("utility.contractDurationMonths")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <Input
@@ -549,7 +552,7 @@ export default function AdminUtilityServices() {
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit"

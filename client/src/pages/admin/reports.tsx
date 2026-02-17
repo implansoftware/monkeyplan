@@ -262,7 +262,7 @@ export default function AdminReports() {
                         format(inventoryDateRange.from, "dd MMM yyyy", { locale: it })
                       )
                     ) : (
-                      "Seleziona periodo"
+                      t("common.selectPeriod")
                     )}
                   </Button>
                 </PopoverTrigger>

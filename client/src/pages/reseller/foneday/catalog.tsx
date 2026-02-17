@@ -94,19 +94,19 @@ export default function FonedayCatalogPage() {
       return res.json();
     },
     onMutate: () => {
-      toast({ title: "Sincronizzazione avviata", description: "Questo potrebbe richiedere qualche minuto..." });
+      toast({ title: t("integrations.syncStarted"), description: t("integrations.syncMayTakeMinutes") });
     },
     onSuccess: (data) => {
       refetchCacheStatus();
       queryClient.invalidateQueries({ queryKey: ["/api/foneday/catalog/products"] });
       toast({ 
-        title: "Sincronizzazione completata", 
-        description: `${data.totalProducts} prodotti caricati in ${Math.round(data.syncDurationMs / 1000)}s` 
+        title: t("integrations.syncCompleted"), 
+        description: t("integrations.productsLoadedIn", { count: data.totalProducts, seconds: Math.round(data.syncDurationMs / 1000) })
       });
     },
     onError: (error: Error) => {
       refetchCacheStatus();
-      toast({ title: "Errore sincronizzazione", description: error.message, variant: "destructive" });
+      toast({ title: t("integrations.syncError"), description: error.message, variant: "destructive" });
     },
   });
   
@@ -136,7 +136,7 @@ export default function FonedayCatalogPage() {
       params.append("per_page", String(perPage));
       
       const res = await fetch(`/api/foneday/catalog/products?${params}`);
-      if (!res.ok) throw new Error("Errore nel caricamento prodotti");
+      if (!res.ok) throw new Error(t("integrations.loadingProductsError"));
       return res.json();
     },
     enabled: !!credential?.isActive && debouncedSearch.length >= 2,
@@ -184,7 +184,7 @@ export default function FonedayCatalogPage() {
     },
     onSuccess: () => {
       refetchCart();
-      toast({ title: "Aggiunto al carrello" });
+      toast({ title: t("integrations.addedToCart") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -233,11 +233,11 @@ export default function FonedayCatalogPage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>Credenziali Foneday non configurate. Configura il tuo API Token per continuare.</span>
+            <span>{t("integrations.credentialsNotConfigured")}</span>
             <Link href="/reseller/foneday/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                Configura
+                {t("integrations.configure")}
               </Button>
             </Link>
           </AlertDescription>
@@ -259,15 +259,15 @@ export default function FonedayCatalogPage() {
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Catalogo Foneday</h1>
-              <p className="text-sm text-muted-foreground">Sfoglia e ordina ricambi dal catalogo Foneday</p>
+              <h1 className="text-2xl font-bold tracking-tight">Foneday {t("integrations.catalogTitle")}</h1>
+              <p className="text-sm text-muted-foreground">{t("integrations.browseAndOrderParts")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/reseller/foneday/cart">
               <Button variant="outline" className="shadow-lg shadow-primary/25" data-testid="button-view-cart">
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Carrello
+                {t("integrations.cartTitle")}
                 {cart && cart.cart && cart.cart.length > 0 && (
                   <Badge variant="secondary" className="ml-2">
                     {cart.cart.reduce((sum: number, item: FonedayCartItem) => sum + item.quantity, 0)}
@@ -290,10 +290,10 @@ export default function FonedayCatalogPage() {
             <div>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <Search className="h-5 w-5" />
-                Cerca Prodotti
+                {t("integrations.searchProducts")}
               </CardTitle>
               <CardDescription>
-                Cerca per nome, SKU, modello o descrizione
+                {t("integrations.searchByNameSkuModel")}
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -303,7 +303,7 @@ export default function FonedayCatalogPage() {
                     <>
                       <CheckCircle2 className="h-4 w-4 text-green-500" />
                       <span className="text-muted-foreground">
-                        {cacheStatus.totalProducts} prodotti in cache
+                        {t("integrations.productsInCache", { count: cacheStatus.totalProducts })}
                       </span>
                       {cacheStatus.lastSyncAt && (
                         <span className="text-xs text-muted-foreground/70">
@@ -315,19 +315,19 @@ export default function FonedayCatalogPage() {
                   {cacheStatus.syncStatus === "syncing" && (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                      <span className="text-blue-600">Sincronizzazione in corso...</span>
+                      <span className="text-blue-600">{t("integrations.syncInProgress")}</span>
                     </>
                   )}
                   {cacheStatus.syncStatus === "error" && (
                     <>
                       <XCircle className="h-4 w-4 text-red-500" />
-                      <span className="text-red-600">Errore sync</span>
+                      <span className="text-red-600">{t("integrations.syncErrorShort")}</span>
                     </>
                   )}
                   {(!cacheStatus.hasCache || cacheStatus.isExpired) && cacheStatus.syncStatus !== "syncing" && (
                     <>
                       <Clock className="h-4 w-4 text-amber-500" />
-                      <span className="text-amber-600">Cache scaduta o assente</span>
+                      <span className="text-amber-600">{t("integrations.cacheExpiredOrMissing")}</span>
                     </>
                   )}
                 </div>
@@ -340,7 +340,7 @@ export default function FonedayCatalogPage() {
                 data-testid="button-sync-cache"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${cacheStatus?.syncStatus === "syncing" ? "animate-spin" : ""}`} />
-                {cacheStatus?.hasCache && !cacheStatus.isExpired ? t("common.update") : "Sincronizza"}
+                {cacheStatus?.hasCache && !cacheStatus.isExpired ? t("common.update") : t("integrations.sync")}
               </Button>
             </div>
           </div>
@@ -349,7 +349,7 @@ export default function FonedayCatalogPage() {
           <div className="relative max-w-xl">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Cerca per nome, SKU, modello..."
+              placeholder={t("integrations.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -366,10 +366,10 @@ export default function FonedayCatalogPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Package className="h-5 w-5" />
-            Prodotti
+            {t("integrations.products")}
             {totalProducts > 0 && (
               <span className="text-sm font-normal text-muted-foreground">
-                ({accumulatedProducts.length} di {totalProducts})
+                ({t("integrations.ofTotal", { shown: accumulatedProducts.length, total: totalProducts })})
               </span>
             )}
           </CardTitle>
@@ -389,7 +389,7 @@ export default function FonedayCatalogPage() {
             </div>
           ) : accumulatedProducts.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              {debouncedSearch.length >= 2 ? "Nessun prodotto trovato. Prova a modificare la ricerca." : "Inserisci almeno 2 caratteri per cercare."}
+              {debouncedSearch.length >= 2 ? t("integrations.noProductFound") : t("integrations.enterMinChars")}
             </div>
           ) : (
             <div className="space-y-3">
@@ -421,7 +421,7 @@ export default function FonedayCatalogPage() {
                             <Badge variant="outline" className="text-xs">{product.quality}</Badge>
                           )}
                           {product.warranty_months > 0 && (
-                            <div>Garanzia: {product.warranty_months} mesi</div>
+                            <div>{t("integrations.warranty", { months: product.warranty_months })}</div>
                           )}
                         </div>
                       </div>
@@ -431,7 +431,7 @@ export default function FonedayCatalogPage() {
                           {product.stock > 0 ? (
                             <Badge variant="default" className="bg-green-600">{t("shop.inStock")}</Badge>
                           ) : (
-                            <Badge variant="secondary">Non disponibile</Badge>
+                            <Badge variant="secondary">{t("integrations.unavailable")}</Badge>
                           )}
                         </div>
                       </div>
@@ -468,7 +468,7 @@ export default function FonedayCatalogPage() {
                           ) : (
                             <ShoppingCart className="h-4 w-4 mr-2" />
                           )}
-                          Aggiungi
+                          {t("common.add")}
                         </Button>
                       </div>
                     )}
@@ -492,7 +492,7 @@ export default function FonedayCatalogPage() {
                     ) : (
                       <>
                         <Plus className="h-4 w-4 mr-2" />
-                        Carica Altri ({totalProducts - accumulatedProducts.length} rimanenti)
+                        {t("integrations.loadMore", { remaining: totalProducts - accumulatedProducts.length })}
                       </>
                     )}
                   </Button>

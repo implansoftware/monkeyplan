@@ -394,10 +394,10 @@ export default function ResellerB2BCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
-              Riepilogo Ordine B2B
+              {t("b2b.orderSummary")}
             </DialogTitle>
             <DialogDescription>
-              Verifica i prodotti e conferma l'ordine. L'ordine richiederà approvazione dall'amministratore.
+              {t("b2b.orderSummaryDesc")}
             </DialogDescription>
           </DialogHeader>
 

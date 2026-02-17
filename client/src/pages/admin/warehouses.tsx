@@ -455,7 +455,7 @@ export default function WarehousesPage() {
                 <table className="w-full">
                   <thead className="border-b">
                     <tr>
-                      <th className="text-left p-4 font-medium">Prodotto</th>
+                      <th className="text-left p-4 font-medium">{t("common.product")}</th>
                       <th className="text-left p-4 font-medium">{t("products.sku")}</th>
                       <th className="text-left p-4 font-medium">{t("common.type")}</th>
                       <th className="text-right p-4 font-medium">{t("common.quantity")}</th>
@@ -549,7 +549,7 @@ export default function WarehousesPage() {
                       <th className="text-left p-4 font-medium">{t("common.date")}</th>
                       <th className="text-left p-4 font-medium">{t("common.type")}</th>
                       <th className="text-left p-4 font-medium">Da/Verso</th>
-                      <th className="text-left p-4 font-medium">Prodotto</th>
+                      <th className="text-left p-4 font-medium">{t("common.product")}</th>
                       <th className="text-right p-4 font-medium">{t("common.quantity")}</th>
                       <th className="text-left p-4 font-medium">Operatore</th>
                       <th className="text-left p-4 font-medium">{t("common.notes")}</th>
@@ -623,7 +623,7 @@ export default function WarehousesPage() {
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-2">Prodotto:</p>
+              <p className="text-sm text-muted-foreground mb-2">{t("common.product")}:</p>
               <p className="font-medium">{transferItem?.product?.name}</p>
               <p className="text-sm text-muted-foreground">SKU: {transferItem?.product?.sku}</p>
               <p className="text-sm">Disponibilità: <span className="font-semibold">{transferItem?.quantity}</span></p>

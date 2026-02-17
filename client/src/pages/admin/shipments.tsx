@@ -314,7 +314,7 @@ export default function AdminShipments() {
           {filteredShipments.length === 0 ? (
             <div className="p-12 text-center">
               <Truck className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Nessuna spedizione trovata</p>
+              <p className="text-muted-foreground">{t("shipping.noShipmentFound")}</p>
             </div>
           ) : (
             <Table>
@@ -500,7 +500,7 @@ export default function AdminShipments() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground text-sm">Nessun evento registrato</p>
+                    <p className="text-muted-foreground text-sm">{t("shipping.noEventRecorded")}</p>
                   )}
                 </div>
               </div>

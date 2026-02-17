@@ -66,11 +66,11 @@ const getCategoryColor = (category: string) => {
 };
 
 
-const getPriceSourceLabel = (source: string) => {
+const getPriceSourceLabel = (source: string, t: (key: string) => string) => {
   switch (source) {
-    case 'center': return 'Proprio';
-    case 'reseller': return 'Rivenditore';
-    case 'base': return 'Listino Base';
+    case 'center': return t("products.priceSourceOwn");
+    case 'reseller': return t("products.priceSourceReseller");
+    case 'base': return t("products.priceSourceBase");
     default: return source;
   }
 };
@@ -459,7 +459,7 @@ export default function RepairCenterServiceCatalog() {
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
                         <Badge variant="outline" className={getPriceSourceColor(item.priceSource)}>
-                          {getPriceSourceLabel(item.priceSource)}
+                          {getPriceSourceLabel(item.priceSource, t)}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-right">

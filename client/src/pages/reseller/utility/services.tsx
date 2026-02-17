@@ -23,11 +23,11 @@ type ServiceCategory = "fisso" | "mobile" | "centralino" | "luce" | "gas" | "alt
 
 function getCategoryLabels(t: (key: string) => string): Record<ServiceCategory, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
     altro: t("common.other"),
   };
 }
@@ -200,7 +200,7 @@ export default function ResellerUtilityServices() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">
-                  {service.monthlyPriceCents ? "Prezzo mensile" : "Costo attivazione"}
+                  {service.monthlyPriceCents ? t("utility.monthlyPrice") : t("utility.activationCost")}
                 </p>
                 <p className="text-lg font-semibold">
                   {formatCurrency(service.monthlyPriceCents || service.activationFeeCents)}
@@ -214,18 +214,18 @@ export default function ResellerUtilityServices() {
             <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium text-green-700 dark:text-green-300">La tua commissione</span>
+                <span className="text-sm font-medium text-green-700 dark:text-green-300">{t("utility.yourCommission")}</span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {formatCurrency(commission * 100)}
                 </span>
-                <span className="text-xs text-muted-foreground">per attivazione</span>
+                <span className="text-xs text-muted-foreground">{t("utility.perActivation")}</span>
               </div>
               {service.commissionPercent && (
                 <div className="flex flex-wrap items-center gap-1 mt-1 text-xs text-green-600 dark:text-green-400">
                   <Percent className="h-3 w-3" />
-                  {service.commissionPercent}% {service.monthlyPriceCents ? "del canone mensile" : "del costo attivazione"}
+                  {service.commissionPercent}% {service.monthlyPriceCents ? t("utility.ofMonthlyFee") : t("utility.ofActivationCost")}
                 </div>
               )}
             </div>
@@ -233,7 +233,7 @@ export default function ResellerUtilityServices() {
             <div className="p-2 rounded-lg bg-muted/50 text-center">
               <p className="text-xs text-muted-foreground">
                 <Calculator className="h-3 w-3 inline mr-1" />
-                10 attivazioni = <span className="font-semibold text-foreground">{formatCurrency(potential10Sales * 100)}</span>
+{t("utility.earnings10Sales")}: <span className="font-semibold text-foreground">{formatCurrency(potential10Sales * 100)}</span>
               </p>
             </div>
 
@@ -244,7 +244,7 @@ export default function ResellerUtilityServices() {
                 data-testid={`button-create-practice-${service.id}`}
               >
                 <FileCheck className="h-4 w-4" />
-                Crea Pratica
+                {t("utility.createPractice")}
               </Button>
             )}
           </div>
@@ -270,8 +270,8 @@ export default function ResellerUtilityServices() {
               <Zap className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-white">Servizi Utility</h1>
-              <p className="text-sm text-white/80">Aumenta i tuoi guadagni con i servizi utility</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("utility.servicesTitle")}</h1>
+              <p className="text-sm text-white/80">{t("utility.increaseEarnings")}</p>
             </div>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function ResellerUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Servizi Disponibili</p>
+                <p className="text-sm text-muted-foreground">{t("utility.availableServices")}</p>
                 <p className="text-3xl font-bold">{stats.totalServices}</p>
               </div>
               <div className="p-3 rounded-full bg-primary/20">
@@ -296,7 +296,7 @@ export default function ResellerUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Commissione Media</p>
+                <p className="text-sm text-muted-foreground">{t("utility.avgCommission")}</p>
                 <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                   {formatCurrency(stats.avgCommission * 100)}
                 </p>
@@ -312,7 +312,7 @@ export default function ResellerUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Commissione Max</p>
+                <p className="text-sm text-muted-foreground">{t("utility.maxCommission")}</p>
                 <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                   {formatCurrency(stats.maxCommission * 100)}
                 </p>
@@ -328,7 +328,7 @@ export default function ResellerUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Categorie</p>
+                <p className="text-sm text-muted-foreground">{t("common.categories")}</p>
                 <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
                   {stats.categoriesCount}
                 </p>
@@ -345,8 +345,8 @@ export default function ResellerUtilityServices() {
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Trophy className="h-5 w-5 text-yellow-500" />
-            <h2 className="text-lg font-semibold">I Più Redditizi</h2>
-            <Badge variant="secondary" className="ml-2">Top Commissioni</Badge>
+            <h2 className="text-lg font-semibold">{t("utility.mostProfitable")}</h2>
+            <Badge variant="secondary" className="ml-2">{t("utility.topCommissions")}</Badge>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {topCommissionServices.map((service) => (
@@ -376,7 +376,7 @@ export default function ResellerUtilityServices() {
                     <SelectValue placeholder={t("common.supplier")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti i fornitori</SelectItem>
+                    <SelectItem value="all">{t("utility.allSuppliersFilter")}</SelectItem>
                     {suppliers.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>{supplier.name}</SelectItem>
                     ))}
@@ -387,7 +387,7 @@ export default function ResellerUtilityServices() {
                     <SelectValue placeholder={t("common.category")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutte le categorie</SelectItem>
+                    <SelectItem value="all">{t("utility.allCategoriesFilter")}</SelectItem>
                     {Object.entries(categoryLabels).map(([value, label]) => (
                       <SelectItem key={value} value={value}>{label}</SelectItem>
                     ))}
@@ -419,7 +419,7 @@ export default function ResellerUtilityServices() {
           ) : filteredServices.length === 0 ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">Nessun servizio trovato</p>
+              <p className="text-muted-foreground">{t("utility.noServiceFound")}</p>
             </div>
           ) : viewMode === "cards" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -435,9 +435,9 @@ export default function ResellerUtilityServices() {
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.supplier")}</TableHead>
                   <TableHead>{t("common.category")}</TableHead>
-                  <TableHead>Prezzo Mensile</TableHead>
+                  <TableHead>{t("utility.monthlyPrice")}</TableHead>
                   <TableHead>{t("utility.commission")}</TableHead>
-                  <TableHead>Guadagno 10 Vendite</TableHead>
+                  <TableHead>{t("utility.earnings10Sales")}</TableHead>
                   <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -482,7 +482,7 @@ export default function ResellerUtilityServices() {
                       <TableCell>
                         <Button size="sm" variant="outline" className="gap-1" onClick={(e) => { e.stopPropagation(); handleCreatePractice(service.id); }} data-testid={`button-create-practice-table-${service.id}`}>
                           <FileCheck className="h-3 w-3" />
-                          Crea Pratica
+                          {t("utility.createPractice")}
                         </Button>
                       </TableCell>
                     </TableRow>

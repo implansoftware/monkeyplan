@@ -303,7 +303,7 @@ export default function RepairCenterCustomerDetail() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor}`}>
-                            {statusConfig.label}
+                            {t(statusConfig.labelKey)}
                           </Badge>
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-muted-foreground text-sm">

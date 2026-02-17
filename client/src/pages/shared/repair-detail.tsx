@@ -224,9 +224,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         credentials: "include",
       });
       if (!response.ok) {
-        if (response.status === 404) throw new Error("Riparazione non trovata");
-        if (response.status === 403) throw new Error("Accesso negato");
-        throw new Error("Errore nel caricamento");
+        if (response.status === 404) throw new Error(t("repairs.repairNotFound"));
+        if (response.status === 403) throw new Error(t("standalone.accessDenied"));
+        throw new Error(t("standalone.loadingError"));
       }
       return response.json();
     },
@@ -255,7 +255,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       });
       if (!response.ok) {
         if (response.status === 404) return null;
-        throw new Error("Errore nel caricamento preventivo");
+        throw new Error(t("standalone.quoteLoadingError"));
       }
       return response.json();
     },
@@ -271,7 +271,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       });
       if (!response.ok) {
         if (response.status === 404) return null;
-        throw new Error("Errore nel caricamento dati accettazione");
+        throw new Error(t("standalone.acceptanceLoadingError"));
       }
       return response.json();
     },
@@ -340,7 +340,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}`, { repairCenterId });
     },
     onSuccess: () => {
-      toast({ title: "Centro di riparazione aggiornato" });
+      toast({ title: t("standalone.repairCenterUpdatedToast") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
@@ -410,7 +410,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty`, { warrantyProductId });
     },
     onSuccess: () => {
-      toast({ title: "Garanzia offerta", description: t("repairs.lOffertaDiGaranziaStataCreataConSuccesso") });
+      toast({ title: t("standalone.warrantyOffered"), description: t("repairs.lOffertaDiGaranziaStataCreataConSuccesso") });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
     },
     onError: (error: Error) => {
@@ -424,7 +424,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty/accept`);
     },
     onSuccess: () => {
-      toast({ title: "Garanzia accettata", description: t("repairs.laGaranziaStataAttivataConSuccesso") });
+      toast({ title: t("standalone.warrantyAccepted"), description: t("repairs.laGaranziaStataAttivataConSuccesso") });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
     },
     onError: (error: Error) => {
@@ -438,7 +438,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repairs/${repairOrderId}/warranty/decline`);
     },
     onSuccess: () => {
-      toast({ title: "Garanzia rifiutata", description: t("repairs.lOffertaDiGaranziaStataRifiutata") });
+      toast({ title: t("standalone.warrantyDeclined"), description: t("repairs.lOffertaDiGaranziaStataRifiutata") });
       queryClient.invalidateQueries({ queryKey: ["/api/repairs", repairOrderId, "warranty"] });
     },
     onError: (error: Error) => {
@@ -528,7 +528,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/quote/accept`);
     },
     onSuccess: () => {
-      toast({ title: "Preventivo accettato", description: t("repairs.laRiparazioneProcederComeIndicatoNelPrevent") });
+      toast({ title: t("standalone.quoteAcceptedTitle"), description: t("repairs.laRiparazioneProcederComeIndicatoNelPrevent") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
@@ -544,7 +544,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/quote/reject`);
     },
     onSuccess: () => {
-      toast({ title: "Preventivo rifiutato", description: t("repairs.laRiparazioneStataAnnullata") });
+      toast({ title: t("standalone.quoteRejectedTitle"), description: t("repairs.laRiparazioneStataAnnullata") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId, "quote"] });
@@ -581,7 +581,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/start-repair`);
     },
     onSuccess: () => {
-      toast({ title: "Riparazione avviata" });
+      toast({ title: t("standalone.repairStarted") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
@@ -595,7 +595,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/ready-for-pickup`);
     },
     onSuccess: () => {
-      toast({ title: "Dispositivo pronto per il ritiro" });
+      toast({ title: t("standalone.deviceReadyForPickupToast") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
@@ -609,7 +609,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/skip-quote`, { reason });
     },
     onSuccess: () => {
-      toast({ title: "Preventivo saltato", description: "La riparazione procede senza preventivo" });
+      toast({ title: t("standalone.quoteSkipped"), description: t("standalone.repairProceedsWithoutQuote") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       setSkipQuoteDialogOpen(false);
@@ -643,7 +643,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         credentials: "include",
       });
       if (!freshResponse.ok) {
-        throw new Error("Errore nel verificare lo stato attuale");
+        throw new Error(t("standalone.errorVerifyingCurrentStatus"));
       }
       const freshRepair = await freshResponse.json();
       
@@ -655,7 +655,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return await apiRequest("POST", getSkipDiagnosisEndpoint(), { reason });
     },
     onSuccess: () => {
-      toast({ title: "Diagnosi saltata", description: "Si procede direttamente al preventivo" });
+      toast({ title: t("standalone.diagnosisSkipped"), description: t("standalone.proceedDirectlyToQuote") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       setSkipDiagnosisDialogOpen(false);
@@ -676,15 +676,15 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       case "preventivo_emesso": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repairs.preventivoEmesso")}</Badge>;
       case "preventivo_accettato": return <Badge data-testid={`status-${status}`}>{t("repairs.preventivoAccettato")}</Badge>;
       case "preventivo_rifiutato": return <Badge variant="destructive" data-testid={`status-${status}`}>{t("repairs.preventivoRifiutato")}</Badge>;
-      case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>Attesa Ricambi</Badge>;
+      case "attesa_ricambi": return <Badge variant="outline" data-testid={`status-${status}`}>{t("standalone.waitingForParts")}</Badge>;
       case "in_riparazione": return <Badge data-testid={`status-${status}`}>{t("dashboard.inRiparazione")}</Badge>;
       case "in_test": return <Badge data-testid={`status-${status}`}>{t("dashboard.inTest")}</Badge>;
-      case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>Pronto Ritiro</Badge>;
+      case "pronto_ritiro": return <Badge data-testid={`status-${status}`}>{t("standalone.readyForPickupBtn")}</Badge>;
       case "consegnato": return <Badge variant="outline" data-testid={`status-${status}`}>{t("repairs.status.delivered")}</Badge>;
       case "cancelled": return <Badge variant="destructive" data-testid={`status-${status}`}>{t("repairs.status.cancelled")}</Badge>;
       case "pending": return <Badge variant="secondary" data-testid={`status-${status}`}>{t("b2b.status.pending")}</Badge>;
       case "in_progress": return <Badge data-testid={`status-${status}`}>{t("tickets.status.inProgress")}</Badge>;
-      case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>In attesa pezzi</Badge>;
+      case "waiting_parts": return <Badge variant="outline" data-testid={`status-${status}`}>{t("standalone.waitingForPartsShort")}</Badge>;
       case "completed": return <Badge variant="outline" data-testid={`status-${status}`}>{t("pos.completata")}</Badge>;
       case "delivered": return <Badge variant="outline" data-testid={`status-${status}`}>{t("shipping.delivered")}</Badge>;
       default: return <Badge variant="outline" data-testid={`status-${status}`}>{status}</Badge>;
@@ -692,7 +692,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   };
 
   const formatCurrency = (amount: number | null | undefined, inCents: boolean = false) => {
-    if (amount === null || amount === undefined) return "Da definire";
+    if (amount === null || amount === undefined) return t("standalone.toDefineAmount");
     const value = inCents ? amount / 100 : amount;
     return new Intl.NumberFormat("it-IT", {
       style: "currency",
@@ -701,22 +701,22 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   };
 
   const workflowSteps = [
-    { key: 'ingressato', label: 'Ingresso', icon: Package, num: 1 },
-    { key: 'in_diagnosi', label: 'Diagnosi', icon: Stethoscope, num: 2 },
-    { key: 'preventivo_emesso', label: 'Preventivo', icon: Receipt, num: 3 },
-    { key: 'preventivo_accettato', label: 'Accettato', icon: CheckCircle, num: 4 },
-    { key: 'attesa_ricambi', label: 'Ricambi', icon: Package, num: 5 },
-    { key: 'in_riparazione', label: 'Riparazione', icon: Wrench, num: 6 },
-    { key: 'in_test', label: 'Collaudo', icon: ClipboardCheck, num: 7 },
-    { key: 'pronto_ritiro', label: 'Pronto', icon: PackageCheck, num: 8 },
-    { key: 'consegnato', label: 'Consegnato', icon: Truck, num: 9 },
+    { key: 'ingressato', label: t("standalone.intake"), icon: Package, num: 1 },
+    { key: 'in_diagnosi', label: t("standalone.diagnosisStep"), icon: Stethoscope, num: 2 },
+    { key: 'preventivo_emesso', label: t("standalone.quoteStep"), icon: Receipt, num: 3 },
+    { key: 'preventivo_accettato', label: t("standalone.acceptedStep"), icon: CheckCircle, num: 4 },
+    { key: 'attesa_ricambi', label: t("standalone.partsStep"), icon: Package, num: 5 },
+    { key: 'in_riparazione', label: t("standalone.repairStep"), icon: Wrench, num: 6 },
+    { key: 'in_test', label: t("standalone.testingStep"), icon: ClipboardCheck, num: 7 },
+    { key: 'pronto_ritiro', label: t("standalone.readyStep"), icon: PackageCheck, num: 8 },
+    { key: 'consegnato', label: t("standalone.deliveredStep"), icon: Truck, num: 9 },
   ];
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       diagnosis: t("repairs.diagnosis"),
-      quote: "Preventivo",
-      repair: "Riparazione",
+      quote: t("common.quote"),
+      repair: t("common.repair"),
       testing: t("repairs.testing"),
       delivery: t("common.delivery"),
     };
@@ -780,7 +780,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return (
         <div className="flex flex-wrap items-center gap-2 text-sm text-destructive">
           <AlertCircle className="h-4 w-4" />
-          <span>Scaduto - {phaseLabel}: {timeStr}</span>
+          <span>{t("standalone.expired")} - {phaseLabel}: {timeStr}</span>
         </div>
       );
     }
@@ -789,7 +789,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       return (
         <div className="flex flex-wrap items-center gap-2 text-sm text-orange-600">
           <Clock className="h-4 w-4" />
-          <span>Urgente - {phaseLabel}: {timeStr}</span>
+          <span>{t("standalone.urgent")} - {phaseLabel}: {timeStr}</span>
         </div>
       );
     }
@@ -797,7 +797,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     return (
       <div className="flex flex-wrap items-center gap-2 text-sm text-green-600">
         <Clock className="h-4 w-4" />
-        <span>In Tempo - {phaseLabel}: {timeStr}</span>
+        <span>{t("standalone.inTime")} - {phaseLabel}: {timeStr}</span>
       </div>
     );
   };
@@ -822,9 +822,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">{error?.message || "Riparazione non trovata"}</p>
+        <p className="text-muted-foreground">{error?.message || t("repairs.repairNotFound")}</p>
         <Button onClick={() => setLocation(backPath)} className="mt-4" data-testid="button-back-error">
-          Torna alla Lista
+          {t("standalone.backToList")}
         </Button>
       </div>
     );
@@ -885,9 +885,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Wrench className="h-4 w-4 text-primary" />
                 </div>
-                <span>Flusso di Lavoro</span>
+                <span>{t("standalone.workflowTitle")}</span>
                 <Badge variant="outline" className="ml-auto">
-                  Fase {currentStepIndex + 1} di {workflowSteps.length}
+                  {t("standalone.phaseOf", { current: currentStepIndex + 1, total: workflowSteps.length })}
                 </Badge>
               </CardTitle>
             </CardHeader>
@@ -895,7 +895,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               {/* Progress Bar */}
               <div className="mb-6">
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                  <span>Avanzamento</span>
+                  <span>{t("standalone.progressLabel")}</span>
                   <span>{Math.round(((currentStepIndex + 1) / workflowSteps.length) * 100)}%</span>
                 </div>
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -938,7 +938,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         className={`flex flex-col items-center relative group ${clickable ? 'cursor-pointer' : ''}`}
                         data-testid={`workflow-step-${step.key}`}
                         onClick={() => clickable && handleStepClick(step.key, isCompleted, isSkipped)}
-                        title={clickable ? `Clicca per visualizzare ${step.label}` : undefined}
+                        title={clickable ? `${t("standalone.clickToView")} ${step.label}` : undefined}
                       >
                         <div className={`relative z-10 h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                           isRejected
@@ -990,7 +990,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
                     </div>
                     <p className="text-sm font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                      Prossimo Passo
+                      {t("standalone.nextStepLabel")}
                     </p>
                   </div>
                   
@@ -1006,7 +1006,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-start-diagnosis"
                         >
                           <Stethoscope className="mr-2 h-4 w-4" />
-                          Inizia Diagnosi
+                          {t("standalone.startDiagnosisBtn")}
                         </Button>
                         <Button
                           variant="outline"
@@ -1015,7 +1015,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-skip-diagnosis"
                         >
                           <SkipForward className="mr-2 h-4 w-4" />
-                          Salta Diagnosi
+                          {t("standalone.skipDiagnosisBtn")}
                         </Button>
                       </div>
                     </div>
@@ -1027,20 +1027,18 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
                             <SkipForward className="h-4 w-4" />
-                            <span>Diagnosi saltata{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
+                            <span>{t("standalone.diagnosisSkippedLabel")}{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
                           </div>
                           <p className="text-sm">
-                            <strong>{t("repairs.creaIlPreventivo")}</strong> per il cliente.
+                            <strong>{t("repairs.creaIlPreventivo")}</strong> {t("standalone.createQuoteForCustomer")}
                           </p>
                         </div>
                       ) : diagnosis ? (
                         <p className="text-sm">
-                          <strong>{t("repairs.diagnosiCompletata")}</strong> Ora <strong>crea il preventivo</strong> per il cliente.
+                          <strong>{t("repairs.diagnosiCompletata")}</strong> <span dangerouslySetInnerHTML={{ __html: t("standalone.nowCreateQuote") }} />
                         </p>
                       ) : (
-                        <p className="text-sm">
-                          Diagnosi in corso. <strong>Completa la diagnosi</strong> e poi <strong>crea il preventivo</strong> per il cliente.
-                        </p>
+                        <p className="text-sm" dangerouslySetInnerHTML={{ __html: t("standalone.diagnosisInProgressDesc") }} />
                       )}
                       <div className="flex gap-2">
                         {!repair.skipDiagnosis && (
@@ -1051,7 +1049,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             data-testid="button-edit-diagnosis"
                           >
                             <Stethoscope className="mr-2 h-4 w-4" />
-                            {diagnosis ? 'Modifica Diagnosi' : 'Completa Diagnosi'}
+                            {diagnosis ? t("standalone.editDiagnosis") : t("standalone.completeDiagnosis")}
                           </Button>
                         )}
                         <Button
@@ -1061,7 +1059,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-create-quote"
                         >
                           <Receipt className="mr-2 h-4 w-4" />
-                          Crea Preventivo
+                          {t("standalone.createQuoteBtn")}
                         </Button>
                       </div>
                       {(diagnosis || repair.skipDiagnosis) && (
@@ -1074,7 +1072,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             data-testid="button-skip-quote"
                           >
                             <SkipForward className="mr-2 h-4 w-4" />
-                            Salta Preventivo (Garanzia/Omaggio)
+                            {t("standalone.skipQuoteWarrantyGift")}
                           </Button>
                         </div>
                       )}
@@ -1084,7 +1082,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'preventivo_emesso' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        <strong>{t("remote.preventivoInviato")}</strong> al cliente. In attesa di risposta.
+                        <span dangerouslySetInnerHTML={{ __html: t("standalone.quoteSentAwaitingResponse") }} />
                       </p>
                       <div className="flex gap-2">
                         <Button
@@ -1095,7 +1093,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-reject-quote"
                         >
                           <XCircle className="mr-2 h-4 w-4" />
-                          Rifiutato
+                          {t("standalone.rejectedBtn")}
                         </Button>
                         <Button
                           onClick={() => updateQuoteStatusMutation.mutate('accepted')}
@@ -1104,7 +1102,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-accept-quote"
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
-                          Accettato
+                          {t("standalone.acceptedBtn")}
                         </Button>
                       </div>
                       <div className="pt-3 border-t">
@@ -1115,7 +1113,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-add-diagnosis-later"
                         >
                           <Stethoscope className="mr-2 h-4 w-4" />
-                          {diagnosis ? 'Modifica Diagnosi' : 'Aggiungi Diagnosi'}
+                          {diagnosis ? t("standalone.editDiagnosis") : t("standalone.addDiagnosis")}
                         </Button>
                       </div>
                     </div>
@@ -1126,16 +1124,16 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       {repair.quoteBypassReason && (
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
                           {repair.quoteBypassReason === 'garanzia' ? (
-                            <><Shield className="h-4 w-4" /> Riparazione in Garanzia</>
+                            <><Shield className="h-4 w-4" /> {t("standalone.repairUnderWarranty")}</>
                           ) : (
-                            <><Gift className="h-4 w-4" /> Riparazione Omaggio</>
+                            <><Gift className="h-4 w-4" /> {t("standalone.repairComplimentary")}</>
                           )}
                         </div>
                       )}
                       <p className="text-sm">
                         {repair.quoteBypassReason 
-                          ? "Preventivo saltato. Ordina i ricambi o avvia la riparazione."
-                          : "Preventivo accettato! Ordina i ricambi necessari o avvia la riparazione."
+                          ? t("standalone.quoteSkippedOrderParts")
+                          : t("standalone.quoteAcceptedOrderParts")
                         }
                       </p>
                       <div className="flex gap-2">
@@ -1146,7 +1144,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-order-parts"
                         >
                           <Package className="mr-2 h-4 w-4" />
-                          Ordina Ricambi
+                          {t("standalone.orderParts")}
                         </Button>
                         <Button
                           onClick={() => startRepairMutation.mutate()}
@@ -1159,7 +1157,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           ) : (
                             <Play className="mr-2 h-4 w-4" />
                           )}
-                          Avvia Riparazione
+                          {t("standalone.startRepair")}
                         </Button>
                       </div>
                       <div className="pt-3 border-t">
@@ -1170,7 +1168,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-add-diagnosis-accepted"
                         >
                           <Stethoscope className="mr-2 h-4 w-4" />
-                          {diagnosis ? 'Modifica Diagnosi' : 'Aggiungi Diagnosi'}
+                          {diagnosis ? t("standalone.editDiagnosis") : t("standalone.addDiagnosis")}
                         </Button>
                       </div>
                     </div>
@@ -1179,7 +1177,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'attesa_ricambi' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        <strong>In attesa dei ricambi.</strong> Quando arrivano, avvia la riparazione.
+                        <span dangerouslySetInnerHTML={{ __html: t("standalone.waitingForPartsMsg") }} />
                       </p>
                       <div className="flex gap-2">
                         <Button
@@ -1189,7 +1187,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-manage-parts"
                         >
                           <Package className="mr-2 h-4 w-4" />
-                          Gestisci Ricambi
+                          {t("standalone.manageParts")}
                         </Button>
                         <Button
                           onClick={() => startRepairMutation.mutate()}
@@ -1202,7 +1200,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           ) : (
                             <Play className="mr-2 h-4 w-4" />
                           )}
-                          Avvia Riparazione
+                          {t("standalone.startRepair")}
                         </Button>
                       </div>
                     </div>
@@ -1221,7 +1219,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-order-parts-repair"
                         >
                           <Package className="mr-2 h-4 w-4" />
-                          Ordina Ricambi
+                          {t("standalone.orderPartsBtn")}
                         </Button>
                         <Button
                           variant="outline"
@@ -1238,7 +1236,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-start-test"
                         >
                           <ClipboardCheck className="mr-2 h-4 w-4" />
-                          Avvia Collaudo
+                          {t("standalone.startTesting")}
                         </Button>
                       </div>
                     </div>
@@ -1247,7 +1245,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'in_test' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm">
-                        <strong>Collaudo in corso.</strong> Completa i test e segna come pronto.
+                        <span dangerouslySetInnerHTML={{ __html: t("standalone.testingInProgressMsg") }} />
                       </p>
                       <div className="flex gap-2">
                         <Button
@@ -1257,7 +1255,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-continue-test"
                         >
                           <ClipboardCheck className="mr-2 h-4 w-4" />
-                          Gestisci Collaudo
+                          {t("standalone.manageTesting")}
                         </Button>
                         <Button
                           onClick={() => readyForPickupMutation.mutate()}
@@ -1270,7 +1268,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           ) : (
                             <PackageCheck className="mr-2 h-4 w-4" />
                           )}
-                          Pronto per Ritiro
+                          {t("standalone.readyForPickupBtn")}
                         </Button>
                       </div>
                     </div>
@@ -1282,7 +1280,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         {user?.role === 'customer' ? (
                           <span dangerouslySetInnerHTML={{ __html: t("repairs.deviceReadyBookAppointmentFull") }} />
                         ) : (
-                          <>Dispositivo pronto per il ritiro. <strong>Prenota un appuntamento</strong> o <strong>completa la consegna</strong> quando il cliente arriva.</>
+                          <span dangerouslySetInnerHTML={{ __html: t("standalone.deviceReadyPickupStaff") }} />
                         )}
                       </p>
                       
@@ -1291,13 +1289,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         <div className="bg-green-50 dark:bg-green-950 rounded-lg p-3 border border-green-200 dark:border-green-800 space-y-2">
                           <div className="flex flex-wrap items-center gap-2 text-sm text-green-700 dark:text-green-300">
                             <CalendarCheck className="h-4 w-4" />
-                            <span className="font-medium">Appuntamento prenotato dal cliente</span>
+                            <span className="font-medium">{t("standalone.appointmentBookedByCustomer")}</span>
                           </div>
                           <div className="text-sm">
-                            <p>Data: <strong>{appointment.date}</strong></p>
-                            <p>Ora: <strong>{appointment.startTime} - {appointment.endTime}</strong></p>
+                            <p>{t("standalone.dateLabel")} <strong>{appointment.date}</strong></p>
+                            <p>{t("standalone.timeLabel")} <strong>{appointment.startTime} - {appointment.endTime}</strong></p>
                             {appointment.notes && (
-                              <p className="mt-1 text-muted-foreground">Note: {appointment.notes}</p>
+                              <p className="mt-1 text-muted-foreground">{t("standalone.notesLabel")} {appointment.notes}</p>
                             )}
                           </div>
                         </div>
@@ -1311,7 +1309,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           data-testid="button-book-appointment"
                         >
                           <CalendarCheck className="mr-2 h-4 w-4" />
-                          {appointment ? 'Gestisci Appuntamento' : 'Prenota Appuntamento'}
+                          {appointment ? t("standalone.manageAppointment") : t("standalone.bookAppointment")}
                         </Button>
                         {user?.role !== 'customer' && (
                           <Button
@@ -1320,7 +1318,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                             data-testid="button-complete-delivery"
                           >
                             <Truck className="mr-2 h-4 w-4" />
-                            Completa Consegna
+                            {t("standalone.completeDelivery")}
                           </Button>
                         )}
                       </div>
@@ -1332,17 +1330,17 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="mt-4 pt-4 border-t">
                       <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
                         <ShoppingBag className="h-3 w-3" />
-                        ACCESSORI CONSIGLIATI PER IL CLIENTE
+                        {t("standalone.suggestedAccessoriesTitle")}
                       </p>
                       {accessoriesLoading && (
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground p-3">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Caricamento accessori compatibili...
+                          {t("standalone.loadingCompatibleAccessories")}
                         </div>
                       )}
                       {!accessoriesLoading && suggestedAccessories.length === 0 && (
                         <p className="text-sm text-muted-foreground p-3 text-center">
-                          Nessun accessorio compatibile trovato per questo dispositivo.
+                          {t("standalone.noCompatibleAccessories")}
                         </p>
                       )}
                       <div className="grid gap-3">
@@ -1385,7 +1383,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         ))}
                         {suggestedAccessories.length > 4 && (
                           <p className="text-xs text-muted-foreground text-center">
-                            +{suggestedAccessories.length - 4} altri accessori compatibili
+                            {t("standalone.otherCompatibleAccessories", { count: suggestedAccessories.length - 4 })}
                           </p>
                         )}
                       </div>
@@ -1397,13 +1395,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="mt-4 pt-4 border-t">
                       <p className="text-xs text-muted-foreground mb-3 flex items-center gap-2">
                         <Shield className="h-3 w-3" />
-                        OFFERTA GARANZIA ESTESA
+                        {t("standalone.extendedWarrantyOffer")}
                       </p>
                       
                       {warrantyLoading && (
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground p-3">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Caricamento...
+                          {t("common.loading")}
                         </div>
                       )}
 
@@ -1428,18 +1426,18 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                               repairWarranty.status === 'accepted' ? 'default' :
                               repairWarranty.status === 'declined' ? 'destructive' : 'secondary'
                             }>
-                              {repairWarranty.status === 'offered' ? 'In attesa' :
-                               repairWarranty.status === 'accepted' ? 'Accettata' :
-                               repairWarranty.status === 'declined' ? 'Rifiutata' : 'Scaduta'}
+                              {repairWarranty.status === 'offered' ? t("standalone.warrantyStatusOffered") :
+                               repairWarranty.status === 'accepted' ? t("standalone.warrantyStatusAccepted") :
+                               repairWarranty.status === 'declined' ? t("standalone.warrantyStatusDeclined") : t("standalone.warrantyStatusExpired")}
                             </Badge>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                             <div>
-                              <span className="text-muted-foreground">Durata:</span>
-                              <p className="font-medium">{repairWarranty.durationMonthsSnapshot} mesi</p>
+                              <span className="text-muted-foreground">{t("standalone.durationLabel")}</span>
+                              <p className="font-medium">{repairWarranty.durationMonthsSnapshot} {t("standalone.monthsUnit")}</p>
                             </div>
                             <div>
-                              <span className="text-muted-foreground">Copertura:</span>
+                              <span className="text-muted-foreground">{t("standalone.coverageLabel")}</span>
                               <p className="font-medium capitalize">{repairWarranty.coverageTypeSnapshot}</p>
                             </div>
                             <div>
@@ -1464,7 +1462,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                 ) : (
                                   <XCircle className="mr-2 h-3 w-3" />
                                 )}
-                                Rifiuta
+                                {t("standalone.declineBtn")}
                               </Button>
                               <Button
                                 size="sm"
@@ -1478,13 +1476,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                 ) : (
                                   <CheckCircle2 className="mr-2 h-3 w-3" />
                                 )}
-                                Accetta
+                                {t("standalone.acceptBtn")}
                               </Button>
                             </div>
                           )}
                           {repairWarranty.status === 'accepted' && repairWarranty.startDate && repairWarranty.endDate && (
                             <div className="text-xs text-emerald-700 dark:text-emerald-300 pt-2 border-t border-emerald-200 dark:border-emerald-800">
-                              Valida dal {format(new Date(repairWarranty.startDate), 'dd/MM/yyyy', { locale: it })} al {format(new Date(repairWarranty.endDate), 'dd/MM/yyyy', { locale: it })}
+                              {t("standalone.validFromTo", { from: format(new Date(repairWarranty.startDate), 'dd/MM/yyyy', { locale: it }), to: format(new Date(repairWarranty.endDate), 'dd/MM/yyyy', { locale: it }) })}
                             </div>
                           )}
                         </div>
@@ -1496,12 +1494,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           {warrantyProductsLoading && (
                             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground p-3">
                               <Loader2 className="h-4 w-4 animate-spin" />
-                              Caricamento prodotti garanzia...
+                              {t("standalone.loadingWarrantyProducts")}
                             </div>
                           )}
                           {!warrantyProductsLoading && warrantyProducts.length === 0 && (
                             <p className="text-sm text-muted-foreground p-3 text-center">
-                              Nessun prodotto garanzia disponibile.
+                              {t("standalone.noWarrantyProducts")}
                             </p>
                           )}
                           <div className="grid gap-2">
@@ -1519,13 +1517,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                     <p className="font-medium text-sm">{product.name}</p>
                                     {!product.resellerId && (
                                       <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
-                                        Globale
+                                        {t("standalone.globalBadge")}
                                       </Badge>
                                     )}
                                   </div>
                                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                     <Badge variant="secondary" className="text-xs">
-                                      {product.durationMonths} mesi
+                                      {product.durationMonths} {t("standalone.monthsUnit")}
                                     </Badge>
                                     <span className="capitalize">{product.coverageType}</span>
                                   </div>
@@ -1543,7 +1541,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                                     {offerWarrantyMutation.isPending ? (
                                       <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
-                                      'Offri'
+                                      t("standalone.offerBtn")
                                     )}
                                   </Button>
                                 </div>
@@ -1559,10 +1557,10 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 space-y-2 border border-red-200 dark:border-red-800">
                       <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
                         <XCircle className="h-4 w-4" />
-                        <strong>Il cliente ha rifiutato il preventivo.</strong>
+                        <strong>{t("standalone.customerRejectedQuote")}</strong>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Puoi contattare il cliente per negoziare o creare un nuovo preventivo.
+                        {t("standalone.contactCustomerNegotiate")}
                       </p>
                     </div>
                   )}
@@ -1571,7 +1569,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4">
                       <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4" />
-                        <strong>Riparazione completata e consegnata!</strong>
+                        <strong>{t("standalone.repairCompletedDeliveredMsg")}</strong>
                       </p>
                     </div>
                   )}
@@ -1585,7 +1583,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="flex flex-wrap items-center gap-2">
                       <Receipt className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                       <p className="font-medium text-amber-800 dark:text-amber-200">
-                        Preventivo in attesa di risposta
+                        {t("standalone.quotePendingResponse")}
                       </p>
                     </div>
                     <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border">
@@ -1597,7 +1595,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Accetta il preventivo per procedere con la riparazione, oppure rifiutalo per annullare.
+                      {t("standalone.acceptQuoteToRepair")}
                     </p>
                     <div className="flex gap-3">
                       <Button
@@ -1612,7 +1610,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         ) : (
                           <XCircle className="mr-2 h-4 w-4" />
                         )}
-                        Rifiuta Preventivo
+                        {t("standalone.rejectQuoteBtn")}
                       </Button>
                       <Button
                         onClick={() => acceptQuoteMutation.mutate()}
@@ -1625,7 +1623,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         ) : (
                           <CheckCircle className="mr-2 h-4 w-4" />
                         )}
-                        Accetta Preventivo
+                        {t("standalone.acceptQuoteBtn")}
                       </Button>
                     </div>
                   </div>
@@ -1643,17 +1641,17 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       </p>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Prenota un appuntamento per venire a ritirare il tuo dispositivo presso il centro di riparazione.
+                      {t("standalone.bookPickupAppointment")}
                     </p>
                     {appointment ? (
                       <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border space-y-2">
                         <div className="flex flex-wrap items-center gap-2 text-sm">
                           <CalendarCheck className="h-4 w-4 text-primary" />
-                          <span className="font-medium">Appuntamento prenotato</span>
+                          <span className="font-medium">{t("standalone.appointmentBooked")}</span>
                         </div>
                         <div className="text-sm">
-                          <p>Data: <strong>{appointment.date}</strong></p>
-                          <p>Ora: <strong>{appointment.startTime} - {appointment.endTime}</strong></p>
+                          <p>{t("standalone.dateLabel")} <strong>{appointment.date}</strong></p>
+                          <p>{t("standalone.timeLabel")} <strong>{appointment.startTime} - {appointment.endTime}</strong></p>
                         </div>
                         <Button
                           variant="outline"
@@ -1662,7 +1660,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           className="w-full mt-2"
                           data-testid="button-customer-manage-appointment"
                         >
-                          Gestisci Appuntamento
+                          {t("standalone.manageAppointmentBtn")}
                         </Button>
                       </div>
                     ) : (
@@ -1672,7 +1670,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                         data-testid="button-customer-book-appointment"
                       >
                         <CalendarCheck className="mr-2 h-4 w-4" />
-                        Prenota Appuntamento per il Ritiro
+                        {t("standalone.bookPickupAppointmentBtn")}
                       </Button>
                     )}
                   </div>
@@ -1680,7 +1678,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               )}
 
               <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground mb-3">DOCUMENTI</p>
+                <p className="text-xs text-muted-foreground mb-3">{t("standalone.documentsTitle")}</p>
                 <div className="flex flex-wrap gap-3">
                   <Button
                     variant="outline"
@@ -1689,7 +1687,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     data-testid="button-download-acceptance"
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Accettazione
+                    {t("standalone.acceptanceDoc")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1698,7 +1696,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     data-testid="button-download-labels"
                   >
                     <Tag className="mr-2 h-4 w-4" />
-                    Etichette
+                    {t("standalone.labelsDoc")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1707,7 +1705,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     data-testid="button-download-diagnosis"
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Diagnosi
+                    {t("standalone.diagnosisDoc")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1716,7 +1714,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     data-testid="button-download-quote"
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Preventivo
+                    {t("standalone.quoteDoc")}
                   </Button>
                   <Button
                     variant="outline"
@@ -1725,7 +1723,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     data-testid="button-download-delivery"
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Consegna/Garanzia
+                    {t("standalone.deliveryWarrantyDoc")}
                   </Button>
                 </div>
               </div>
@@ -1760,7 +1758,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <p className="font-semibold mt-1">{repair.deviceModel}</p>
               </div>
               <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
-                <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">Problema Segnalato</span>
+                <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">{t("standalone.reportedProblem")}</span>
                 <p className="font-medium mt-1 text-sm">{repair.issueDescription}</p>
               </div>
               {(repair.imei || repair.serial) && (
@@ -1773,7 +1771,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   )}
                   {repair.serial && (
                     <div className="bg-muted/30 rounded-lg p-3">
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Seriale</span>
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("standalone.serialLabel")}</span>
                       <p className="font-mono text-sm mt-1">{repair.serial}</p>
                     </div>
                   )}
@@ -1790,7 +1788,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                   <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <span>Centro di Riparazione</span>
+                <span>{t("standalone.repairCenterTitle")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1802,7 +1800,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 if (!repair.repairCenterId) {
                   return (
                     <p className="text-sm text-muted-foreground" data-testid="text-no-center">
-                      Nessun centro assegnato
+                      {t("standalone.noCenterAssigned")}
                     </p>
                   );
                 }
@@ -1810,7 +1808,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 if (!assignedCenter) {
                   return (
                     <p className="text-sm text-muted-foreground" data-testid="text-center-loading">
-                      Caricamento centro...
+                      {t("standalone.loadingCenter")}
                     </p>
                   );
                 }
@@ -1870,7 +1868,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               {/* Dropdown for changing center - only for admin/reseller/reseller_staff */}
               {(user?.role === 'admin' || user?.role === 'reseller' || user?.role === 'reseller_staff') && (
                 <div className="pt-3 border-t">
-                  <span className="text-sm text-muted-foreground block mb-2">Cambia centro</span>
+                  <span className="text-sm text-muted-foreground block mb-2">{t("standalone.changeCenter")}</span>
                   <Select
                     value={repair.repairCenterId || "unassigned"}
                     onValueChange={(value) => updateRepairCenterMutation.mutate(value === "unassigned" ? null : value)}
@@ -1898,13 +1896,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <ClipboardCheck className="h-4 w-4" />
-                  Dati Accettazione
+                  {t("standalone.acceptanceDataTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {acceptance.declaredDefects && acceptance.declaredDefects.length > 0 && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Guasti Dichiarati</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.declaredDefects")}</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {acceptance.declaredDefects.map((defect, idx) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
@@ -1916,13 +1914,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 )}
                 {acceptance.aestheticCondition && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Condizione Estetica</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.aestheticCondition")}</span>
                     <p className="font-medium">{acceptance.aestheticCondition}</p>
                   </div>
                 )}
                 {acceptance.aestheticNotes && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Note Estetiche</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.aestheticNotes")}</span>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{acceptance.aestheticNotes}</p>
                   </div>
                 )}
@@ -1940,16 +1938,16 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 )}
                 {acceptance.hasLockCode && (
                   <div className="space-y-2 pt-2 border-t">
-                    <span className="text-sm text-muted-foreground font-medium">Codici di Sblocco</span>
+                    <span className="text-sm text-muted-foreground font-medium">{t("standalone.unlockCodes")}</span>
                     {acceptance.lockCode && (
                       <div>
-                        <span className="text-xs text-muted-foreground">PIN/Password:</span>
+                        <span className="text-xs text-muted-foreground">{t("standalone.pinPassword")}</span>
                         <p className="font-mono text-sm" data-testid="text-lock-code">{acceptance.lockCode}</p>
                       </div>
                     )}
                     {acceptance.lockPattern && (
                       <div>
-                        <span className="text-xs text-muted-foreground">Sequenza Pattern:</span>
+                        <span className="text-xs text-muted-foreground">{t("standalone.sequencePattern")}</span>
                         <div className="mt-1">
                           <PatternLock value={acceptance.lockPattern} readOnly />
                         </div>
@@ -1957,13 +1955,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     )}
                     {!acceptance.lockCode && !acceptance.lockPattern && (
                       <p className="text-sm text-muted-foreground italic">
-                        Cliente ha indicato presenza codice ma non fornito
+                        {t("repairs.customerIndicatedCodeNotProvided")}
                       </p>
                     )}
                   </div>
                 )}
                 <div className="pt-2 border-t">
-                  <span className="text-sm text-muted-foreground">Data Accettazione</span>
+                  <span className="text-sm text-muted-foreground">{t("standalone.acceptanceDate")}</span>
                   <p className="font-medium">{format(new Date(acceptance.acceptedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                 </div>
               </CardContent>
@@ -1975,7 +1973,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Stethoscope className="h-4 w-4" />
-                  Dati Diagnosi
+                  {t("repairs.diagnosisData")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -1987,7 +1985,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 )}
                 {diagnosis.damagedComponents && diagnosis.damagedComponents.length > 0 && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Componenti Danneggiati</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.damagedComponents")}</span>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {diagnosis.damagedComponents.map((comp: string, idx: number) => (
                         <Badge key={idx} variant="destructive" className="text-xs">
@@ -1999,36 +1997,36 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 )}
                 {diagnosis.diagnosisOutcome && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Esito Diagnosi</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.diagnosisOutcome")}</span>
                     <Badge 
                       variant={diagnosis.diagnosisOutcome === 'riparabile' ? 'default' : diagnosis.diagnosisOutcome === 'irriparabile' ? 'destructive' : 'secondary'}
                       className="ml-2"
                     >
-                      {diagnosis.diagnosisOutcome === 'riparabile' ? 'Riparabile' : diagnosis.diagnosisOutcome === 'irriparabile' ? 'Irriparabile' : 'Non Conveniente'}
+                      {diagnosis.diagnosisOutcome === 'riparabile' ? t("repairs.repairable") : diagnosis.diagnosisOutcome === 'irriparabile' ? t("repairs.unrepairable") : t("repairs.notWorthRepairing")}
                     </Badge>
                   </div>
                 )}
                 {diagnosis.estimatedRepairTime && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Tempo Stimato Riparazione</span>
-                    <p className="font-medium">{diagnosis.estimatedRepairTime} ore</p>
+                    <span className="text-sm text-muted-foreground">{t("standalone.estimatedRepairTime")}</span>
+                    <p className="font-medium">{diagnosis.estimatedRepairTime} {t("standalone.hoursUnit")}</p>
                   </div>
                 )}
                 {diagnosis.requiresExternalParts && (
                   <div className="flex flex-wrap items-center gap-2 text-amber-600 dark:text-amber-400">
                     <Package className="h-4 w-4" />
-                    <span className="text-sm">Richiede ricambi esterni</span>
+                    <span className="text-sm">{t("standalone.requiresExternalParts")}</span>
                   </div>
                 )}
                 {diagnosis.diagnosisNotes && (
                   <div>
-                    <span className="text-sm text-muted-foreground">Note del Tecnico</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.technicianNotes")}</span>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">{diagnosis.diagnosisNotes}</p>
                   </div>
                 )}
                 {diagnosis.diagnosedAt && (
                   <div className="pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Data Diagnosi</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.diagnosisDate")}</span>
                     <p className="font-medium">{format(new Date(diagnosis.diagnosedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                   </div>
                 )}
@@ -2042,7 +2040,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Smartphone className="h-4 w-4 text-green-600" />
-                  Smartphone Consigliati
+                  {t("repairs.suggestedSmartphones")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -2084,14 +2082,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <ClipboardCheck className="h-4 w-4" />
-                  Dati Collaudo
+                  {t("repairs.testData")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2 mb-3">
-                  <span className="text-sm font-medium">Esito Complessivo:</span>
+                  <span className="text-sm font-medium">{t("standalone.overallOutcome")}</span>
                   <Badge variant={testChecklist.overallResult ? 'default' : 'destructive'}>
-                    {testChecklist.overallResult ? 'Superato' : 'Non Superato'}
+                    {testChecklist.overallResult ? t("standalone.passed") : t("standalone.failed")}
                   </Badge>
                 </div>
                 
@@ -2099,13 +2097,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {[
                     { key: 'displayTest', label: 'Display' },
                     { key: 'touchTest', label: 'Touch' },
-                    { key: 'batteryTest', label: 'Batteria' },
+                    { key: 'batteryTest', label: t('repairs.batteryTest') },
                     { key: 'audioTest', label: 'Audio' },
-                    { key: 'cameraTest', label: 'Fotocamera' },
+                    { key: 'cameraTest', label: t('repairs.cameraTest') },
                     { key: 'connectivityTest', label: t('repairs.connectivityTest') },
-                    { key: 'buttonsTest', label: 'Pulsanti' },
-                    { key: 'sensorsTest', label: 'Sensori' },
-                    { key: 'chargingTest', label: 'Ricarica' },
+                    { key: 'buttonsTest', label: t('repairs.buttonsTest') },
+                    { key: 'sensorsTest', label: t('repairs.sensorsTest') },
+                    { key: 'chargingTest', label: t('repairs.chargingTest') },
                     { key: 'softwareTest', label: 'Software' },
                   ].map(({ key, label }) => {
                     const value = testChecklist[key as keyof typeof testChecklist];
@@ -2125,14 +2123,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
                 {testChecklist.notes && (
                   <div className="pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Note Collaudo</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.testingNotes")}</span>
                     <p className="text-sm whitespace-pre-wrap mt-1">{testChecklist.notes}</p>
                   </div>
                 )}
 
                 {testChecklist.testedAt && (
                   <div className="pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Data Collaudo</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.testingDate")}</span>
                     <p className="font-medium">{format(new Date(testChecklist.testedAt), "dd/MM/yyyy HH:mm", { locale: it })}</p>
                   </div>
                 )}
@@ -2149,7 +2147,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    Dati Cliente
+                    {t("repairs.customerData")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -2211,7 +2209,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Euro className="h-4 w-4" />
-                  Preventivo
+                  {t("repairs.quote")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2222,7 +2220,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">{t("common.status")}</span>
                   <Badge variant={quote.status === 'accepted' ? 'default' : quote.status === 'rejected' ? 'destructive' : 'outline'}>
-                    {quote.status === 'pending' || quote.status === 'sent' || quote.status === 'draft' ? 'In Attesa' : quote.status === 'accepted' ? 'Accettato' : 'Rifiutato'}
+                    {quote.status === 'pending' || quote.status === 'sent' || quote.status === 'draft' ? t("repairs.pending") : quote.status === 'accepted' ? t("repairs.accepted") : t("repairs.rejected")}
                   </Badge>
                 </div>
                 
@@ -2261,7 +2259,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 {/* Labor cost */}
                 {quote.laborCost > 0 && (
                   <div className="flex justify-between items-center pt-2 border-t">
-                    <span className="text-sm text-muted-foreground">Manodopera</span>
+                    <span className="text-sm text-muted-foreground">{t("standalone.laborCost")}</span>
                     <span className="font-medium">
                       {(quote.laborCost / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
                     </span>
@@ -2298,7 +2296,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Paperclip className="h-4 w-4" />
-              Allegati
+              {t("standalone.attachmentsTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -2315,7 +2313,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <HardDrive className="h-4 w-4" />
-                Recupero Dati
+                {t("standalone.dataRecoveryTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2337,7 +2335,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               ) : (
                 <div className="text-center py-4">
                   <p className="text-sm text-muted-foreground mb-3">
-                    Il cliente ha richiesto il recupero dati
+                    {t("standalone.customerRequestedDataRecovery")}
                   </p>
                   <Button
                     variant="outline"
@@ -2345,7 +2343,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     data-testid="button-start-data-recovery"
                   >
                     <HardDrive className="mr-2 h-4 w-4" />
-                    Gestisci Recupero Dati
+                    {t("repairs.manageDataRecovery")}
                   </Button>
                 </div>
               )}
@@ -2358,7 +2356,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <CalendarCheck className="h-4 w-4" />
-                Appuntamento Consegna
+                {t("repairs.deliveryAppointment")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2372,7 +2370,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   </p>
                 </div>
                 <Badge variant={appointment.status === 'confirmed' ? 'default' : 'outline'}>
-                  {appointment.status === 'confirmed' ? 'Confermato' : 'In Attesa'}
+                  {appointment.status === 'confirmed' ? t("repairs.confirmed") : t("repairs.pending")}
                 </Badge>
               </div>
             </CardContent>
@@ -2384,7 +2382,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Note
+                {t("common.notes")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2451,9 +2449,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       <Dialog open={skipDiagnosisDialogOpen} onOpenChange={setSkipDiagnosisDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Salta Diagnosi</DialogTitle>
+            <DialogTitle>{t("standalone.skipDiagnosisTitle")}</DialogTitle>
             <DialogDescription>
-              Conferma per saltare la diagnosi tecnica e procedere direttamente al preventivo.
+              {t("standalone.skipDiagnosisDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -2475,7 +2473,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSkipDiagnosisDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() => skipDiagnosisMutation.mutate(skipDiagnosisReason || undefined)}
@@ -2487,7 +2485,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               ) : (
                 <SkipForward className="mr-2 h-4 w-4" />
               )}
-              Conferma e Salta
+              {t("standalone.confirmAndSkip")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2496,9 +2494,9 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       <Dialog open={skipQuoteDialogOpen} onOpenChange={setSkipQuoteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Salta Preventivo</DialogTitle>
+            <DialogTitle>{t("standalone.skipQuoteTitle")}</DialogTitle>
             <DialogDescription>
-              Seleziona il motivo per cui il preventivo viene saltato.
+              {t("standalone.skipQuoteDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -2519,13 +2517,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 data-testid="button-skip-gift"
               >
                 <Gift className="h-6 w-6" />
-                <span>Omaggio</span>
+                <span>{t("standalone.gift")}</span>
               </Button>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSkipQuoteDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={() => skipQuoteReason && skipQuoteMutation.mutate(skipQuoteReason)}
@@ -2535,7 +2533,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               {skipQuoteMutation.isPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Conferma
+              {t("common.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

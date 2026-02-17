@@ -77,11 +77,11 @@ function NotificationCard({ notification, onMarkAsRead }: { notification: Notifi
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                 )}
                 <Badge variant="secondary" className="text-xs whitespace-nowrap">
-                  {notification.type === 'system' ? 'Sistema' : 
-                   notification.type === 'repair_update' ? 'Riparazione' :
+                  {notification.type === 'system' ? t("common.system") : 
+                   notification.type === 'repair_update' ? t("common.repair") :
                    notification.type === 'sla_warning' ? 'SLA' :
-                   notification.type === 'review_request' ? 'Recensione' :
-                   notification.type === 'message' ? 'Messaggio' : 'Altro'}
+                   notification.type === 'review_request' ? t("common.review") :
+                   notification.type === 'message' ? t("common.message") : t("common.other")}
                 </Badge>
               </div>
             </div>

@@ -284,7 +284,7 @@ export default function RepairCenterInvoices() {
                   <TableRow>
                     <TableHead>{t("common.number")}</TableHead>
                     <TableHead>{t("common.date")}</TableHead>
-                    <TableHead className="hidden md:table-cell">Fonte</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("common.source")}</TableHead>
                     <TableHead className="text-right">Imponibile</TableHead>
                     <TableHead className="hidden lg:table-cell text-right">IVA%</TableHead>
                     <TableHead className="hidden lg:table-cell text-right">IVA</TableHead>

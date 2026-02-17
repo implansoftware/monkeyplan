@@ -285,8 +285,8 @@ export default function ResellerShipments() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nuova spedizione</DialogTitle>
-            <DialogDescription>Crea una nuova spedizione per un ordine</DialogDescription>
+            <DialogTitle>{t("shipping.newShipment")}</DialogTitle>
+            <DialogDescription>{t("shipping.newShipmentDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">

@@ -48,11 +48,11 @@ interface UtilitySummary {
 
 function getCategoryLabels(t: (key: string) => string): Record<string, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
     altro: t("common.other"),
   };
 }
@@ -71,7 +71,7 @@ function getStatusLabels(t: (key: string) => string): Record<string, string> {
     bozza: t("invoices.draft"),
     inviata: t("invoices.sent"),
     in_lavorazione: t("repairs.inProgress"),
-    completata: "Completata",
+    completata: t("utility.practiceStatus.completata"),
     annullata: t("common.cancelled"),
     rifiutata: t("common.rejected"),
   };
@@ -111,7 +111,7 @@ export default function ResellerUtilityReports() {
   }));
 
   const commissionsData = [
-    { name: "Pagate", value: summary?.commissions?.paid || 0, fill: "#22c55e" },
+    { name: t("utility.paid"), value: summary?.commissions?.paid || 0, fill: "#22c55e" },
     { name: t("common.pending"), value: summary?.commissions?.pending || 0, fill: "#eab308" },
   ];
 
@@ -133,7 +133,7 @@ export default function ResellerUtilityReports() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">{t("utility.reportTitle")}</h1>
-                <p className="text-white/80">Statistiche e report</p>
+                <p className="text-white/80">{t("utility.statisticsAndReports")}</p>
               </div>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function ResellerUtilityReports() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">{t("utility.reportTitle")}</h1>
-              <p className="text-white/80">Statistiche e report</p>
+              <p className="text-white/80">{t("utility.statisticsAndReports")}</p>
             </div>
           </div>
           <Select
@@ -195,13 +195,13 @@ export default function ResellerUtilityReports() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="rounded-2xl" data-testid="card-total-practices">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Totale Pratiche</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.totalPractices")}</CardTitle>
             <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.totalPractices || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {summary?.activePractices || 0} completate
+              {summary?.activePractices || 0} {t("utility.practiceStatus.completata").toLowerCase()}
             </p>
           </CardContent>
         </Card>
@@ -213,26 +213,26 @@ export default function ResellerUtilityReports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.supplierCount || 0}</div>
-            <p className="text-xs text-muted-foreground">Provider attivi</p>
+            <p className="text-xs text-muted-foreground">{t("utility.activeProviders")}</p>
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl" data-testid="card-commissions-pending">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsPending")}</CardTitle>
             <Coins className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(summary?.commissions?.pending || 0)}
             </div>
-            <p className="text-xs text-muted-foreground">Da liquidare</p>
+            <p className="text-xs text-muted-foreground">{t("utility.toBePaid")}</p>
           </CardContent>
         </Card>
 
         <Card className="rounded-2xl" data-testid="card-commissions-total">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Totali</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsTotal")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -247,7 +247,7 @@ export default function ResellerUtilityReports() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="rounded-2xl" data-testid="card-chart-categories">
           <CardHeader>
-            <CardTitle className="text-lg">Pratiche per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.practicesByCategory")}</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryData.length > 0 ? (
@@ -270,7 +270,7 @@ export default function ResellerUtilityReports() {
                     </Pie>
                     <Tooltip 
                       formatter={(value, name, props) => [
-                        `${value} pratiche - ${formatCurrency(props.payload.commissions)}`,
+                        `${value} ${t("utility.practicesLabel").toLowerCase()} - ${formatCurrency(props.payload.commissions)}`,
                         name
                       ]}
                     />
@@ -285,7 +285,7 @@ export default function ResellerUtilityReports() {
 
         <Card className="rounded-2xl" data-testid="card-chart-status">
           <CardHeader>
-            <CardTitle className="text-lg">Pratiche per Stato</CardTitle>
+            <CardTitle className="text-lg">{t("utility.practicesByStatus")}</CardTitle>
           </CardHeader>
           <CardContent>
             {statusData.length > 0 ? (
@@ -296,7 +296,7 @@ export default function ResellerUtilityReports() {
                     <XAxis type="number" />
                     <YAxis dataKey="name" type="category" width={100} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#8884d8" name="Pratiche" />
+                    <Bar dataKey="count" fill="#8884d8" name={t("utility.practicesLabel")} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -308,7 +308,7 @@ export default function ResellerUtilityReports() {
 
         <Card className="rounded-2xl" data-testid="card-chart-commissions">
           <CardHeader>
-            <CardTitle className="text-lg">Stato Commissioni</CardTitle>
+            <CardTitle className="text-lg">{t("utility.commissionsStatusTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             {(summary?.commissions?.total || 0) > 0 ? (
@@ -342,7 +342,7 @@ export default function ResellerUtilityReports() {
 
         <Card className="rounded-2xl" data-testid="card-categories-detail">
           <CardHeader>
-            <CardTitle className="text-lg">Dettaglio per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.categoryDetail")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -364,13 +364,13 @@ export default function ResellerUtilityReports() {
                         <div>
                           <p className="font-medium">{cat.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {cat.value} pratiche
+                            {cat.value} {t("utility.practicesLabel").toLowerCase()}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">{formatCurrency(cat.commissions)}</p>
-                        <p className="text-xs text-muted-foreground">commissioni</p>
+                        <p className="text-xs text-muted-foreground">{t("utility.commissionsLabel")}</p>
                       </div>
                     </div>
                   );

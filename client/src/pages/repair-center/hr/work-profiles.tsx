@@ -42,7 +42,7 @@ export default function RepairCenterHrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/work-profiles"] });
       setDialogOpen(false);
       setNewProfile({ name: "", description: "", weeklyHours: "40", dailyHours: "8" });
-      toast({ title: "Profilo creato", description: t("hr.ilProfiloOrarioStatoCreatoConSuccesso") });
+      toast({ title: t("hr.profileCreated"), description: t("hr.ilProfiloOrarioStatoCreatoConSuccesso") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -70,7 +70,7 @@ export default function RepairCenterHrWorkProfiles() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/work-profiles"] });
-      toast({ title: "Profilo eliminato" });
+      toast({ title: t("hr.profileDeleted") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -116,20 +116,20 @@ export default function RepairCenterHrWorkProfiles() {
               <Briefcase className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">Profili Lavoro</h1>
-              <p className="text-emerald-100">Configurazione orari di lavoro</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.workProfiles")}</h1>
+              <p className="text-emerald-100">{t("hr.workHoursConfig")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/repair-center/hr">
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard HR
+                {t("hr.dashboardHR")}
               </Button>
             </Link>
             <Button onClick={() => { setEditingProfile(null); setNewProfile({ name: "", description: "", weeklyHours: "40", dailyHours: "8" }); setDialogOpen(true); }} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline">
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo Profilo
+              {t("hr.newProfile")}
             </Button>
           </div>
         </div>
@@ -137,7 +137,7 @@ export default function RepairCenterHrWorkProfiles() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Profili Configurati</CardTitle>
+          <CardTitle>{t("hr.configuredProfiles")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -146,7 +146,7 @@ export default function RepairCenterHrWorkProfiles() {
             </div>
           ) : workProfiles.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nessun profilo orario configurato
+              {t("hr.noProfilesConfigured")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -155,8 +155,8 @@ export default function RepairCenterHrWorkProfiles() {
                 <TableRow>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead className="hidden md:table-cell">{t("common.description")}</TableHead>
-                  <TableHead>Ore/Sett.</TableHead>
-                  <TableHead>Ore/Giorno</TableHead>
+                  <TableHead>{t("hr.weeklyHoursShort")}</TableHead>
+                  <TableHead>{t("hr.dailyHoursShort")}</TableHead>
                   <TableHead className="hidden sm:table-cell">Default</TableHead>
                   <TableHead>{t("common.actions")}</TableHead>
                 </TableRow>
@@ -193,8 +193,8 @@ export default function RepairCenterHrWorkProfiles() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingProfile ? "Modifica Profilo" : "Nuovo Profilo Orario"}</DialogTitle>
-            <DialogDescription>Configura le impostazioni del profilo orario</DialogDescription>
+            <DialogTitle>{editingProfile ? t("hr.editProfile") : t("hr.newWorkProfile")}</DialogTitle>
+            <DialogDescription>{t("hr.configureProfileSettings")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -203,16 +203,16 @@ export default function RepairCenterHrWorkProfiles() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium">Ore Settimanali</label>
+                <label className="text-sm font-medium">{t("hr.weeklyHours")}</label>
                 <Input type="number" value={newProfile.weeklyHours} onChange={(e) => setNewProfile({ ...newProfile, weeklyHours: e.target.value })} />
               </div>
               <div>
-                <label className="text-sm font-medium">Ore Giornaliere</label>
+                <label className="text-sm font-medium">{t("hr.dailyHours")}</label>
                 <Input type="number" value={newProfile.dailyHours} onChange={(e) => setNewProfile({ ...newProfile, dailyHours: e.target.value })} />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Descrizione (opzionale)</label>
+              <label className="text-sm font-medium">{t("hr.descriptionOptional")}</label>
               <Textarea value={newProfile.description} onChange={(e) => setNewProfile({ ...newProfile, description: e.target.value })} placeholder={t("hr.profileDescription")} />
             </div>
           </div>

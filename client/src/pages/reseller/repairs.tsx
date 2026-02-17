@@ -293,7 +293,7 @@ export default function ResellerRepairs() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Totale Lavorazioni</p>
                 <p className="text-3xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">{totalRepairs}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {repairs.length > 0 ? `Pagina ${page}/${totalPages}` : 'Nessun filtro'}
+                  {repairs.length > 0 ? `${t("common.page")} ${page}/${totalPages}` : t("common.noFilter")}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">

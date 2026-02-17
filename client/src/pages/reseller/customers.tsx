@@ -366,9 +366,9 @@ export default function ResellerCustomers() {
               <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Users className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="font-medium mb-1">Nessun cliente trovato</h3>
+              <h3 className="font-medium mb-1">{t("customers.noCustomerFound")}</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                {searchQuery ? "Prova a modificare i criteri di ricerca" : "Inizia aggiungendo il tuo primo cliente"}
+                {searchQuery ? t("common.tryDifferentSearch") : t("customers.startAddingFirstCustomer")}
               </p>
               {!searchQuery && (
                 <Button className="mt-4" onClick={() => setDialogOpen(true)}>

@@ -23,11 +23,11 @@ export const DEVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
 export const DEVICE_CATEGORY_LABELS: Record<string, string> = {
   smartphone: "Smartphone",
   tablet: "Tablet",
-  portatile: "PC Portatile",
-  pc_fisso: "PC Fisso",
+  portatile: "Laptop",
+  pc_fisso: "Desktop PC",
   smartwatch: "Smartwatch",
   console: "Console",
-  altro: "Altro",
+  altro: "Other",
 };
 
 export const PRODUCT_TYPE_LABEL_KEYS: Record<string, string> = {
@@ -37,9 +37,9 @@ export const PRODUCT_TYPE_LABEL_KEYS: Record<string, string> = {
 };
 
 export const PRODUCT_TYPE_LABELS: Record<string, string> = {
-  dispositivo: "Dispositivo",
-  ricambio: "Ricambio",
-  accessorio: "Accessorio",
+  dispositivo: "Device",
+  ricambio: "Spare Part",
+  accessorio: "Accessory",
 };
 
 export const CATEGORY_SPECS_CONFIG: Record<string, CategorySpecsConfig> = {

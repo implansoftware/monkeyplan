@@ -136,7 +136,7 @@ export default function HrExpenses() {
       setDialogOpen(false);
       setNewReport({ title: "", description: "", userId: "", amountEuro: "" });
       setNewReportFile(null);
-      toast({ title: t("hr.expenseCreated"), description: "La nota spese è stata creata con successo." });
+      toast({ title: t("hr.expenseCreated"), description: t("hr.expenseCreatedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -149,7 +149,7 @@ export default function HrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
-      toast({ title: t("tickets.statusUpdated"), description: "Lo stato della nota spese è stato aggiornato." });
+      toast({ title: t("tickets.statusUpdated"), description: t("hr.expenseStatusUpdatedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -164,7 +164,7 @@ export default function HrExpenses() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       setEditDialogOpen(false);
       setEditingReport(null);
-      toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
+      toast({ title: t("hr.expenseUpdated"), description: t("hr.changesSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -187,7 +187,7 @@ export default function HrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
-      toast({ title: t("utility.noteDeleted"), description: "La nota spese è stata eliminata." });
+      toast({ title: t("utility.noteDeleted"), description: t("hr.expenseDeletedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -214,7 +214,7 @@ export default function HrExpenses() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
       setUploadingReportId(null);
-      toast({ title: t("hr.attachmentUploaded"), description: "Il giustificativo è stato caricato con successo." });
+      toast({ title: t("hr.attachmentUploaded"), description: t("hr.attachmentUploadedDesc") });
     },
     onError: (error: any) => {
       setUploadingReportId(null);
@@ -244,7 +244,7 @@ export default function HrExpenses() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/expense-reports", entityType, selectedEntityId] });
-      toast({ title: t("hr.attachmentRemoved"), description: "Il giustificativo è stato rimosso." });
+      toast({ title: t("hr.attachmentRemoved"), description: t("hr.attachmentRemovedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -283,7 +283,7 @@ export default function HrExpenses() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white" data-testid="text-expenses-title">{t("sidebar.items.expenseReimbursement")}</h1>
-                <p className="text-white/80">Gestione note spese e trasferte</p>
+                <p className="text-white/80">{t("hr.expenseManagement")}</p>
               </div>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function HrExpenses() {
             </div>
             <div>
               <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-sm text-muted-foreground">Note spese in attesa</p>
+              <p className="text-sm text-muted-foreground">{t("hr.pendingExpenses")}</p>
             </div>
           </CardContent>
         </Card>
@@ -335,7 +335,7 @@ export default function HrExpenses() {
             </div>
             <div>
               <p className="text-2xl font-bold">{(totalPending / 100).toFixed(2)}</p>
-              <p className="text-sm text-muted-foreground">Totale da approvare</p>
+              <p className="text-sm text-muted-foreground">{t("hr.totalToApprove")}</p>
             </div>
           </CardContent>
         </Card>
@@ -356,11 +356,11 @@ export default function HrExpenses() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.allMasc")}</SelectItem>
-                <SelectItem value="draft">Bozze</SelectItem>
+                <SelectItem value="draft">{t("invoices.draft")}</SelectItem>
                 <SelectItem value="pending">{t("common.pending")}</SelectItem>
-                <SelectItem value="approved">Approvate</SelectItem>
-                <SelectItem value="rejected">Rifiutate</SelectItem>
-                <SelectItem value="paid">Pagate</SelectItem>
+                <SelectItem value="approved">{t("common.approved")}</SelectItem>
+                <SelectItem value="rejected">{t("common.rejected")}</SelectItem>
+                <SelectItem value="paid">{t("invoices.paid")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -413,7 +413,7 @@ export default function HrExpenses() {
                                 size="icon"
                                 variant="ghost"
                                 onClick={() => downloadReceiptMutation.mutate(report.id)}
-                                title={`Scarica: ${report.receiptFileName}`}
+                                title={`${t("common.download")}: ${report.receiptFileName}`}
                                 data-testid={`button-download-receipt-${report.id}`}
                               >
                                 <Download className="h-4 w-4 text-emerald-600" />
@@ -535,11 +535,11 @@ export default function HrExpenses() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("hr.newExpense")}</DialogTitle>
-            <DialogDescription>Crea una nuova nota spese</DialogDescription>
+            <DialogDescription>{t("hr.createNewExpenseDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Dipendente Richiedente *</Label>
+              <Label>{t("hr.requestingEmployee")}</Label>
               <Select 
                 value={newReport.userId} 
                 onValueChange={(v) => setNewReport({ ...newReport, userId: v })}
@@ -562,7 +562,7 @@ export default function HrExpenses() {
               <Input
                 value={newReport.title}
                 onChange={(e) => setNewReport({ ...newReport, title: e.target.value })}
-                placeholder="es. Trasferta Milano"
+                placeholder={t("hr.expenseTitlePlaceholder")}
                 data-testid="input-title"
               />
             </div>
@@ -592,7 +592,7 @@ export default function HrExpenses() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Allegato (opzionale)</Label>
+              <Label>{t("hr.attachmentOptional")}</Label>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   type="file"
@@ -614,7 +614,7 @@ export default function HrExpenses() {
               </div>
               {newReportFile && (
                 <p className="text-xs text-muted-foreground">
-                  File selezionato: {newReportFile.name}
+                  {t("hr.fileSelected")} {newReportFile.name}
                 </p>
               )}
             </div>
@@ -636,20 +636,20 @@ export default function HrExpenses() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("hr.editExpense")}</DialogTitle>
-            <DialogDescription>Modifica i dati della nota spese di {editingReport?.user?.fullName}</DialogDescription>
+            <DialogDescription>{t("hr.editExpenseDataOf")} {editingReport?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Titolo *</Label>
+              <Label>{t("hr.titleRequired")}</Label>
               <Input
                 value={editForm.title}
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                placeholder="es. Trasferta Milano"
+                placeholder={t("hr.expenseTitlePlaceholder")}
                 data-testid="input-edit-title"
               />
             </div>
             <div className="space-y-2">
-              <Label>Importo Totale (EUR) *</Label>
+              <Label>{t("hr.totalAmountRequired")}</Label>
               <div className="relative">
                 <Euro className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -665,7 +665,7 @@ export default function HrExpenses() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Descrizione (opzionale)</Label>
+              <Label>{t("hr.descriptionOptional")}</Label>
               <Textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}

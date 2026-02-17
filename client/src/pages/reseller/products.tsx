@@ -1704,7 +1704,7 @@ export default function ResellerProducts() {
                     >{t("common.next")}</Button>
                   ) : (
                     <Button type="submit" disabled={createProductMutation.isPending} data-testid="button-submit-create">
-                      {createProductMutation.isPending ? t("pages.creating") : "Crea Prodotto"}
+                      {createProductMutation.isPending ? t("pages.creating") : t("products.createProduct")}
                     </Button>
                   )}
                 </div>

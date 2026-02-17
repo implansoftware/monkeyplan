@@ -102,7 +102,7 @@ export default function AdminPriceListDetail() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Errore durante l'aggiornamento dell'aliquota.",
+        description: error.message || t("products.errorUpdatingVatRate"),
         variant: "destructive",
       });
     },
@@ -129,7 +129,7 @@ export default function AdminPriceListDetail() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Errore durante l'aggiunta della voce.",
+        description: error.message || t("products.errorAddingItem"),
         variant: "destructive",
       });
     },
@@ -149,7 +149,7 @@ export default function AdminPriceListDetail() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Errore durante l'eliminazione della voce.",
+        description: error.message || t("products.errorDeletingItem"),
         variant: "destructive",
       });
     },
@@ -252,7 +252,7 @@ export default function AdminPriceListDetail() {
   if (!priceList) {
     return (
       <div className="container mx-auto py-6 text-center">
-        <p className="text-muted-foreground">Listino non trovato</p>
+        <p className="text-muted-foreground">{t("products.priceListNotFound")}</p>
         <Link href="/admin/price-lists">
           <Button variant="ghost">{t("products.backToPriceLists")}</Button>
         </Link>
@@ -282,7 +282,7 @@ export default function AdminPriceListDetail() {
         <div className="flex items-center gap-2">
           {isAdminList && (
             <Badge className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white">
-              Tuo Listino
+              {t("products.yourPriceList")}
             </Badge>
           )}
           <Badge variant="outline" className="text-xs">
@@ -314,10 +314,10 @@ export default function AdminPriceListDetail() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Percent className="h-4 w-4 text-emerald-500" />
-              Aliquota IVA del Listino
+              {t("products.priceListVatRate")}
             </CardTitle>
             <CardDescription>
-              Seleziona l'aliquota IVA predefinita per questo listino
+              {t("products.selectDefaultVatRate")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -348,7 +348,7 @@ export default function AdminPriceListDetail() {
                 ) : (
                   <Save className="h-4 w-4 mr-1" />
                 )}
-                Salva
+                {t("common.save")}
               </Button>
             </div>
           </CardContent>
@@ -361,7 +361,7 @@ export default function AdminPriceListDetail() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Euro className="h-5 w-5 text-emerald-500" />
-                Voci del Listino
+                {t("products.priceListItems")}
               </CardTitle>
               <CardDescription>
                 {filteredItems.length} voci nel listino {!isAdminList && "(sola lettura)"}
@@ -544,11 +544,11 @@ export default function AdminPriceListDetail() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[60px]">Foto</TableHead>
+                  <TableHead className="w-[60px]">{t("common.photo")}</TableHead>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
-                  <TableHead className="text-right">Prezzo Originale</TableHead>
-                  <TableHead className="text-right">Prezzo Listino</TableHead>
+                  <TableHead className="text-right">{t("products.originalPrice")}</TableHead>
+                  <TableHead className="text-right">{t("products.listPrice")}</TableHead>
                   <TableHead className="text-center">IVA</TableHead>
                   {isAdminList && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
                 </TableRow>
@@ -575,9 +575,9 @@ export default function AdminPriceListDetail() {
                       <TableCell>
                         <Badge variant="outline">
                           {isProduct ? (
-                            <><Package className="h-3 w-3 mr-1" /> Prodotto</>
+                            <><Package className="h-3 w-3 mr-1" /> {t("common.product")}</>
                           ) : (
-                            <><Wrench className="h-3 w-3 mr-1" /> Servizio</>
+                            <><Wrench className="h-3 w-3 mr-1" /> {t("common.service")}</>
                           )}
                         </Badge>
                       </TableCell>

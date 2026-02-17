@@ -150,7 +150,7 @@ export default function AdminExternalIntegrations() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Integrazioni Esterne</h1>
               <p className="text-sm text-muted-foreground">
-                Gestisci le integrazioni con fornitori API esterni
+                {t("common.manageExternalIntegrations")}
               </p>
             </div>
           </div>

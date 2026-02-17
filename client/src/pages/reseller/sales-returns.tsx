@@ -111,7 +111,7 @@ export default function ResellerSalesReturns() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Reso aggiornato con successo" });
+      toast({ title: t("common.returnUpdated") });
       queryClient.invalidateQueries({ queryKey: ['/api/sales-returns'] });
       setShowUpdateDialog(false);
       setSelectedReturn(null);
@@ -361,7 +361,7 @@ export default function ResellerSalesReturns() {
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Dettagli Reso</DialogTitle>
+            <DialogTitle>{t("common.returnDetails")}</DialogTitle>
             <DialogDescription>
               {selectedReturn?.returnNumber}
             </DialogDescription>
@@ -409,7 +409,7 @@ export default function ResellerSalesReturns() {
       <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Gestisci Reso</DialogTitle>
+            <DialogTitle>{t("common.manageReturn")}</DialogTitle>
             <DialogDescription>
               {selectedReturn?.returnNumber}
             </DialogDescription>

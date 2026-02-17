@@ -54,7 +54,7 @@ export function EntityFilterSelector({
       const rc = repairCenters.find(r => r.id === selectedEntityId);
       return rc?.name || "Centro";
     }
-    return "Il mio Team";
+    return t("hr.myTeam");
   };
 
   return (
@@ -75,7 +75,7 @@ export function EntityFilterSelector({
           <SelectItem value="own">
             <div className="flex flex-wrap items-center gap-2">
               <Users className="h-4 w-4" />
-              <span>Il mio Team</span>
+              <span>{t("hr.myTeam")}</span>
             </div>
           </SelectItem>
           {subResellers.length > 0 && (
@@ -136,7 +136,7 @@ export function EntityFilterSelector({
 
       {!isOwnTeam && selectedEntityId && (
         <Badge variant="outline" className="ml-2">
-          Dati di: {getEntityName()}
+          {t("hr.dataOf")}: {getEntityName()}
         </Badge>
       )}
     </div>

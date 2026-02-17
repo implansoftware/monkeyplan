@@ -195,7 +195,7 @@ export default function ResellerShopCatalog() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white" data-testid="text-page-title">{t("sidebar.items.shopCatalog")}</h1>
-              <p className="text-white/80 text-sm">Prodotti disponibili per la vendita</p>
+              <p className="text-white/80 text-sm">{t("products.availableForSale")}</p>
             </div>
           </div>
         </div>

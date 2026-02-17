@@ -434,11 +434,11 @@ export default function PosSessionsPage() {
 
                 {session.totalsByVatRate && Object.keys(session.totalsByVatRate).length > 0 && (
                   <div className="mt-3 pt-3 border-t">
-                    <div className="text-sm font-medium mb-2">Riepilogo IVA (Corrispettivi)</div>
+                    <div className="text-sm font-medium mb-2">{t("common.vatSummary")}</div>
                     <div className="grid grid-cols-4 gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">Aliquota</span>
-                      <span className="font-medium text-right">Imponibile</span>
-                      <span className="font-medium text-right">IVA</span>
+                      <span className="font-medium">{t("common.vatRate")}</span>
+                      <span className="font-medium text-right">{t("common.taxableAmount")}</span>
+                      <span className="font-medium text-right">{t("common.vat")}</span>
                       <span className="font-medium text-right">{t("common.total")}</span>
                     </div>
                     {Object.entries(session.totalsByVatRate).map(([rate, data]) => (

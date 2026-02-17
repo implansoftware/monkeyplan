@@ -378,7 +378,7 @@ export default function RepairCenterTransferRequestsPage() {
                                 </div>
                                 <div className="text-right">
                                   <Badge variant="secondary">
-                                    {totalStock} disponibili
+                                    {totalStock} {t("common.available")}
                                   </Badge>
                                   <p className="text-xs text-muted-foreground mt-1">
                                     {Array.from(new Set(item.warehouses.map(w => w.ownerName))).join(', ')}

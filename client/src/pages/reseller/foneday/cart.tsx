@@ -141,7 +141,7 @@ export default function FonedayCartPage() {
       setSelectedShipping("");
       toast({
         title: t("cart.orderSubmitted"),
-        description: `Ordine #${data.order_number} creato con successo`,
+        description: t("integrations.orderCreatedSuccess", { number: data.order_number }),
       });
     },
     onError: (error: Error) => {
@@ -205,11 +205,11 @@ export default function FonedayCartPage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>Credenziali Foneday non configurate.</span>
+            <span>{t("integrations.credentialsNotConfigured")}</span>
             <Link href="/reseller/foneday/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                Configura
+                {t("integrations.configure")}
               </Button>
             </Link>
           </AlertDescription>
@@ -225,7 +225,7 @@ export default function FonedayCartPage() {
           <ShoppingCart className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">{t("cart.fonedayCart")}</h1>
-            <p className="text-muted-foreground">Gestisci i prodotti nel carrello e completa l'ordine</p>
+            <p className="text-muted-foreground">{t("integrations.manageCartAndOrder")}</p>
           </div>
         </div>
         <Link href="/reseller/foneday/catalog">
@@ -248,7 +248,7 @@ export default function FonedayCartPage() {
             <ShoppingCart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">{t("pos.emptyCart")}</h3>
             <p className="text-muted-foreground mb-4">
-              Non hai ancora aggiunto prodotti al carrello
+              {t("integrations.noProductsCartYet")}
             </p>
             <Link href="/reseller/foneday/catalog">
               <Button>
@@ -263,7 +263,7 @@ export default function FonedayCartPage() {
           <div className="lg:col-span-2 space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle>Prodotti ({cart.length})</CardTitle>
+                <CardTitle>{t("integrations.productsCount", { count: cart.length })}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {cart.map((item) => (
@@ -350,7 +350,7 @@ export default function FonedayCartPage() {
                     
                     <div className="space-y-3">
                       <div>
-                        <Label>Nome *</Label>
+                        <Label>{t("common.name")} *</Label>
                         <Input
                           value={address.name}
                           onChange={(e) => setAddress({ ...address, name: e.target.value })}
@@ -368,7 +368,7 @@ export default function FonedayCartPage() {
                         />
                       </div>
                       <div>
-                        <Label>Indirizzo *</Label>
+                        <Label>{t("integrations.addressRequired")}</Label>
                         <Input
                           value={address.address_line1}
                           onChange={(e) => setAddress({ ...address, address_line1: e.target.value })}
@@ -377,7 +377,7 @@ export default function FonedayCartPage() {
                         />
                       </div>
                       <div>
-                        <Label>Indirizzo 2</Label>
+                        <Label>{t("integrations.address2")}</Label>
                         <Input
                           value={address.address_line2}
                           onChange={(e) => setAddress({ ...address, address_line2: e.target.value })}
@@ -387,7 +387,7 @@ export default function FonedayCartPage() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <Label>Città *</Label>
+                          <Label>{t("integrations.cityRequired")}</Label>
                           <Input
                             value={address.city}
                             onChange={(e) => setAddress({ ...address, city: e.target.value })}
@@ -396,7 +396,7 @@ export default function FonedayCartPage() {
                           />
                         </div>
                         <div>
-                          <Label>CAP *</Label>
+                          <Label>{t("integrations.postalCodeRequired")}</Label>
                           <Input
                             value={address.postal_code}
                             onChange={(e) => setAddress({ ...address, postal_code: e.target.value })}
@@ -406,7 +406,7 @@ export default function FonedayCartPage() {
                         </div>
                       </div>
                       <div>
-                        <Label>Telefono *</Label>
+                        <Label>{t("integrations.phoneRequired")}</Label>
                         <Input
                           value={address.phone}
                           onChange={(e) => setAddress({ ...address, phone: e.target.value })}
@@ -415,12 +415,12 @@ export default function FonedayCartPage() {
                         />
                       </div>
                       <div>
-                        <Label>Email *</Label>
+                        <Label>{t("integrations.emailRequired")}</Label>
                         <Input
                           type="email"
                           value={address.email}
                           onChange={(e) => setAddress({ ...address, email: e.target.value })}
-                          placeholder="email@esempio.com"
+                          placeholder={t("foneday.emailPlaceholder")}
                           data-testid="input-shipping-email"
                         />
                       </div>

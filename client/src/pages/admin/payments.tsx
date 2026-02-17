@@ -345,7 +345,7 @@ export default function AdminPayments() {
           {filteredPayments.length === 0 ? (
             <div className="p-12 text-center">
               <CreditCard className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Nessun pagamento trovato</p>
+              <p className="text-muted-foreground">{t("common.noPaymentFound")}</p>
             </div>
           ) : (
             <Table>

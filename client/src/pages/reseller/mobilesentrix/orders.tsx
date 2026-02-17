@@ -64,7 +64,7 @@ type OrderDetails = {
 function getStatusConfigMap(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive"; icon: typeof Clock }> {
   return {
     pending: { label: t("common.pending"), variant: "secondary", icon: Clock },
-    processing: { label: "In Elaborazione", variant: "default", icon: Package },
+    processing: { label: t("integrations.processing"), variant: "default", icon: Package },
     shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
     Shipped: { label: t("b2b.status.shipped"), variant: "default", icon: Truck },
     complete: { label: t("common.completed"), variant: "default", icon: CheckCircle },
@@ -107,7 +107,7 @@ export default function MobilesentrixOrdersPage() {
   const handleViewDetails = async (order: MobilesentrixOrder) => {
     const orderId = order.mobilesentrixOrderId;
     if (orderId.startsWith('pending-')) {
-      setDetailsError("Ordine in elaborazione. I dettagli saranno disponibili a breve.");
+      setDetailsError(t("integrations.orderProcessing"));
       setSelectedOrderId(orderId);
       return;
     }
@@ -124,10 +124,10 @@ export default function MobilesentrixOrdersPage() {
       if (data.success && data.data) {
         setOrderDetails(data.data);
       } else {
-        setDetailsError(data.message || "Impossibile caricare i dettagli");
+        setDetailsError(data.message || t("integrations.unableToLoadDetails"));
       }
     } catch (error: any) {
-      setDetailsError(error.message || "Errore nel caricamento dei dettagli");
+      setDetailsError(error.message || t("integrations.errorLoadingDetails"));
     } finally {
       setLoadingDetails(false);
     }
@@ -151,8 +151,8 @@ export default function MobilesentrixOrdersPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Package className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">I Miei Ordini MobileSentrix</h1>
-            <p className="text-muted-foreground">Storico degli ordini effettuati su MobileSentrix</p>
+            <h1 className="text-2xl font-bold">{t("integrations.myOrders")}</h1>
+            <p className="text-muted-foreground">{t("integrations.orderHistory")}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -171,12 +171,12 @@ export default function MobilesentrixOrdersPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Nessun ordine</h2>
-            <p className="text-muted-foreground mb-4">Non hai ancora effettuato ordini su MobileSentrix</p>
+            <h2 className="text-xl font-semibold mb-2">{t("integrations.noOrders")}</h2>
+            <p className="text-muted-foreground mb-4">{t("integrations.noOrdersYet")}</p>
             <Link href="/reseller/mobilesentrix/catalog">
               <Button data-testid="button-browse-catalog">
                 <Package className="h-4 w-4 mr-2" />
-                Sfoglia Catalogo
+                {t("integrations.browseCatalog")}
               </Button>
             </Link>
           </CardContent>
@@ -194,7 +194,7 @@ export default function MobilesentrixOrdersPage() {
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-3">
                         <h3 className="font-semibold text-lg">
-                          Ordine #{order.orderNumber || order.mobilesentrixOrderId}
+                          {t("mobilesentrix.orderPrefix")} #{order.orderNumber || order.mobilesentrixOrderId}
                         </h3>
                         <Badge variant={config.variant} className="flex flex-wrap items-center gap-1">
                           <StatusIcon className="h-3 w-3" />
@@ -241,10 +241,10 @@ export default function MobilesentrixOrdersPage() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
-              Dettagli Ordine #{orderDetails?.increment_id || selectedOrderId}
+              {t("integrations.orderDetails")} #{orderDetails?.increment_id || selectedOrderId}
             </DialogTitle>
             <DialogDescription>
-              Informazioni complete sull'ordine
+              {t("integrations.completeOrderInfo")}
             </DialogDescription>
           </DialogHeader>
 
@@ -310,7 +310,7 @@ export default function MobilesentrixOrdersPage() {
                 <div className="p-4 border rounded-md">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4" />
-                    <h4 className="font-semibold">Indirizzo di Spedizione</h4>
+                    <h4 className="font-semibold">{t("integrations.shippingAddress")}</h4>
                   </div>
                   <p className="text-sm">
                     {shippingAddress.firstname} {shippingAddress.lastname}
@@ -327,7 +327,7 @@ export default function MobilesentrixOrdersPage() {
               )}
 
               <div>
-                <h4 className="font-semibold mb-3">Articoli Ordinati ({orderDetails.order_items?.length || 0})</h4>
+                <h4 className="font-semibold mb-3">{t("integrations.orderedItems", { count: orderDetails.order_items?.length || 0 })}</h4>
                 <div className="space-y-2">
                   {orderDetails.order_items?.map((item, index) => {
                     const qty = parseFloat(item.qty_ordered) || 1;
@@ -342,10 +342,10 @@ export default function MobilesentrixOrdersPage() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm">{item.name || t("common.product")}</p>
                           <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
-                          <p className="text-xs text-muted-foreground">{formatPrice(unitPrice)} cad.</p>
+                          <p className="text-xs text-muted-foreground">{formatPrice(unitPrice)} {t("integrations.each")}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm">Qtà: {qty}</p>
+                          <p className="text-sm">{t("integrations.qty")}: {qty}</p>
                           <p className="font-semibold">{formatPrice(rowTotal)}</p>
                         </div>
                       </div>
@@ -355,9 +355,9 @@ export default function MobilesentrixOrdersPage() {
               </div>
 
               <div className="text-xs text-muted-foreground pt-2 border-t">
-                <p>Creato: {format(new Date(orderDetails.created_at), "d MMMM yyyy, HH:mm", { locale: it })}</p>
+                <p>{t("integrations.created")}: {format(new Date(orderDetails.created_at), "d MMMM yyyy, HH:mm", { locale: it })}</p>
                 {orderDetails.updated_at && (
-                  <p>Aggiornato: {format(new Date(orderDetails.updated_at), "d MMMM yyyy, HH:mm", { locale: it })}</p>
+                  <p>{t("integrations.updated")}: {format(new Date(orderDetails.updated_at), "d MMMM yyyy, HH:mm", { locale: it })}</p>
                 )}
               </div>
             </div>

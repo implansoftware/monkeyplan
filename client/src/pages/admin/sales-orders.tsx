@@ -237,7 +237,7 @@ export default function AdminSalesOrders() {
                 <ShoppingBag className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Totale ordini</p>
+                <p className="text-sm text-muted-foreground">{t("common.totalOrders")}</p>
                 <p className="text-2xl font-bold" data-testid="stat-total-orders">{stats.total}</p>
               </div>
             </div>
@@ -329,7 +329,7 @@ export default function AdminSalesOrders() {
           {filteredOrders.length === 0 ? (
             <div className="p-12 text-center">
               <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Nessun ordine trovato</p>
+              <p className="text-muted-foreground">{t("common.noOrderFound")}</p>
             </div>
           ) : (
             <Table>
@@ -463,7 +463,7 @@ export default function AdminSalesOrders() {
                             {item.productImage ? (
                               <img 
                                 src={item.productImage} 
-                                alt={item.productName || 'Prodotto'} 
+                                alt={item.productName || t("common.product")} 
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -471,7 +471,7 @@ export default function AdminSalesOrders() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{item.productName || 'Prodotto'}</p>
+                            <p className="font-medium truncate">{item.productName || t("common.product")}</p>
                             <p className="text-sm text-muted-foreground">
                               Qtà: {item.quantity} x {formatPrice(item.unitPrice)}
                             </p>
@@ -480,7 +480,7 @@ export default function AdminSalesOrders() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-muted-foreground text-sm p-3 bg-muted/50 rounded-lg">Nessun prodotto</p>
+                      <p className="text-muted-foreground text-sm p-3 bg-muted/50 rounded-lg">{t("common.noProducts")}</p>
                     )}
                   </div>
                 </div>

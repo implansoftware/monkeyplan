@@ -89,7 +89,7 @@ export default function RepairCenterHrExpenses() {
       setDialogOpen(false);
       setNewReport({ title: "", description: "", totalAmount: "", userId: "" });
       setNewReportFile(null);
-      toast({ title: "Nota spese creata", description: t("hr.laNotaSpeseStataCreataConSuccesso") });
+      toast({ title: t("hr.expenseCreated"), description: t("hr.laNotaSpeseStataCreataConSuccesso") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -117,7 +117,7 @@ export default function RepairCenterHrExpenses() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/expense-reports"] });
       setEditDialogOpen(false);
       setEditingReport(null);
-      toast({ title: "Nota spese modificata", description: "Le modifiche sono state salvate." });
+      toast({ title: t("hr.expenseUpdated"), description: t("hr.changesSaved") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -218,19 +218,19 @@ export default function RepairCenterHrExpenses() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.expenses")}</h1>
-              <p className="text-emerald-100">Gestione note spese e trasferte</p>
+              <p className="text-emerald-100">{t("hr.expenseManagement")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/repair-center/hr">
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard HR
+                {t("hr.dashboardHR")}
               </Button>
             </Link>
             <Button onClick={() => setDialogOpen(true)} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Nota Spese
+              {t("hr.newExpense")}
             </Button>
           </div>
         </div>
@@ -247,7 +247,7 @@ export default function RepairCenterHrExpenses() {
             </div>
           ) : expenseReports.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nessuna nota spese presente
+              {t("hr.noExpenses")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -283,7 +283,7 @@ export default function RepairCenterHrExpenses() {
                               size="icon"
                               variant="ghost"
                               onClick={() => downloadReceiptMutation.mutate(report.id)}
-                              title={`Scarica: ${report.receiptFileName}`}
+                              title={`${t("common.download")}: ${report.receiptFileName}`}
                               data-testid={`button-download-receipt-${report.id}`}
                             >
                               <Download className="h-4 w-4 text-emerald-600" />
@@ -342,7 +342,7 @@ export default function RepairCenterHrExpenses() {
                         )}
                         {report.status === "draft" && (
                           <Button size="sm" variant="outline" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "pending" })}>
-                            Invia
+                            {t("common.submit")}
                           </Button>
                         )}
                         {report.status === "pending" && (
@@ -357,7 +357,7 @@ export default function RepairCenterHrExpenses() {
                         )}
                         {report.status === "approved" && (
                           <Button size="sm" variant="outline" onClick={() => updateStatusMutation.mutate({ id: report.id, status: "paid" })}>
-                            Segna Pagata
+                            {t("hr.markAsPaid")}
                           </Button>
                         )}
                       </div>
@@ -393,18 +393,18 @@ export default function RepairCenterHrExpenses() {
             </div>
             <div>
               <label className="text-sm font-medium">{t("common.title")}</label>
-              <Input value={newReport.title} onChange={(e) => setNewReport({ ...newReport, title: e.target.value })} placeholder="Es. Trasferta Milano" />
+              <Input value={newReport.title} onChange={(e) => setNewReport({ ...newReport, title: e.target.value })} placeholder={t("hr.expenseTitlePlaceholder")} />
             </div>
             <div>
               <label className="text-sm font-medium">{t("b2b.importoTotale")}</label>
               <Input type="number" step="0.01" value={newReport.totalAmount} onChange={(e) => setNewReport({ ...newReport, totalAmount: e.target.value })} placeholder="0.00" />
             </div>
             <div>
-              <label className="text-sm font-medium">Descrizione (opzionale)</label>
+              <label className="text-sm font-medium">{t("hr.descriptionOptional")}</label>
               <Textarea value={newReport.description} onChange={(e) => setNewReport({ ...newReport, description: e.target.value })} placeholder={t("hr.expenseDetails")} />
             </div>
             <div className="space-y-2">
-              <Label>Allegato (opzionale)</Label>
+              <Label>{t("hr.attachmentOptional")}</Label>
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   type="file"
@@ -426,7 +426,7 @@ export default function RepairCenterHrExpenses() {
               </div>
               {newReportFile && (
                 <p className="text-xs text-muted-foreground">
-                  File selezionato: {newReportFile.name}
+                  {t("hr.fileSelected")} {newReportFile.name}
                 </p>
               )}
             </div>
@@ -434,7 +434,7 @@ export default function RepairCenterHrExpenses() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={() => createMutation.mutate({ ...newReport, totalAmount: parseFloat(newReport.totalAmount) || 0, file: newReportFile })} disabled={createMutation.isPending || !newReport.title || !newReport.userId}>
-              {createMutation.isPending ? "Creazione..." : t("hr.createExpenseReport")}
+              {createMutation.isPending ? t("pages.creating") : t("hr.createExpenseReport")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -444,7 +444,7 @@ export default function RepairCenterHrExpenses() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("hr.editExpense")}</DialogTitle>
-            <DialogDescription>Modifica i dati della nota spese di {editingReport?.user?.fullName}</DialogDescription>
+            <DialogDescription>{t("hr.editExpenseDataOf")} {editingReport?.user?.fullName}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -452,7 +452,7 @@ export default function RepairCenterHrExpenses() {
               <Input 
                 value={editForm.title} 
                 onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} 
-                placeholder="Es. Trasferta Milano" 
+                placeholder={t("hr.expenseTitlePlaceholder")} 
               />
             </div>
             <div>
@@ -466,7 +466,7 @@ export default function RepairCenterHrExpenses() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Descrizione (opzionale)</label>
+              <label className="text-sm font-medium">{t("hr.descriptionOptional")}</label>
               <Textarea 
                 value={editForm.description} 
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} 

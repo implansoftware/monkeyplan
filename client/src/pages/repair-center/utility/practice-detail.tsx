@@ -54,12 +54,14 @@ const taskStatusIcons: Record<TaskStatus, typeof Circle> = {
   annullato: XCircle,
 };
 
-const priorityLabels: Record<Priority, string> = {
-  bassa: "Bassa",
-  normale: "Normale",
-  alta: "Alta",
-  urgente: "Urgente",
-};
+function getPriorityLabels(t: (key: string) => string): Record<Priority, string> {
+  return {
+    bassa: t("utility.priorityLabels.bassa"),
+    normale: t("utility.priorityLabels.normale"),
+    alta: t("utility.priorityLabels.alta"),
+    urgente: t("utility.priorityLabels.urgente"),
+  };
+}
 
 const priorityColors: Record<Priority, string> = {
   bassa: "bg-gray-100 text-gray-700",
@@ -99,6 +101,7 @@ interface EnrichedPractice extends UtilityPractice {
 
 export default function RepairCenterUtilityPracticeDetail() {
   const { t } = useTranslation();
+  const priorityLabels = getPriorityLabels(t);
   const statusLabels: Record<PracticeStatus, string> = {
     bozza: t("utility.practiceStatus.bozza"),
     inviata: t("utility.practiceStatus.inviata"),
@@ -119,7 +122,7 @@ export default function RepairCenterUtilityPracticeDetail() {
     documento_identita: t("utility.documentTypes.documentoIdentita"),
     codice_fiscale: t("utility.documentTypes.codiceFiscale"),
     bolletta: t("utility.documentTypes.bolletta"),
-    conferma_fornitore: "Conferma Fornitore",
+    conferma_fornitore: t("utility.supplierConfirmLabel"),
     fattura: t("common.invoice"),
     altro: t("utility.serviceTypes.altro"),
   };
@@ -274,9 +277,9 @@ export default function RepairCenterUtilityPracticeDetail() {
       setStatusDialogOpen(false);
       setStatusReason("");
       const invoiceMsg = data.invoice 
-        ? ` - Fattura ${data.invoice.invoiceNumber} generata`
+        ? ` - ${t("utility.invoiceGenerated", { number: data.invoice.invoiceNumber })}`
         : "";
-      toast({ title: `Stato aggiornato${invoiceMsg}` });
+      toast({ title: `${t("utility.statusUpdated")}${invoiceMsg}` });
     },
   });
 
@@ -343,7 +346,7 @@ export default function RepairCenterUtilityPracticeDetail() {
       <div className="p-4 sm:p-6">
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Pratica non trovata</h2>
+          <h2 className="text-xl font-semibold mb-2">{t("utility.practiceNotFound")}</h2>
           <Link href="/repair-center/utility/practices">
             <Button variant="outline">{t("utility.backToPractices")}</Button>
           </Link>
@@ -368,7 +371,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             <h1 className="text-xl sm:text-2xl font-bold" data-testid="text-practice-number">{practice.practiceNumber}</h1>
             <p className="text-muted-foreground">
               {practice.itemType === "product" 
-                ? product?.name || "Prodotto" 
+                ? product?.name || t("common.product") 
                 : `${supplier?.name || ""} - ${(practice as any).customServiceName || service?.name || ""}`}
             </p>
           </div>
@@ -386,7 +389,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             }}
             data-testid="button-change-status"
           >
-            Cambia Stato
+            {t("utility.changeStatusBtn")}
           </Button>
         </div>
       </div>
@@ -395,7 +398,7 @@ export default function RepairCenterUtilityPracticeDetail() {
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5" data-testid="tabs-practice">
           <TabsTrigger value="panoramica" className="flex flex-wrap items-center gap-2" data-testid="tab-panoramica">
             <FileText className="h-4 w-4" />
-            Panoramica
+            {t("utility.overviewTab")}
           </TabsTrigger>
           <TabsTrigger value="attivita" className="flex flex-wrap items-center gap-2" data-testid="tab-attivita">
             <CheckSquare className="h-4 w-4" />
@@ -403,15 +406,15 @@ export default function RepairCenterUtilityPracticeDetail() {
           </TabsTrigger>
           <TabsTrigger value="documenti" className="flex flex-wrap items-center gap-2" data-testid="tab-documenti">
             <Upload className="h-4 w-4" />
-            Documenti ({documents.length})
+            {t("utility.documentsTab")} ({documents.length})
           </TabsTrigger>
           <TabsTrigger value="cronologia" className="flex flex-wrap items-center gap-2" data-testid="tab-cronologia">
             <Clock className="h-4 w-4" />
-            Cronologia
+            {t("utility.timelineTab")}
           </TabsTrigger>
           <TabsTrigger value="note" className="flex flex-wrap items-center gap-2" data-testid="tab-note">
             <MessageSquare className="h-4 w-4" />
-            Note ({notes.length})
+            {t("utility.notesLabel")} ({notes.length})
           </TabsTrigger>
         </TabsList>
 
@@ -436,8 +439,8 @@ export default function RepairCenterUtilityPracticeDetail() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {practice.itemType === "product" ? "Dettagli Prodotti" : 
-                   practice.itemType === "service_with_products" ? "Dettagli Servizio + Prodotti" : 
+                  {practice.itemType === "product" ? t("utility.productDetailsTitle") : 
+                   practice.itemType === "service_with_products" ? t("utility.serviceWithProductDetailsTitle") : 
                    t("serviceCatalog.serviceDetails")}
                 </CardTitle>
               </CardHeader>
@@ -470,7 +473,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                           {(practice as any).customServiceName || service?.name || "-"}
                         </p>
                         {(practice as any).customServiceName && (
-                          <Badge variant="outline" className="text-xs">Temporaneo</Badge>
+                          <Badge variant="outline" className="text-xs">{t("utility.temporaryLabel")}</Badge>
                         )}
                       </div>
                     </div>
@@ -482,7 +485,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                   <>
                     {practiceProducts.length > 0 ? (
                       <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Prodotti ({practiceProducts.length})</p>
+                        <p className="text-sm text-muted-foreground">{t("utility.productsCountLabel")} ({practiceProducts.length})</p>
                         <div className="border rounded-md overflow-hidden">
                           <table className="w-full text-sm">
                             <thead className="bg-muted/50">
@@ -533,7 +536,7 @@ export default function RepairCenterUtilityPracticeDetail() {
 
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {practice.priceType === "forfait" ? "Prezzo Forfait" : t("pos.monthlyFee")}
+                    {practice.priceType === "forfait" ? t("utility.forfaitPriceLabel") : t("pos.monthlyFee")}
                   </p>
                   <p className="font-medium" data-testid="text-price">
                     {practice.priceType === "forfait" 
@@ -546,7 +549,7 @@ export default function RepairCenterUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Date Importanti</CardTitle>
+                <CardTitle className="text-lg">{t("utility.importantDatesTitle")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -559,11 +562,11 @@ export default function RepairCenterUtilityPracticeDetail() {
                     <p className="font-medium">{formatDateShort(practice.submittedAt)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Attivazione Prevista</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.expectedActivationLabel")}</p>
                     <p className="font-medium">{formatDateShort(practice.expectedActivationDate)}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Attivata il</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.activatedOnLabel")}</p>
                     <p className="font-medium">{formatDateShort(practice.activatedAt)}</p>
                   </div>
                 </div>
@@ -572,11 +575,11 @@ export default function RepairCenterUtilityPracticeDetail() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Riferimenti</CardTitle>
+                <CardTitle className="text-lg">{t("utility.referencesTitle")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <p className="text-sm text-muted-foreground">Riferimento Fornitore</p>
+                  <p className="text-sm text-muted-foreground">{t("utility.supplierReferenceLabel")}</p>
                   <p className="font-medium">{practice.supplierReference || "-"}</p>
                 </div>
                 <div>
@@ -586,7 +589,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Canale Comunicazione</p>
+                  <p className="text-sm text-muted-foreground">{t("utility.communicationChannelLabel")}</p>
                   <p className="font-medium">{practice.communicationChannel || "-"}</p>
                 </div>
               </CardContent>
@@ -596,7 +599,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           {practice.notes && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Note Pratica</CardTitle>
+                <CardTitle className="text-lg">{t("utility.practiceNotesTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="whitespace-pre-wrap">{practice.notes}</p>
@@ -610,7 +613,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             <div>
               <h3 className="text-lg font-semibold">{t("utility.attivitDaCompletare")}</h3>
               <p className="text-sm text-muted-foreground">
-                {completedTasks} di {totalTasks} completate
+                {completedTasks} / {totalTasks} {t("utility.completedCount")}
               </p>
             </div>
             <Button onClick={() => setTaskDialogOpen(true)} data-testid="button-add-task">
@@ -694,7 +697,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           <div className="flex justify-between items-center">
             <div>
               <h3 className="text-lg font-semibold">{t("utility.documentiAllegati")}</h3>
-              <p className="text-sm text-muted-foreground">{documents.length} documenti</p>
+              <p className="text-sm text-muted-foreground">{documents.length} {t("utility.documents")}</p>
             </div>
             <Button 
               variant="outline" 
@@ -711,7 +714,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             <CardContent className="p-0">
               {documents.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessun documento allegato.
+                  {t("utility.noDocumentsAttachedMsg")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -760,8 +763,8 @@ export default function RepairCenterUtilityPracticeDetail() {
         <TabsContent value="cronologia" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Cronologia eventi</h3>
-              <p className="text-sm text-muted-foreground">{timeline.length} eventi</p>
+              <h3 className="text-lg font-semibold">{t("utility.eventTimelineTitle")}</h3>
+              <p className="text-sm text-muted-foreground">{timeline.length} {t("utility.eventsLabel")}</p>
             </div>
           </div>
 
@@ -770,13 +773,13 @@ export default function RepairCenterUtilityPracticeDetail() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <History className="h-4 w-4" />
-                  Storico Stati
+                  {t("utility.stateHistoryTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {stateHistory.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground text-sm">
-                    Nessun cambio di stato registrato.
+                    {t("utility.noStateChanges")}
                   </div>
                 ) : (
                   <div className="divide-y">
@@ -806,13 +809,13 @@ export default function RepairCenterUtilityPracticeDetail() {
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4" />
-                  Timeline Eventi
+                  {t("utility.eventTimelineTitle")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
                 {timeline.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    Nessun evento registrato.
+                    {t("utility.noEventsRecorded")}
                   </div>
                 ) : (
                   <ScrollArea className="h-[400px]">
@@ -829,7 +832,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                             <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-muted-foreground">
                               <span>{formatDate(event.createdAt)}</span>
                               <span>•</span>
-                              <span>{users.find(u => u.id === event.createdBy)?.fullName || "Sistema"}</span>
+                              <span>{users.find(u => u.id === event.createdBy)?.fullName || t("utility.systemLabel")}</span>
                             </div>
                           </div>
                         </div>
@@ -845,12 +848,12 @@ export default function RepairCenterUtilityPracticeDetail() {
         <TabsContent value="note" className="space-y-4">
           <div className="flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold">Note e comunicazioni</h3>
-              <p className="text-sm text-muted-foreground">{notes.length} note</p>
+              <h3 className="text-lg font-semibold">{t("utility.notesAndCommsTitle")}</h3>
+              <p className="text-sm text-muted-foreground">{notes.length} {t("utility.notesLabel")}</p>
             </div>
             <Button onClick={() => setNoteDialogOpen(true)} data-testid="button-add-note">
               <Plus className="h-4 w-4 mr-2" />
-              Nuova Nota
+              {t("utility.newNoteLabel")}
             </Button>
           </div>
 
@@ -858,7 +861,7 @@ export default function RepairCenterUtilityPracticeDetail() {
             <CardContent className="p-0">
               {notes.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessuna nota. Aggiungi la prima nota.
+                  {t("utility.noNotesYet")}
                 </div>
               ) : (
                 <div className="divide-y">
@@ -872,7 +875,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <Badge variant={note.visibility === "internal" ? "secondary" : "outline"}>
-                              {note.visibility === "internal" ? "Interna" : "Cliente"}
+                              {note.visibility === "internal" ? t("utility.internalVisibility") : t("utility.customerVisibility")}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {formatDate(note.createdAt)}
@@ -880,7 +883,7 @@ export default function RepairCenterUtilityPracticeDetail() {
                           </div>
                           <p className="whitespace-pre-wrap">{note.body}</p>
                           <p className="text-xs text-muted-foreground mt-2">
-                            di {users.find(u => u.id === note.createdBy)?.fullName || "Sistema"}
+                            {t("utility.byLabel")} {users.find(u => u.id === note.createdBy)?.fullName || t("utility.systemLabel")}
                           </p>
                         </div>
                         <Button 
@@ -909,7 +912,7 @@ export default function RepairCenterUtilityPracticeDetail() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="task-title">Titolo *</Label>
+              <Label htmlFor="task-title">{t("utility.titleRequiredLabel")}</Label>
               <Input
                 id="task-title"
                 value={newTaskTitle}
@@ -936,7 +939,7 @@ export default function RepairCenterUtilityPracticeDetail() {
               disabled={!newTaskTitle.trim() || createTaskMutation.isPending}
               data-testid="button-save-task"
             >
-              Aggiungi
+              {t("utility.addBtn")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -956,13 +959,13 @@ export default function RepairCenterUtilityPracticeDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="internal">Interna (solo operatori)</SelectItem>
-                  <SelectItem value="customer">Cliente (visibile al cliente)</SelectItem>
+                  <SelectItem value="internal">{t("utility.visibilityInternalLabel")}</SelectItem>
+                  <SelectItem value="customer">{t("utility.visibilityCustomerLabel")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="note-body">Contenuto *</Label>
+              <Label htmlFor="note-body">{t("utility.contentRequiredLabel")}</Label>
               <Textarea
                 id="note-body"
                 value={newNoteBody}
@@ -980,7 +983,7 @@ export default function RepairCenterUtilityPracticeDetail() {
               disabled={!newNoteBody.trim() || createNoteMutation.isPending}
               data-testid="button-save-note"
             >
-              Aggiungi
+              {t("utility.addBtn")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1024,7 +1027,7 @@ export default function RepairCenterUtilityPracticeDetail() {
               disabled={updateStatusMutation.isPending}
               data-testid="button-update-status"
             >
-              Conferma
+              {t("utility.confirmBtn")}
             </Button>
           </DialogFooter>
         </DialogContent>

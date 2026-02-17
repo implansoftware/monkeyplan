@@ -94,7 +94,7 @@ export function AdminEntityFilterSelector({
             <SelectItem value="repair-center">
               <div className="flex flex-wrap items-center gap-2">
                 <Store className="h-4 w-4" />
-                <span>Centri Riparazione ({repairCenters.length})</span>
+                <span>{t("hr.repairCentersCount", { count: repairCenters.length })}</span>
               </div>
             </SelectItem>
           )}
@@ -127,7 +127,7 @@ export function AdminEntityFilterSelector({
                   </div>
                   {sr.parentName && (
                     <span className="text-xs text-muted-foreground ml-6">
-                      Padre: {sr.parentName}
+                      {t("hr.parent")}: {sr.parentName}
                     </span>
                   )}
                 </div>
@@ -142,7 +142,7 @@ export function AdminEntityFilterSelector({
                   </div>
                   {rc.parentName && (
                     <span className="text-xs text-muted-foreground ml-6">
-                      Reseller: {rc.parentName}
+                      {t("hr.reseller")}: {rc.parentName}
                     </span>
                   )}
                 </div>
@@ -161,7 +161,7 @@ export function AdminEntityFilterSelector({
       {entityType === "all" && (
         <Badge variant="outline" className="ml-2">
           <Globe className="h-3 w-3 mr-1" />
-          Visibilità Globale
+          {t("hr.globalVisibility")}
         </Badge>
       )}
     </div>

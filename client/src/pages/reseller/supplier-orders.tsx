@@ -39,8 +39,8 @@ type RepairCenter = {
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
     draft: t("invoices.draft"),
-    sent: "Inviato",
-    confirmed: "Confermato",
+    sent: t("common.sent"),
+    confirmed: t("common.confirmed"),
     shipped: t("b2b.status.shipped"),
     partially_received: t("invoices.partial"),
     received: t("repairs.status.received"),

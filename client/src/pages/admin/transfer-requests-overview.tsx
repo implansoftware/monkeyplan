@@ -546,7 +546,7 @@ export default function AdminTransferRequestsOverviewPage() {
                       {selectedRequest.items.map((item) => (
                         <tr key={item.id} className="border-t">
                           <td className="p-2">
-                            <span className="font-medium">{item.product?.name || 'Prodotto'}</span>
+                            <span className="font-medium">{item.product?.name || t("common.product")}</span>
                             <span className="text-muted-foreground text-xs ml-2">{item.product?.sku}</span>
                           </td>
                           <td className="text-right p-2">{item.requestedQuantity}</td>
@@ -579,15 +579,15 @@ export default function AdminTransferRequestsOverviewPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2">Prodotto</th>
-                      <th className="text-right p-2">Richiesti</th>
-                      <th className="text-right p-2">Approvati</th>
+                      <th className="text-left p-2">{t("common.product")}</th>
+                      <th className="text-right p-2">{t("transfers.requested")}</th>
+                      <th className="text-right p-2">{t("transfers.approved")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedRequest.items.map((item, idx) => (
                       <tr key={item.id} className="border-t">
-                        <td className="p-2">{item.product?.name || 'Prodotto'}</td>
+                        <td className="p-2">{item.product?.name || t("common.product")}</td>
                         <td className="text-right p-2">{item.requestedQuantity}</td>
                         <td className="text-right p-2">
                           <Input
@@ -684,15 +684,15 @@ export default function AdminTransferRequestsOverviewPage() {
                 <table className="w-full text-sm">
                   <thead className="bg-muted">
                     <tr>
-                      <th className="text-left p-2">Prodotto</th>
-                      <th className="text-right p-2">Approvati</th>
-                      <th className="text-right p-2">Da Spedire</th>
+                      <th className="text-left p-2">{t("common.product")}</th>
+                      <th className="text-right p-2">{t("transfers.approved")}</th>
+                      <th className="text-right p-2">{t("transfers.toShip")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedRequest.items.map((item, idx) => (
                       <tr key={item.id} className="border-t">
-                        <td className="p-2">{item.product?.name || 'Prodotto'}</td>
+                        <td className="p-2">{item.product?.name || t("common.product")}</td>
                         <td className="text-right p-2">{item.approvedQuantity || item.requestedQuantity}</td>
                         <td className="text-right p-2">
                           <Input

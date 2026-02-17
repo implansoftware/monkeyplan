@@ -765,7 +765,7 @@ export default function RepairCenterRemoteRequests() {
           <DialogHeader>
             <DialogTitle>{t("remoteRequests.richiediSpedizione")}</DialogTitle>
             <DialogDescription>
-              Inserisci l'indirizzo dove il cliente deve spedire il dispositivo
+              {t("remoteRequests.enterShippingAddress")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleReady} className="space-y-4">
@@ -844,7 +844,7 @@ export default function RepairCenterRemoteRequests() {
           <DialogHeader>
             <DialogTitle>{t("remote.annullaRichiesta")}</DialogTitle>
             <DialogDescription>
-              Il cliente non ha spedito il dispositivo. Vuoi annullare questa richiesta?
+              {t("remoteRequests.cancelRequestDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

@@ -312,9 +312,9 @@ export default function IntegrationsPage() {
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Plug className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nessuna integrazione disponibile</h3>
+            <h3 className="text-lg font-medium mb-2">{t("common.noIntegrationAvailable")}</h3>
             <p className="text-muted-foreground">
-              Contatta l'amministratore per abilitare le integrazioni con i fornitori.
+              {t("common.contactAdminForIntegrations")}
             </p>
           </CardContent>
         </Card>

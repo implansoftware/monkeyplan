@@ -129,7 +129,7 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: t("hr.profileCreated"), description: "Il profilo orario è stato creato con successo." });
+      toast({ title: t("hr.profileCreated"), description: t("hr.ilProfiloOrarioStatoCreatoConSuccesso") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -144,7 +144,7 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setDialogOpen(false);
       resetForm();
-      toast({ title: t("profile.profileUpdatedTitle"), description: "Il profilo orario è stato aggiornato." });
+      toast({ title: t("profile.profileUpdatedTitle"), description: t("hr.profileUpdatedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -177,7 +177,7 @@ export default function HrWorkProfiles() {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/work-profiles"] });
       setDeleteDialogOpen(false);
       setSelectedProfile(null);
-      toast({ title: t("hr.profileDeleted"), description: "Il profilo orario è stato eliminato." });
+      toast({ title: t("hr.profileDeleted"), description: t("hr.profileDeletedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -595,7 +595,7 @@ export default function HrWorkProfiles() {
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Crea Profilo Sincronizzato
+                  {t("hr.createSyncedProfile")}
                 </>
               )}
             </Button>

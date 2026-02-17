@@ -25,12 +25,12 @@ import { useToast } from "@/hooks/use-toast";
 export default function RepairCenterUtilitySuppliers() {
   const { t } = useTranslation();
   const categoryLabels: Record<string, string> = {
-    fisso: t("utility.serviceTypes.fisso"),
-    mobile: t("utility.serviceTypes.mobile"),
-    centralino: t("utility.serviceTypes.centralino"),
-    luce: t("utility.serviceTypes.luce"),
-    gas: t("utility.serviceTypes.gas"),
-    altro: t("utility.serviceTypes.altro"),
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
+    altro: t("common.other"),
   };
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -67,7 +67,7 @@ export default function RepairCenterUtilitySuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore aggiornato" });
+      toast({ title: t("utility.supplierUpdated") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -80,7 +80,7 @@ export default function RepairCenterUtilitySuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
-      toast({ title: "Fornitore eliminato" });
+      toast({ title: t("utility.supplierDeleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -152,13 +152,13 @@ export default function RepairCenterUtilitySuppliers() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.utilitySuppliers")}</h1>
-              <p className="text-emerald-100">Provider di servizi telefonici ed energetici</p>
+              <p className="text-emerald-100">{t("utility.providerSubtitle")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={handleNewSupplier} className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg" variant="outline" data-testid="button-new-supplier-hero">
               <Plus className="h-4 w-4 mr-2" />
-              Nuovo Fornitore
+              {t("utility.newSupplierBtn")}
             </Button>
           </div>
         </div>
@@ -214,12 +214,12 @@ export default function RepairCenterUtilitySuppliers() {
                       {isOwnSupplier(supplier) ? (
                         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                           <User className="h-3 w-3 mr-1" />
-                          Personale
+                          {t("utility.personal")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
                           <Globe2 className="h-3 w-3 mr-1" />
-                          Globale
+                          {t("utility.global")}
                         </Badge>
                       )}
                     </TableCell>
@@ -251,12 +251,12 @@ export default function RepairCenterUtilitySuppliers() {
                       {supplier.isActive ? (
                         <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Attivo
+                          {t("common.active")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
                           <XCircle className="h-3 w-3 mr-1" />
-                          Inattivo
+                          {t("common.inactive")}
                         </Badge>
                       )}
                     </TableCell>
@@ -329,7 +329,7 @@ export default function RepairCenterUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Codice *</Label>
+                <Label htmlFor="code">{t("utility.codeRequired")}</Label>
                 <Input
                   id="code"
                   name="code"
@@ -381,7 +381,7 @@ export default function RepairCenterUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="portalUrl">URL Portale Partner</Label>
+              <Label htmlFor="portalUrl">{t("utility.partnerPortalUrl")}</Label>
               <Input
                 id="portalUrl"
                 name="portalUrl"
@@ -451,7 +451,7 @@ export default function RepairCenterUtilitySuppliers() {
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit"

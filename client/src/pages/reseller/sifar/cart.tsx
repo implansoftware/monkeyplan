@@ -74,7 +74,7 @@ export default function SifarCartPage() {
     queryFn: async () => {
       if (!selectedStoreCode) return { articoli: [], totale: 0, totaleIvato: 0, inviabile: false };
       const res = await fetch(`/api/sifar/cart?storeCode=${selectedStoreCode}`);
-      if (!res.ok) throw new Error("Errore nel caricamento carrello");
+      if (!res.ok) throw new Error(t("integrations.loadingCartError"));
       return res.json();
     },
     enabled: !!selectedStoreCode,
@@ -85,7 +85,7 @@ export default function SifarCartPage() {
     queryFn: async () => {
       if (!selectedStoreCode) return [];
       const res = await fetch(`/api/sifar/couriers?storeCode=${selectedStoreCode}`);
-      if (!res.ok) throw new Error("Errore nel caricamento corrieri");
+      if (!res.ok) throw new Error(t("integrations.loadingCouriersError"));
       return res.json();
     },
     enabled: !!selectedStoreCode,
@@ -115,7 +115,7 @@ export default function SifarCartPage() {
     },
     onSuccess: () => {
       refetchCart();
-      toast({ title: "Articolo rimosso dal carrello" });
+      toast({ title: t("integrations.itemRemovedFromCart") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -129,7 +129,7 @@ export default function SifarCartPage() {
     },
     onSuccess: () => {
       refetchCart();
-      toast({ title: "Carrello svuotato" });
+      toast({ title: t("integrations.cartCleared") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -148,10 +148,10 @@ export default function SifarCartPage() {
       setOrderResult(data);
       setShowConfirmOrder(false);
       refetchCart();
-      toast({ title: "Ordine inviato", description: `Numero ordine: ${data.numeroOrdine}` });
+      toast({ title: t("integrations.orderSent"), description: t("integrations.orderNumber", { number: data.numeroOrdine }) });
     },
     onError: (error: Error) => {
-      toast({ title: "Errore nell'invio ordine", description: error.message, variant: "destructive" });
+      toast({ title: t("integrations.orderSentError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -176,7 +176,7 @@ export default function SifarCartPage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Nessun punto vendita configurato. Configura le credenziali SIFAR prima di continuare.
+            {t("integrations.noStoreConfigured")}
           </AlertDescription>
         </Alert>
       </div>
@@ -194,8 +194,8 @@ export default function SifarCartPage() {
         <div className="flex flex-wrap items-center gap-3">
           <ShoppingCart className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Carrello SIFAR</h1>
-            <p className="text-muted-foreground">Rivedi e conferma il tuo ordine</p>
+            <h1 className="text-2xl font-bold">SIFAR {t("integrations.cartTitle")}</h1>
+            <p className="text-muted-foreground">{t("integrations.reviewAndConfirm")}</p>
           </div>
         </div>
       </div>
@@ -205,7 +205,7 @@ export default function SifarCartPage() {
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              Ordine inviato con successo! Numero ordine: <strong>{orderResult.numeroOrdine}</strong>
+              {t("integrations.orderSentSuccess", { number: orderResult.numeroOrdine })}
             </span>
             <Button variant="outline" size="sm" onClick={() => setOrderResult(null)}>{t("common.close")}</Button>
           </AlertDescription>
@@ -219,7 +219,7 @@ export default function SifarCartPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <Package className="h-5 w-5" />
-                  Articoli nel Carrello
+                  {t("integrations.cartItems")}
                 </CardTitle>
                 {cart && cart.articoli.length > 0 && (
                   <Button
@@ -230,12 +230,12 @@ export default function SifarCartPage() {
                     data-testid="button-clear-cart"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Svuota
+                    {t("integrations.empty")}
                   </Button>
                 )}
               </div>
               <CardDescription>
-                Punto vendita: {stores.find(s => s.storeCode === selectedStoreCode)?.storeName || selectedStoreCode}
+                {t("sifar.storeLabel")}: {stores.find(s => s.storeCode === selectedStoreCode)?.storeName || selectedStoreCode}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -249,7 +249,7 @@ export default function SifarCartPage() {
                   <p className="text-muted-foreground">{t("shop.emptyCart")}</p>
                   <Link href="/reseller/sifar/catalog">
                     <Button variant="outline" className="mt-4">
-                      Sfoglia catalogo
+                      {t("integrations.browseCatalog")}
                     </Button>
                   </Link>
                 </div>
@@ -264,14 +264,14 @@ export default function SifarCartPage() {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">{item.descArticolo}</h4>
                         <div className="text-sm text-muted-foreground">
-                          Cod: {item.codiceArticolo}
+                          {t("integrations.itemCode")}: {item.codiceArticolo}
                         </div>
                         <div className="text-sm mt-1">
-                          {formatPrice(item.prezzoIvato * 100)} cad.
+                          {formatPrice(item.prezzoIvato * 100)} {t("integrations.each")}
                         </div>
                         {!item.disponibile && (
                           <Badge variant="destructive" className="mt-1">
-                            Non disponibile
+                            {t("integrations.unavailable")}
                           </Badge>
                         )}
                       </div>
@@ -347,7 +347,7 @@ export default function SifarCartPage() {
                   disabled={loadingCouriers || !cart || cart.articoli.length === 0}
                 >
                   <SelectTrigger data-testid="select-courier">
-                    <SelectValue placeholder={loadingCouriers ? t("common.loading") : "Seleziona corriere"} />
+                    <SelectValue placeholder={loadingCouriers ? t("common.loading") : t("integrations.selectCourier")} />
                   </SelectTrigger>
                   <SelectContent>
                     {couriers.filter(c => c.disponibile).map(courier => (
@@ -381,7 +381,7 @@ export default function SifarCartPage() {
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
-                    Alcuni articoli non sono disponibili. Rimuovili per procedere.
+                    {t("integrations.someItemsUnavailable")}
                   </AlertDescription>
                 </Alert>
               )}
@@ -395,7 +395,7 @@ export default function SifarCartPage() {
                 data-testid="button-checkout"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Invia Ordine
+                {t("integrations.submitOrder")}
               </Button>
             </CardFooter>
           </Card>
@@ -407,22 +407,22 @@ export default function SifarCartPage() {
           <DialogHeader>
             <DialogTitle>{t("shop.placeOrder")}</DialogTitle>
             <DialogDescription>
-              Stai per inviare un ordine a SIFAR. Questa azione non può essere annullata.
+              {t("integrations.aboutToSubmitOrder")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Articoli:</span>
+                <span>{t("integrations.items")}:</span>
                 <span>{cart?.articoli.reduce((sum, a) => sum + a.quantita, 0) || 0}</span>
               </div>
               <div className="flex justify-between">
-                <span>Corriere:</span>
+                <span>{t("integrations.courier")}:</span>
                 <span>{couriers.find(c => c.codiceCorriere === selectedCourier)?.descCorriere || "-"}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-bold">
-                <span>Totale:</span>
+                <span>{t("common.total")}:</span>
                 <span>{cart ? formatPrice(cart.totaleIvato * 100) : "€ 0,00"}</span>
               </div>
             </div>
@@ -437,7 +437,7 @@ export default function SifarCartPage() {
               {submitOrderMutation.isPending ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : null}
-              Conferma Ordine
+              {t("integrations.confirmOrder")}
             </Button>
           </DialogFooter>
         </DialogContent>

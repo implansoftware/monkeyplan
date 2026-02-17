@@ -90,7 +90,7 @@ export default function SifarCatalogPage() {
     queryFn: async () => {
       if (!selectedStoreCode) return [];
       const res = await fetch(`/api/sifar/catalog/brands?storeCode=${selectedStoreCode}`);
-      if (!res.ok) throw new Error("Errore nel caricamento marchi");
+      if (!res.ok) throw new Error(t("integrations.loadingBrandsError"));
       return res.json();
     },
     enabled: !!selectedStoreCode,
@@ -101,7 +101,7 @@ export default function SifarCatalogPage() {
     queryFn: async () => {
       if (!selectedStoreCode || !selectedBrand) return [];
       const res = await fetch(`/api/sifar/catalog/models?storeCode=${selectedStoreCode}&brandCode=${selectedBrand}`);
-      if (!res.ok) throw new Error("Errore nel caricamento modelli");
+      if (!res.ok) throw new Error(t("integrations.loadingModelsError"));
       return res.json();
     },
     enabled: !!selectedStoreCode && !!selectedBrand,
@@ -112,7 +112,7 @@ export default function SifarCatalogPage() {
     queryFn: async () => {
       if (!selectedStoreCode || !selectedModel) return [];
       const res = await fetch(`/api/sifar/catalog/articles?storeCode=${selectedStoreCode}&modelCode=${selectedModel}`);
-      if (!res.ok) throw new Error("Errore nel caricamento articoli");
+      if (!res.ok) throw new Error(t("integrations.loadingArticlesError"));
       return res.json();
     },
     enabled: !!selectedStoreCode && !!selectedModel,
@@ -123,7 +123,7 @@ export default function SifarCatalogPage() {
     queryFn: async () => {
       if (!selectedStoreCode) return { articoli: [], totale: 0, totaleIvato: 0, inviabile: false };
       const res = await fetch(`/api/sifar/cart?storeCode=${selectedStoreCode}`);
-      if (!res.ok) throw new Error("Errore nel caricamento carrello");
+      if (!res.ok) throw new Error(t("integrations.loadingCartError"));
       return res.json();
     },
     enabled: !!selectedStoreCode,
@@ -140,7 +140,7 @@ export default function SifarCatalogPage() {
     },
     onSuccess: () => {
       refetchCart();
-      toast({ title: "Aggiunto al carrello" });
+      toast({ title: t("integrations.addedToCart") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -168,11 +168,11 @@ export default function SifarCatalogPage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>Nessun punto vendita configurato. Configura le credenziali SIFAR prima di continuare.</span>
+            <span>{t("integrations.noStoreConfigured")}</span>
             <Link href="/reseller/sifar/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                Configura
+                {t("integrations.configure")}
               </Button>
             </Link>
           </AlertDescription>
@@ -187,15 +187,15 @@ export default function SifarCatalogPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Package className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Catalogo SIFAR</h1>
-            <p className="text-muted-foreground">Sfoglia e ordina ricambi dal catalogo SIFAR</p>
+            <h1 className="text-2xl font-bold">SIFAR {t("integrations.catalogTitle")}</h1>
+            <p className="text-muted-foreground">{t("integrations.browseAndOrderParts")}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/sifar/cart">
             <Button variant="outline" data-testid="button-view-cart">
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Carrello
+              {t("integrations.cartTitle")}
               {cart && cart.articoli.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {cart.articoli.reduce((sum, a) => sum + a.quantita, 0)}
@@ -215,10 +215,10 @@ export default function SifarCatalogPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Search className="h-5 w-5" />
-            Cerca Ricambi
+            {t("integrations.searchParts")}
           </CardTitle>
           <CardDescription>
-            Seleziona marca e modello per visualizzare i ricambi disponibili
+            {t("integrations.selectBrandAndModel")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -231,12 +231,12 @@ export default function SifarCatalogPage() {
                 setSelectedModel("");
               }}>
                 <SelectTrigger data-testid="select-store">
-                  <SelectValue placeholder="Seleziona punto vendita" />
+                  <SelectValue placeholder={t("integrations.selectStore")} />
                 </SelectTrigger>
                 <SelectContent>
                   {stores.map(store => (
                     <SelectItem key={store.id} value={store.storeCode}>
-                      {store.storeName || `Punto Vendita ${store.storeCode}`}
+                      {store.storeName || t("integrations.storeLabel", { code: store.storeCode })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -274,7 +274,7 @@ export default function SifarCatalogPage() {
                 disabled={!selectedBrand || loadingModels}
               >
                 <SelectTrigger data-testid="select-model">
-                  <SelectValue placeholder={loadingModels ? t("common.loading") : "Seleziona modello"} />
+                  <SelectValue placeholder={loadingModels ? t("common.loading") : t("integrations.selectModel")} />
                 </SelectTrigger>
                 <SelectContent>
                   {models.map(model => (
@@ -294,7 +294,7 @@ export default function SifarCatalogPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Package className="h-5 w-5" />
-              Articoli Disponibili
+              {t("integrations.availableArticles")}
             </CardTitle>
             {selectedBrand && selectedModel && (
               <CardDescription>
@@ -317,7 +317,7 @@ export default function SifarCatalogPage() {
               </div>
             ) : articles.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Nessun articolo trovato per questo modello
+                {t("integrations.noArticlesFound")}
               </div>
             ) : (
               <div className="space-y-3">
@@ -343,7 +343,7 @@ export default function SifarCatalogPage() {
                         <div>
                           <h3 className="font-medium">{article.descArticolo}</h3>
                           <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                            <div>Cod: {article.codiceArticolo}</div>
+                            <div>{t("integrations.itemCode")}: {article.codiceArticolo}</div>
                             {article.ean && <div>EAN: {article.ean}</div>}
                             {article.qualita && (
                               <Badge variant="outline" className="mt-1">
@@ -352,7 +352,7 @@ export default function SifarCatalogPage() {
                             )}
                             {article.mesiGaranzia && (
                               <Badge variant="secondary" className="ml-2">
-                                Garanzia {article.mesiGaranzia} mesi
+                                {t("integrations.warranty", { months: article.mesiGaranzia })}
                               </Badge>
                             )}
                           </div>
@@ -362,7 +362,7 @@ export default function SifarCatalogPage() {
                             {formatPrice(article.prezzoIvato * 100)}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            {formatPrice(article.prezzo * 100)} + IVA
+                            {formatPrice(article.prezzo * 100)} {t("sifar.plusVat")}
                           </div>
                         </div>
                       </div>
@@ -374,16 +374,16 @@ export default function SifarCatalogPage() {
                           ) : article.contattaPerOrdinare ? (
                             <Badge variant="outline" className="text-yellow-600 border-yellow-600">
                               <AlertTriangle className="h-3 w-3 mr-1" />
-                              Su ordinazione
+                              {t("integrations.onOrder")}
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="text-red-600 border-red-600">
-                              Non disponibile
+                              {t("integrations.unavailable")}
                             </Badge>
                           )}
                           {article.giacenza !== undefined && article.giacenza > 0 && (
                             <span className="text-sm text-muted-foreground">
-                              ({article.giacenza} in stock)
+                              ({article.giacenza} {t("sifar.inStockUnits")})
                             </span>
                           )}
                         </div>

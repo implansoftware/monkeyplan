@@ -62,7 +62,7 @@ export default function SifarSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sifar/credentials"] });
       setClientKey("");
-      toast({ title: "Credenziali salvate", description: "Le credenziali SIFAR sono state configurate" });
+      toast({ title: t("integrations.credentialsSaved"), description: t("integrations.credentialsConfigured") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -77,9 +77,9 @@ export default function SifarSettingsPage() {
     onSuccess: (data) => {
       setTestResult(data);
       if (data.success) {
-        toast({ title: "Connessione riuscita", description: "La connessione a SIFAR funziona correttamente" });
+        toast({ title: t("integrations.connectionSuccessful"), description: t("integrations.connectionWorksCorrectly") });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("integrations.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -102,7 +102,7 @@ export default function SifarSettingsPage() {
       setNewStoreCode("");
       setNewStoreName("");
       setShowAddStore(false);
-      toast({ title: "Punto vendita aggiunto", description: "Il punto vendita è stato configurato" });
+      toast({ title: t("integrations.storeAdded"), description: t("integrations.storeConfigured") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -115,7 +115,7 @@ export default function SifarSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sifar/stores"] });
-      toast({ title: "Punto vendita rimosso" });
+      toast({ title: t("integrations.storeRemoved") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -135,8 +135,8 @@ export default function SifarSettingsPage() {
       <div className="flex flex-wrap items-center gap-3">
         <Settings className="h-8 w-8" />
         <div>
-          <h1 className="text-2xl font-bold">Configurazione SIFAR</h1>
-          <p className="text-muted-foreground">Gestisci le credenziali e i punti vendita SIFAR per ordinare ricambi</p>
+          <h1 className="text-2xl font-bold">SIFAR {t("integrations.settingsTitle")}</h1>
+          <p className="text-muted-foreground">{t("integrations.manageCredentialsAndStores")}</p>
         </div>
       </div>
 
@@ -144,10 +144,10 @@ export default function SifarSettingsPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Key className="h-5 w-5" />
-            Credenziali API
+            {t("integrations.apiCredentials")}
           </CardTitle>
           <CardDescription>
-            Inserisci la Client Key fornita da SIFAR per abilitare l'integrazione
+            {t("integrations.enterClientKey")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -156,7 +156,7 @@ export default function SifarSettingsPage() {
               <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="flex items-center justify-between">
                 <span>
-                  Credenziali configurate - Ambiente: <Badge variant="outline">{credential.environment}</Badge>
+                  {t("integrations.credentialsConfiguredEnv", { env: "" })} <Badge variant="outline">{credential.environment}</Badge>
                 </span>
                 <Button
                   variant="outline"
@@ -172,7 +172,7 @@ export default function SifarSettingsPage() {
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Nessuna credenziale configurata. Inserisci la Client Key per iniziare.
+                {t("integrations.noCredentialsConfigured")}
               </AlertDescription>
             </Alert>
           )}
@@ -183,21 +183,21 @@ export default function SifarSettingsPage() {
               <Input
                 id="clientKey"
                 type="password"
-                placeholder="Inserisci la Client Key"
+                placeholder={t("integrations.enterApiToken")}
                 value={clientKey}
                 onChange={(e) => setClientKey(e.target.value)}
                 data-testid="input-client-key"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="environment">Ambiente</Label>
+              <Label htmlFor="environment">{t("integrations.environment")}</Label>
               <Select value={environment} onValueChange={setEnvironment}>
                 <SelectTrigger data-testid="select-environment">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="collaudo">Collaudo (Test)</SelectItem>
-                  <SelectItem value="produzione">Produzione</SelectItem>
+                  <SelectItem value="collaudo">{t("integrations.staging")}</SelectItem>
+                  <SelectItem value="produzione">{t("integrations.production")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -211,7 +211,7 @@ export default function SifarSettingsPage() {
             {saveCredentialsMutation.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : null}
-            Salva Credenziali
+            {t("integrations.saveCreds")}
           </Button>
         </CardContent>
       </Card>
@@ -222,16 +222,16 @@ export default function SifarSettingsPage() {
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-2">
                 <RefreshCcw className="h-5 w-5" />
-                Test Connessione
+                {t("integrations.testConnection")}
               </CardTitle>
               <CardDescription>
-                Verifica che la connessione a SIFAR funzioni correttamente
+                {t("integrations.verifyConnection")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Codice punto vendita (es. 001)"
+                  placeholder={t("integrations.storeCode")}
                   value={testStoreCode}
                   onChange={(e) => setTestStoreCode(e.target.value)}
                   data-testid="input-test-store-code"
@@ -244,7 +244,7 @@ export default function SifarSettingsPage() {
                   {testConnectionMutation.isPending ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : null}
-                  Testa
+                  {t("integrations.test")}
                 </Button>
               </div>
 
@@ -267,10 +267,10 @@ export default function SifarSettingsPage() {
                 <div>
                   <CardTitle className="flex flex-wrap items-center gap-2">
                     <Store className="h-5 w-5" />
-                    Punti Vendita
+                    {t("integrations.stores")}
                   </CardTitle>
                   <CardDescription>
-                    Configura i punti vendita SIFAR per effettuare ordini
+                    {t("integrations.configureStoresForOrders")}
                   </CardDescription>
                 </div>
                 <Dialog open={showAddStore} onOpenChange={setShowAddStore}>
@@ -280,27 +280,27 @@ export default function SifarSettingsPage() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Aggiungi Punto Vendita</DialogTitle>
+                      <DialogTitle>{t("integrations.addStore")}</DialogTitle>
                       <DialogDescription>
-                        Inserisci il codice del punto vendita SIFAR associato al tuo account
+                        {t("integrations.enterStoreCode")}
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="storeCode">Codice Punto Vendita *</Label>
+                        <Label htmlFor="storeCode">{t("integrations.storeCodeRequired")}</Label>
                         <Input
                           id="storeCode"
-                          placeholder="Es. 001"
+                          placeholder={t("sifar.storeCodePlaceholder")}
                           value={newStoreCode}
                           onChange={(e) => setNewStoreCode(e.target.value)}
                           data-testid="input-new-store-code"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="storeName">Nome (opzionale)</Label>
+                        <Label htmlFor="storeName">{t("integrations.nameOptional")}</Label>
                         <Input
                           id="storeName"
-                          placeholder="Es. Negozio Principale"
+                          placeholder={t("integrations.egMainStore")}
                           value={newStoreName}
                           onChange={(e) => setNewStoreName(e.target.value)}
                           data-testid="input-new-store-name"
@@ -317,7 +317,7 @@ export default function SifarSettingsPage() {
                         {addStoreMutation.isPending ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : null}
-                        Aggiungi
+                        {t("common.add")}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
@@ -331,7 +331,7 @@ export default function SifarSettingsPage() {
                 </div>
               ) : stores.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nessun punto vendita configurato. Aggiungi il tuo primo punto vendita per iniziare.
+                  {t("integrations.noStoresConfiguredYet")}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -345,14 +345,14 @@ export default function SifarSettingsPage() {
                         <Store className="h-5 w-5 text-muted-foreground" />
                         <div>
                           <div className="font-medium">
-                            {store.storeName || `Punto Vendita ${store.storeCode}`}
+                            {store.storeName || t("integrations.storeLabel", { code: store.storeCode })}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            Codice: {store.storeCode}
+                            {t("integrations.code")}: {store.storeCode}
                           </div>
                         </div>
                         {store.isDefault && (
-                          <Badge variant="secondary">Predefinito</Badge>
+                          <Badge variant="secondary">{t("integrations.default")}</Badge>
                         )}
                       </div>
                       <Button

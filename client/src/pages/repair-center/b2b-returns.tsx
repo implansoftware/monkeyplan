@@ -441,7 +441,7 @@ function ShipReturnDialog({ open, onClose, returnDoc }: {
         <DialogHeader>
           <DialogTitle>{t("returns.registraSpedizioneReso")}</DialogTitle>
           <DialogDescription>
-            Inserisci i dati di spedizione per il reso {returnDoc?.returnNumber}
+            {t("returns.enterShipmentData", { number: returnDoc?.returnNumber })}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

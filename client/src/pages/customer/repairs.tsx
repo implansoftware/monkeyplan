@@ -43,7 +43,7 @@ export default function CustomerRepairs() {
     const config = getStatusConfig(status);
     return (
       <Badge className={`${config.bgColor} ${config.color} ${config.borderColor} border`}>
-        {config.label}
+        {t(config.labelKey)}
       </Badge>
     );
   };
@@ -112,7 +112,7 @@ export default function CustomerRepairs() {
 
   const activeStatuses = Object.entries(REPAIR_STATUS_CONFIG)
     .filter(([key]) => !["consegnato", "delivered", "cancelled", "annullato"].includes(key))
-    .map(([key, config]) => ({ key, label: config.label }));
+    .map(([key, config]) => ({ key, label: t(config.labelKey) }));
 
   const completedStatuses = ["consegnato", "delivered", "cancelled", "annullato"];
 
@@ -161,7 +161,7 @@ export default function CustomerRepairs() {
                 <SelectItem value="all">{t("common.allStatuses")}</SelectItem>
                 {Object.entries(REPAIR_STATUS_CONFIG).map(([key, config]) => (
                   <SelectItem key={key} value={key}>
-                    {config.label}
+                    {t(config.labelKey)}
                   </SelectItem>
                 ))}
               </SelectContent>

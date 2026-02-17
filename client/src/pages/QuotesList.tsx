@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,14 +12,6 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { RepairOrderDetailDrawer } from "@/components/RepairOrderDetailDrawer";
 
-const quoteStatusLabels: Record<string, string> = {
-  draft: "Bozza",
-  sent: "Inviato",
-  accepted: "Accettato",
-  rejected: "Rifiutato",
-  expired: "Scaduto",
-};
-
 const quoteStatusColors: Record<string, string> = {
   draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
   sent: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -28,6 +21,7 @@ const quoteStatusColors: Record<string, string> = {
 };
 
 export default function QuotesList() {
+  const { t } = useTranslation();
   const [selectedRepairId, setSelectedRepairId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   
@@ -36,6 +30,14 @@ export default function QuotesList() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  const quoteStatusLabels: Record<string, string> = {
+    draft: t("quotes.statusDraft"),
+    sent: t("quotes.statusSent"),
+    accepted: t("quotes.statusAccepted"),
+    rejected: t("quotes.statusRejected"),
+    expired: t("quotes.statusExpired"),
+  };
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -53,7 +55,7 @@ export default function QuotesList() {
     queryFn: async () => {
       const url = queryString ? `/api/quotes?${queryString}` : "/api/quotes";
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -72,7 +74,7 @@ export default function QuotesList() {
       <div className="p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <FileText className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Preventivi</h1>
+          <h1 className="text-2xl font-bold">{t("quotes.title")}</h1>
         </div>
         <div className="grid gap-4">
           {[1, 2, 3].map((i) => (
@@ -88,7 +90,7 @@ export default function QuotesList() {
       <div className="flex items-center justify-between gap-4 flex-wrap mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <FileText className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Preventivi</h1>
+          <h1 className="text-2xl font-bold">{t("quotes.title")}</h1>
         </div>
         <Button
           variant={showFilters ? "default" : "outline"}
@@ -97,10 +99,10 @@ export default function QuotesList() {
           data-testid="button-toggle-filters"
         >
           <Filter className="h-4 w-4 mr-2" />
-          Filtri
+          {t("common.filters")}
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-2">
-              Attivi
+              {t("common.active")}
             </Badge>
           )}
         </Button>
@@ -111,11 +113,11 @@ export default function QuotesList() {
           <CardContent className="pt-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Cerca</label>
+                <label className="text-sm font-medium">{t("common.search")}</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="N. preventivo, ordine, dispositivo..."
+                    placeholder={t("quotes.searchPlaceholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-9"
@@ -125,24 +127,24 @@ export default function QuotesList() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Stato</label>
+                <label className="text-sm font-medium">{t("common.status")}</label>
                 <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger data-testid="select-status">
-                    <SelectValue placeholder="Tutti" />
+                    <SelectValue placeholder={t("common.all")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tutti</SelectItem>
-                    <SelectItem value="draft">Bozza</SelectItem>
-                    <SelectItem value="sent">Inviato</SelectItem>
-                    <SelectItem value="accepted">Accettato</SelectItem>
-                    <SelectItem value="rejected">Rifiutato</SelectItem>
-                    <SelectItem value="expired">Scaduto</SelectItem>
+                    <SelectItem value="all">{t("common.all")}</SelectItem>
+                    <SelectItem value="draft">{t("quotes.statusDraft")}</SelectItem>
+                    <SelectItem value="sent">{t("quotes.statusSent")}</SelectItem>
+                    <SelectItem value="accepted">{t("quotes.statusAccepted")}</SelectItem>
+                    <SelectItem value="rejected">{t("quotes.statusRejected")}</SelectItem>
+                    <SelectItem value="expired">{t("quotes.statusExpired")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Data da</label>
+                <label className="text-sm font-medium">{t("common.dateFrom")}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -156,7 +158,7 @@ export default function QuotesList() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Data a</label>
+                <label className="text-sm font-medium">{t("common.dateTo")}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -174,7 +176,7 @@ export default function QuotesList() {
               <div className="flex justify-end">
                 <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
                   <X className="h-4 w-4 mr-2" />
-                  Azzera filtri
+                  {t("quotes.clearFilters")}
                 </Button>
               </div>
             )}
@@ -184,25 +186,25 @@ export default function QuotesList() {
 
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 flex-wrap text-sm text-muted-foreground">
-          <span>Filtri attivi:</span>
+          <span>{t("quotes.activeFilters")}</span>
           {search && (
             <Badge variant="secondary">
-              Cerca: "{search}"
+              {t("common.search")}: "{search}"
             </Badge>
           )}
           {status && status !== "all" && (
             <Badge variant="secondary">
-              Stato: {quoteStatusLabels[status]}
+              {t("common.status")}: {quoteStatusLabels[status]}
             </Badge>
           )}
           {dateFrom && (
             <Badge variant="secondary">
-              Dal: {format(new Date(dateFrom), "dd/MM/yyyy")}
+              {t("common.from")}: {format(new Date(dateFrom), "dd/MM/yyyy")}
             </Badge>
           )}
           {dateTo && (
             <Badge variant="secondary">
-              Al: {format(new Date(dateTo), "dd/MM/yyyy")}
+              {t("common.to")}: {format(new Date(dateTo), "dd/MM/yyyy")}
             </Badge>
           )}
         </div>
@@ -211,13 +213,13 @@ export default function QuotesList() {
       {!quotes || quotes.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            {hasActiveFilters ? "Nessun preventivo trovato con i filtri applicati" : "Nessun preventivo trovato"}
+            {hasActiveFilters ? t("quotes.noQuotesWithFilters") : t("quotes.noQuotesFound")}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
           <div className="text-sm text-muted-foreground">
-            {quotes.length} preventivi trovati
+            {t("quotes.quotesFound", { count: quotes.length })}
           </div>
           {quotes.map((quote) => (
             <Card
@@ -260,7 +262,7 @@ export default function QuotesList() {
                       </span>
                       {quote.laborCost && (
                         <span className="text-muted-foreground">
-                          (Manodopera: €{(Number(quote.laborCost) / 100).toFixed(2)})
+                          ({t("quotes.labor")}: €{(Number(quote.laborCost) / 100).toFixed(2)})
                         </span>
                       )}
                     </div>
@@ -275,7 +277,7 @@ export default function QuotesList() {
                       ))}
                       {quote.parts.length > 3 && (
                         <Badge variant="secondary" className="text-xs">
-                          +{quote.parts.length - 3} ricambi
+                          +{quote.parts.length - 3} {t("quotes.parts")}
                         </Badge>
                       )}
                     </div>
@@ -283,12 +285,12 @@ export default function QuotesList() {
 
                   <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                       <span>
-                        Creato: {quote.createdAt && format(new Date(quote.createdAt), "dd MMM yyyy", { locale: it })}
+                        {t("quotes.created")}: {quote.createdAt && format(new Date(quote.createdAt), "dd MMM yyyy", { locale: it })}
                       </span>
                       {quote.validUntil && (
                         <span className="flex flex-wrap items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          Valido fino: {format(new Date(quote.validUntil), "dd MMM yyyy", { locale: it })}
+                          {t("quotes.validUntil")}: {format(new Date(quote.validUntil), "dd MMM yyyy", { locale: it })}
                         </span>
                       )}
                     </div>

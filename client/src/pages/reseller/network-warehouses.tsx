@@ -194,7 +194,7 @@ export default function NetworkWarehousesPage() {
           ) : filteredWarehouses.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Warehouse className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Nessun magazzino trovato nella tua rete</p>
+              <p>{t("warehouse.noNetworkWarehouse")}</p>
             </div>
           ) : (
             <Table>
@@ -282,7 +282,7 @@ export default function NetworkWarehousesPage() {
                 ) : filteredStock.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Nessun prodotto in stock</p>
+                    <p>{t("warehouse.noProductInStock")}</p>
                   </div>
                 ) : (
                   <Table>
@@ -303,7 +303,7 @@ export default function NetworkWarehousesPage() {
                             <Avatar className="h-10 w-10 rounded-md">
                               <AvatarImage 
                                 src={item.product?.imageUrl || undefined} 
-                                alt={item.product?.name || "Prodotto"} 
+                                alt={item.product?.name || t("common.product")} 
                                 className="object-cover"
                               />
                               <AvatarFallback className="rounded-md bg-muted">
@@ -312,7 +312,7 @@ export default function NetworkWarehousesPage() {
                             </Avatar>
                           </TableCell>
                           <TableCell className="font-medium">
-                            {item.product?.name || "Prodotto non trovato"}
+                            {item.product?.name || t("products.productNotFound")}
                           </TableCell>
                           <TableCell className="font-mono text-sm">
                             {item.product?.sku || "-"}
@@ -435,7 +435,7 @@ export default function NetworkWarehousesPage() {
           
           <div className="space-y-4">
             <div>
-              <p className="text-sm text-muted-foreground mb-2">Prodotto:</p>
+              <p className="text-sm text-muted-foreground mb-2">{t("common.product")}:</p>
               <p className="font-medium">{transferItem?.product?.name}</p>
               <p className="text-sm text-muted-foreground">SKU: {transferItem?.product?.sku}</p>
               <p className="text-sm">Disponibilità: <span className="font-semibold">{transferItem?.quantity}</span></p>

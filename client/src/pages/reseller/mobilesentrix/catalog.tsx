@@ -87,7 +87,7 @@ export default function MobilesentrixCatalogPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart"] });
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart/count"] });
-      toast({ title: "Aggiunto al carrello", description: "Prodotto aggiunto con successo" });
+      toast({ title: t("integrations.addedToCart"), description: t("integrations.productAddedSuccess") });
       setAddingToCart(null);
     },
     onError: (error: Error) => {
@@ -146,7 +146,7 @@ export default function MobilesentrixCatalogPage() {
       const res = await fetch(`/api/mobilesentrix/catalog/products?${params}`);
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(errorText || `Errore ${res.status} nel caricamento prodotti`);
+        throw new Error(errorText || t("integrations.loadingProductsError"));
       }
       return res.json();
     },
@@ -205,11 +205,11 @@ export default function MobilesentrixCatalogPage() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>Credenziali MobileSentrix non configurate. Configura le tue credenziali OAuth per continuare.</span>
+            <span>{t("integrations.credentialsNotConfigured")}</span>
             <Link href="/reseller/mobilesentrix/settings">
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                Configura
+                {t("integrations.configure")}
               </Button>
             </Link>
           </AlertDescription>
@@ -224,15 +224,15 @@ export default function MobilesentrixCatalogPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Package className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Catalogo MobileSentrix</h1>
-            <p className="text-muted-foreground">Sfoglia e cerca ricambi dal catalogo MobileSentrix</p>
+            <h1 className="text-2xl font-bold">{t("integrations.mobilesentrixCatalog")}</h1>
+            <p className="text-muted-foreground">{t("integrations.browseAndSearchParts")}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <Link href="/reseller/mobilesentrix/cart">
             <Button variant="outline" className="relative" data-testid="button-view-cart">
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Carrello
+              {t("integrations.cartTitle")}
               {cartCount && cartCount.count > 0 && (
                 <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-gradient-to-r from-blue-500 to-cyan-500">
                   {cartCount.count}
@@ -252,16 +252,16 @@ export default function MobilesentrixCatalogPage() {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Filter className="h-5 w-5" />
-            Cerca e Filtra Prodotti
+            {t("integrations.searchFilterProducts")}
           </CardTitle>
-          <CardDescription>Usa la ricerca o i filtri per trovare prodotti nel catalogo MobileSentrix</CardDescription>
+          <CardDescription>{t("integrations.searchOrFilterDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, SKU..."
+                placeholder={t("integrations.searchByNameSku")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -309,7 +309,7 @@ export default function MobilesentrixCatalogPage() {
             {hasActiveFilters && (
               <Button variant="outline" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
                 <X className="h-4 w-4 mr-1" />
-                Pulisci filtri
+                {t("integrations.clearFilters")}
               </Button>
             )}
           </div>
@@ -317,15 +317,15 @@ export default function MobilesentrixCatalogPage() {
           {hasActiveFilters && (
             <div className="flex flex-wrap gap-2">
               {debouncedSearch && (
-                <Badge variant="secondary">Ricerca: "{debouncedSearch}"</Badge>
+                <Badge variant="secondary">{t("integrations.searchBadge", { query: debouncedSearch })}</Badge>
               )}
               {selectedCategory && categories && (
                 <Badge variant="secondary">
-                  Categoria: {categories.find(c => c.id === selectedCategory)?.name}
+                  {t("integrations.categoryBadge", { name: categories.find(c => c.id === selectedCategory)?.name })}
                 </Badge>
               )}
               {selectedBrand && (
-                <Badge variant="secondary">Marca: {selectedBrand}</Badge>
+                <Badge variant="secondary">{t("integrations.brandBadge", { name: selectedBrand })}</Badge>
               )}
             </div>
           )}
@@ -336,7 +336,7 @@ export default function MobilesentrixCatalogPage() {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Errore durante il caricamento dei prodotti: {productsError.message}
+            {t("integrations.errorLoadingProductsDetail", { message: productsError.message })}
           </AlertDescription>
         </Alert>
       )}
@@ -346,8 +346,8 @@ export default function MobilesentrixCatalogPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               {totalProducts > 0 
-                ? `Mostrando ${accumulatedProducts.length} di ${totalProducts} prodotti`
-                : loadingProducts ? "Ricerca in corso..." : "Nessun prodotto trovato per la ricerca"}
+                ? t("integrations.showingOfProducts", { shown: accumulatedProducts.length, total: totalProducts })
+                : loadingProducts ? t("integrations.searchInProgress") : t("integrations.noProductsFound")}
             </p>
           </div>
 
@@ -408,7 +408,7 @@ export default function MobilesentrixCatalogPage() {
                           variant={product.stock > 0 ? "default" : "secondary"}
                           className="text-xs"
                         >
-                          {product.stock > 0 ? `Stock: ${product.stock}` : "Non disponibile"}
+                          {product.stock > 0 ? t("integrations.stockLabel", { count: product.stock }) : t("integrations.unavailable")}
                         </Badge>
                       </div>
                       <Button
@@ -443,7 +443,7 @@ export default function MobilesentrixCatalogPage() {
                 {isLoadingMore || isFetching ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : null}
-                Carica altri prodotti
+                {t("integrations.loadMoreProducts")}
               </Button>
             </div>
           )}
@@ -453,7 +453,7 @@ export default function MobilesentrixCatalogPage() {
       {debouncedSearch.length > 0 && debouncedSearch.length < 2 && !selectedCategory && !selectedBrand && (
         <Alert>
           <AlertDescription>
-            Inserisci almeno 2 caratteri per cercare, oppure seleziona una categoria o marca.
+            {t("integrations.enterMinCharsOrFilter")}
           </AlertDescription>
         </Alert>
       )}
@@ -462,9 +462,9 @@ export default function MobilesentrixCatalogPage() {
         <Card>
           <CardContent className="p-8 text-center">
             <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-semibold text-lg mb-2">Cerca nel catalogo MobileSentrix</h3>
+            <h3 className="font-semibold text-lg mb-2">{t("integrations.searchByCatalog")}</h3>
             <p className="text-muted-foreground">
-              Usa la barra di ricerca o seleziona una categoria/marca per trovare ricambi per smartphone e tablet.
+              {t("integrations.useSearchBarOrFilters")}
             </p>
           </CardContent>
         </Card>

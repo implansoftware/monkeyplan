@@ -28,11 +28,11 @@ interface UtilitySummary {
 
 function getCategoryLabels(t: (key: string) => string): Record<string, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
     altro: t("common.other"),
   };
 }
@@ -69,7 +69,7 @@ export default function ResellerUtility() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">Utility</h1>
-                <p className="text-white/80">Gestione servizi telefonici ed energetici</p>
+                <p className="text-white/80">{t("utility.manageTelecomAndEnergy")}</p>
               </div>
             </div>
           </div>
@@ -107,7 +107,7 @@ export default function ResellerUtility() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Utility</h1>
-              <p className="text-white/80">Gestione servizi telefonici ed energetici</p>
+              <p className="text-white/80">{t("utility.manageTelecomAndEnergy")}</p>
             </div>
           </div>
         </div>
@@ -116,20 +116,20 @@ export default function ResellerUtility() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card data-testid="card-total-practices" className="rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Le Mie Pratiche</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.myPractices")}</CardTitle>
             <FileCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary?.totalPractices || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {summary?.activePractices || 0} completate
+              {summary?.activePractices || 0} {t("utility.practiceStatus.completata").toLowerCase()}
             </p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-pending-commissions" className="rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsPending")}</CardTitle>
             <Coins className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
@@ -137,14 +137,14 @@ export default function ResellerUtility() {
               {formatCurrency(summary?.commissions?.pending || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
-              Da liquidare
+              {t("utility.toBePaid")}
             </p>
           </CardContent>
         </Card>
 
         <Card data-testid="card-total-commissions" className="rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Compensi Totali</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("utility.commissionsTotal")}</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -161,7 +161,7 @@ export default function ResellerUtility() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card data-testid="card-by-category" className="rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg">Per Categoria</CardTitle>
+            <CardTitle className="text-lg">{t("utility.byCategory")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -170,7 +170,7 @@ export default function ResellerUtility() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline">{categoryLabels[cat] || cat}</Badge>
                     <span className="text-sm text-muted-foreground">
-                      {data.count} pratiche
+                      {data.count} {t("utility.practicesLabel").toLowerCase()}
                     </span>
                   </div>
                   <span className="text-sm font-medium">
@@ -191,9 +191,9 @@ export default function ResellerUtility() {
               <CardContent className="p-6 flex items-center gap-4 cursor-pointer">
                 <FileCheck className="h-10 w-10 text-primary" />
                 <div className="flex-1">
-                  <h3 className="font-semibold">Le Mie Pratiche</h3>
+                  <h3 className="font-semibold">{t("utility.myPractices")}</h3>
                   <p className="text-xs text-muted-foreground">
-                    Gestisci contratti e pratiche
+                    {t("utility.manageContractsAndPractices")}
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -206,9 +206,9 @@ export default function ResellerUtility() {
               <CardContent className="p-6 flex items-center gap-4 cursor-pointer">
                 <Coins className="h-10 w-10 text-primary" />
                 <div className="flex-1">
-                  <h3 className="font-semibold">I Miei Compensi</h3>
+                  <h3 className="font-semibold">{t("utility.myCommissions")}</h3>
                   <p className="text-xs text-muted-foreground">
-                    Traccia commissioni e pagamenti
+                    {t("utility.trackCommissionsAndPayments")}
                   </p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground" />

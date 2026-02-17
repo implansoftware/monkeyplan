@@ -112,7 +112,7 @@ export default function RepairCenterHrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/clock-events"] });
       setDialogOpen(false);
       setNewEvent({ eventType: "entrata", userId: "", notes: "" });
-      toast({ title: "Timbratura registrata", description: t("hr.clockCreatedDesc") });
+      toast({ title: t("hr.clockRegistered"), description: t("hr.clockCreatedDesc") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -127,7 +127,7 @@ export default function RepairCenterHrAttendance() {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/hr/clock-events"] });
       setEditDialogOpen(false);
       setEditingEvent(null);
-      toast({ title: "Timbratura aggiornata", description: t("hr.laModificaStataSalvata") });
+      toast({ title: t("hr.clockUpdated"), description: t("hr.laModificaStataSalvata") });
     },
     onError: (error: any) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -198,14 +198,14 @@ export default function RepairCenterHrAttendance() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.attendance")}</h1>
-              <p className="text-emerald-100">Timbrature e registrazione orari</p>
+              <p className="text-emerald-100">{t("hr.clockAndTimeTracking")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/repair-center/hr">
               <Button variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Dashboard HR
+                {t("hr.dashboardHR")}
               </Button>
             </Link>
           </div>
@@ -214,7 +214,7 @@ export default function RepairCenterHrAttendance() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2 flex-wrap">
-          <CardTitle>Timbrature Rapide</CardTitle>
+          <CardTitle>{t("hr.quickClocks")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
@@ -259,7 +259,7 @@ export default function RepairCenterHrAttendance() {
               </Select>
               <Button onClick={() => setDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nuova
+                {t("common.new")}
               </Button>
             </div>
           </div>
@@ -294,7 +294,7 @@ export default function RepairCenterHrAttendance() {
             </Button>
             {!isToday && (
               <Button variant="secondary" size="sm" onClick={goToToday} data-testid="button-go-today">
-                Oggi
+                {t("common.today")}
               </Button>
             )}
           </div>
@@ -309,7 +309,7 @@ export default function RepairCenterHrAttendance() {
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>{isToday ? "Nessuna timbratura registrata oggi" : `Nessuna timbratura per il ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
+              <p>{isToday ? t("hr.noClockToday") : `${t("hr.noClockForDate")} ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -368,7 +368,7 @@ export default function RepairCenterHrAttendance() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("hr.nuovaTimbraturaManuale")}</DialogTitle>
-            <DialogDescription>Inserisci una timbratura per un membro del team</DialogDescription>
+            <DialogDescription>{t("hr.insertClockForTeamMember")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -398,7 +398,7 @@ export default function RepairCenterHrAttendance() {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Note (opzionale)</label>
+              <label className="text-sm font-medium">{t("hr.notesOptional")}</label>
               <Textarea
                 value={newEvent.notes}
                 onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
@@ -412,7 +412,7 @@ export default function RepairCenterHrAttendance() {
               onClick={() => createMutation.mutate({ eventType: newEvent.eventType, userId: newEvent.userId || undefined, notes: newEvent.notes || undefined })}
               disabled={createMutation.isPending}
             >
-              Registra
+              {t("hr.register")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -448,7 +448,7 @@ export default function RepairCenterHrAttendance() {
               />
             </div>
             <div>
-              <label className="text-sm font-medium">Note (opzionale)</label>
+              <label className="text-sm font-medium">{t("hr.notesOptional")}</label>
               <Textarea
                 value={editForm.notes}
                 onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
@@ -459,7 +459,7 @@ export default function RepairCenterHrAttendance() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t("profile.cancel")}</Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending}>
-              Salva Modifiche
+              {t("team.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -86,7 +86,7 @@ export default function MobilesentrixCartPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart"] });
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart/count"] });
-      toast({ title: "Rimosso", description: "Prodotto rimosso dal carrello" });
+      toast({ title: t("integrations.removed"), description: t("integrations.productRemovedFromCart") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -100,7 +100,7 @@ export default function MobilesentrixCartPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart"] });
       queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart/count"] });
-      toast({ title: "Carrello svuotato", description: "Tutti i prodotti sono stati rimossi" });
+      toast({ title: t("integrations.cartCleared"), description: t("integrations.allProductsRemoved") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -121,14 +121,14 @@ export default function MobilesentrixCartPage() {
         queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart"] });
         queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/cart/count"] });
         queryClient.invalidateQueries({ queryKey: ["/api/mobilesentrix/orders"] });
-        toast({ title: "Ordine creato!", description: `Ordine #${data.order?.orderNumber || data.mobilesentrixOrderId} creato con successo` });
+        toast({ title: t("integrations.orderCreated"), description: t("integrations.orderCreatedSuccess", { number: data.order?.orderNumber || data.mobilesentrixOrderId }) });
       } else {
         toast({ title: t("common.error"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
       setIsCheckingOut(false);
-      toast({ title: "Errore checkout", description: error.message, variant: "destructive" });
+      toast({ title: t("integrations.checkoutError"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -163,15 +163,15 @@ export default function MobilesentrixCartPage() {
         <div className="flex flex-wrap items-center gap-3">
           <ShoppingCart className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Carrello MobileSentrix</h1>
-            <p className="text-muted-foreground">{totalItems} prodott{totalItems === 1 ? "o" : "i"} nel carrello</p>
+            <h1 className="text-2xl font-bold">{t("integrations.mobilesentrixCart")}</h1>
+            <p className="text-muted-foreground">{t("integrations.productsInCart", { count: totalItems })}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/reseller/mobilesentrix/catalog">
             <Button variant="outline" data-testid="button-back-catalog">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Torna al Catalogo
+              {t("integrations.backToCatalog")}
             </Button>
           </Link>
           <Link href="/reseller/mobilesentrix/orders">
@@ -186,11 +186,11 @@ export default function MobilesentrixCartPage() {
           <CardContent className="py-12 text-center">
             <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
             <h2 className="text-xl font-semibold mb-2">{t("pos.emptyCart")}</h2>
-            <p className="text-muted-foreground mb-4">Aggiungi prodotti dal catalogo MobileSentrix</p>
+            <p className="text-muted-foreground mb-4">{t("integrations.addProductsFromCatalog")}</p>
             <Link href="/reseller/mobilesentrix/catalog">
               <Button data-testid="button-browse-catalog">
                 <Package className="h-4 w-4 mr-2" />
-                Sfoglia Catalogo
+                {t("integrations.browseCatalog")}
               </Button>
             </Link>
           </CardContent>
@@ -278,7 +278,7 @@ export default function MobilesentrixCartPage() {
               data-testid="button-clear-cart"
             >
               <Trash2 className="h-4 w-4 mr-2" />
-              Svuota Carrello
+              {t("integrations.clearCart")}
             </Button>
           </div>
 
@@ -289,14 +289,14 @@ export default function MobilesentrixCartPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span>Prodotti ({totalItems})</span>
+                  <span>{t("integrations.productsCount", { count: totalItems })}</span>
                   <span>{formatPrice(totalAmount)}</span>
                 </div>
                 
                 <div className="space-y-2">
                   <Label className="flex flex-wrap items-center gap-2">
                     <Truck className="h-4 w-4" />
-                    Metodo di Spedizione
+                    {t("integrations.shippingMethod")}
                   </Label>
                   {isLoadingShipping ? (
                     <Skeleton className="h-10 w-full" />
@@ -307,7 +307,7 @@ export default function MobilesentrixCartPage() {
                       data-testid="select-shipping-method"
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona spedizione" />
+                        <SelectValue placeholder={t("integrations.selectShipping")} />
                       </SelectTrigger>
                       <SelectContent>
                         {shippingData?.methods.map((method) => (
@@ -320,7 +320,7 @@ export default function MobilesentrixCartPage() {
                   )}
                   {shippingData?.countryId && (
                     <p className="text-xs text-muted-foreground">
-                      Spedizione verso: {shippingData.countryId}
+                      {t("integrations.shippingTo", { country: shippingData.countryId })}
                     </p>
                   )}
                 </div>
@@ -331,7 +331,7 @@ export default function MobilesentrixCartPage() {
                     <span>{formatPrice(totalAmount)}</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    + costi spedizione MobileSentrix
+                    {t("integrations.plusShippingCosts")}
                   </p>
                 </div>
               </CardContent>
@@ -348,14 +348,14 @@ export default function MobilesentrixCartPage() {
                   ) : (
                     <CreditCard className="h-4 w-4 mr-2" />
                   )}
-                  Procedi all'Ordine
+                  {t("integrations.proceedToOrder")}
                 </Button>
               </CardFooter>
             </Card>
 
             <Alert className="mt-4">
               <AlertDescription>
-                L'ordine verrà inviato direttamente a MobileSentrix e processato secondo le loro condizioni di vendita.
+                {t("integrations.orderProcessedNotice")}
               </AlertDescription>
             </Alert>
           </div>

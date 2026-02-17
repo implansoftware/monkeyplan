@@ -91,9 +91,9 @@ export default function SibillSettingsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/credentials"] });
       if (data.success) {
-        toast({ title: "Connessione riuscita", description: data.message });
+        toast({ title: t("integrations.connectionSuccessful"), description: data.message });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("integrations.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -108,7 +108,7 @@ export default function SibillSettingsPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/companies"] });
-      toast({ title: "Sincronizzazione completata", description: `${data.count || 0} aziende sincronizzate` });
+      toast({ title: t("integrations.syncCompleted"), description: t("integrations.syncCompletedCount", { count: data.count || 0 }) });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -122,7 +122,7 @@ export default function SibillSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/credentials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/integrations/summary"] });
-      toast({ title: t("pages.deleted"), description: "Credenziali Sibill eliminate" });
+      toast({ title: t("pages.deleted"), description: t("integrations.sibillCredentialsDeleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -131,14 +131,14 @@ export default function SibillSettingsPage() {
 
   const handleSave = () => {
     if (!apiToken.trim()) {
-      toast({ title: t("common.error"), description: "Inserisci il token API", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("integrations.enterApiToken"), variant: "destructive" });
       return;
     }
     saveMutation.mutate();
   };
 
   const formatDate = (date: string | null) => {
-    if (!date) return "Mai";
+    if (!date) return t("integrations.never");
     return new Date(date).toLocaleString("it-IT");
   };
 
@@ -159,15 +159,15 @@ export default function SibillSettingsPage() {
             <img src={sibillLogo} alt="Sibill" className="max-h-8 max-w-full object-contain" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Impostazioni Sibill</h1>
-            <p className="text-muted-foreground">Gestione fatture e riconciliazione bancaria</p>
+            <h1 className="text-2xl font-bold">{t("integrations.sibillSettingsTitle")}</h1>
+            <p className="text-muted-foreground">{t("integrations.invoiceAndBankReconciliation")}</p>
           </div>
         </div>
         {credential && (
           <Link href="/reseller/sibill/documents">
             <Button data-testid="button-go-documents">
               <FileText className="h-4 w-4 mr-2" />
-              Vai ai Documenti
+              {t("integrations.goToDocuments")}
             </Button>
           </Link>
         )}
@@ -181,9 +181,9 @@ export default function SibillSettingsPage() {
                 <div>
                   <CardTitle className="flex flex-wrap items-center gap-2">
                     <Key className="h-5 w-5" />
-                    Credenziali Configurate
+                    {t("integrations.configuredCredentials")}
                   </CardTitle>
-                  <CardDescription>Le tue credenziali Sibill sono salvate</CardDescription>
+                  <CardDescription>{t("integrations.sibillCredentialsSaved")}</CardDescription>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
@@ -198,7 +198,7 @@ export default function SibillSettingsPage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Token API</Label>
+                  <Label>{t("sibill.apiTokenLabel")}</Label>
                   <div className="flex flex-wrap items-center gap-2">
                     <Input
                       type={showToken ? "text" : "password"}
@@ -212,12 +212,12 @@ export default function SibillSettingsPage() {
                       size="sm"
                       onClick={() => setShowToken(!showToken)}
                     >
-                      {showToken ? "Nascondi" : "Mostra"}
+                      {showToken ? t("common.hide") : t("common.show")}
                     </Button>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Ultimo Test</Label>
+                  <Label>{t("integrations.lastTestLabel")}</Label>
                   <div className="flex flex-wrap items-center gap-2">
                     {credential.testStatus === "success" ? (
                       <CheckCircle className="h-4 w-4 text-green-500" />
@@ -236,7 +236,7 @@ export default function SibillSettingsPage() {
 
               {credential.selectedCompanyName && (
                 <div className="p-3 bg-muted rounded-lg">
-                  <Label className="text-xs text-muted-foreground">Azienda selezionata</Label>
+                  <Label className="text-xs text-muted-foreground">{t("integrations.selectedCompany")}</Label>
                   <p className="font-medium flex items-center gap-2">
                     <Building2 className="h-4 w-4" />
                     {credential.selectedCompanyName}
@@ -256,7 +256,7 @@ export default function SibillSettingsPage() {
                   ) : (
                     <TestTube className="h-4 w-4 mr-2" />
                   )}
-                  Test Connessione
+                  {t("integrations.testConnection")}
                 </Button>
                 <Button
                   variant="outline"
@@ -269,7 +269,7 @@ export default function SibillSettingsPage() {
                   ) : (
                     <RefreshCcw className="h-4 w-4 mr-2" />
                   )}
-                  Sincronizza Aziende
+                  {t("integrations.syncCompanies")}
                 </Button>
                 <Button
                   variant="destructive"
@@ -282,13 +282,13 @@ export default function SibillSettingsPage() {
                   ) : (
                     <Trash2 className="h-4 w-4 mr-2" />
                   )}
-                  Elimina Credenziali
+                  {t("integrations.deleteCredentials")}
                 </Button>
               </div>
 
               <Alert>
                 <AlertDescription>
-                  Per aggiornare le credenziali, eliminale prima e poi inseriscine di nuove.
+                  {t("integrations.toUpdateCredentials")}
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -299,9 +299,9 @@ export default function SibillSettingsPage() {
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <Building2 className="h-5 w-5" />
-                  Aziende Collegate
+                  {t("integrations.linkedCompanies")}
                 </CardTitle>
-                <CardDescription>Aziende sincronizzate da Sibill</CardDescription>
+                <CardDescription>{t("integrations.companiesSyncedFromSibill")}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -313,13 +313,13 @@ export default function SibillSettingsPage() {
                       <div>
                         <p className="font-medium">{company.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {company.vatNumber && `P.IVA: ${company.vatNumber}`}
+                          {company.vatNumber && t("integrations.vatNumber", { number: company.vatNumber })}
                           {company.vatNumber && company.fiscalCode && " • "}
-                          {company.fiscalCode && `CF: ${company.fiscalCode}`}
+                          {company.fiscalCode && t("integrations.fiscalCode", { code: company.fiscalCode })}
                         </p>
                       </div>
                       {credential.selectedCompanyId === company.externalId && (
-                        <Badge>Selezionata</Badge>
+                        <Badge>{t("integrations.selected")}</Badge>
                       )}
                     </div>
                   ))}
@@ -333,10 +333,10 @@ export default function SibillSettingsPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
-              Configura Sibill
+              {t("integrations.configureSibill")}
             </CardTitle>
             <CardDescription>
-              Inserisci il tuo API Token Sibill per gestire fatture e riconciliazione bancaria
+              {t("integrations.enterSibillApiToken")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -345,41 +345,41 @@ export default function SibillSettingsPage() {
               <Input
                 id="apiToken"
                 type="password"
-                placeholder="Inserisci il tuo API Token Sibill"
+                placeholder={t("integrations.enterSibillPlaceholder")}
                 value={apiToken}
                 onChange={(e) => setApiToken(e.target.value)}
                 data-testid="input-api-token"
               />
               <p className="text-sm text-muted-foreground">
-                Puoi ottenere il tuo API Token dal pannello Sibill.{" "}
+                {t("integrations.getSibillToken")}{" "}
                 <a
                   href="https://www.sibill.io"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  Vai a Sibill <ExternalLink className="h-3 w-3" />
+                  {t("integrations.goToSibill")} <ExternalLink className="h-3 w-3" />
                 </a>
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sibillCompanyId">Company ID Sibill (opzionale)</Label>
+              <Label htmlFor="sibillCompanyId">{t("integrations.sibillCompanyIdOptional")}</Label>
               <Input
                 id="sibillCompanyId"
                 type="text"
-                placeholder="Es: comp_abc123..."
+                placeholder={t("integrations.sibillCompanyIdPlaceholder")}
                 value={sibillCompanyId}
                 onChange={(e) => setSibillCompanyId(e.target.value)}
                 data-testid="input-sibill-company-id"
               />
               <p className="text-sm text-muted-foreground">
-                ID dell'azienda su Sibill. Se non lo inserisci, verrà recuperato automaticamente dopo la sincronizzazione.
+                {t("integrations.sibillCompanyIdHint")}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="environment">Ambiente</Label>
+              <Label htmlFor="environment">{t("integrations.environmentLabel")}</Label>
               <Select value={environment} onValueChange={(v) => setEnvironment(v as "development" | "production")}>
                 <SelectTrigger data-testid="select-environment">
                   <SelectValue />
@@ -404,7 +404,7 @@ export default function SibillSettingsPage() {
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              Salva Credenziali
+              {t("integrations.saveCreds")}
             </Button>
           </CardContent>
         </Card>
@@ -412,23 +412,21 @@ export default function SibillSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Informazioni su Sibill</CardTitle>
-          <CardDescription>Come funziona l'integrazione Sibill</CardDescription>
+          <CardTitle>{t("integrations.aboutSibill")}</CardTitle>
+          <CardDescription>{t("integrations.howSibillWorks")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Sibill è una piattaforma italiana per la gestione delle fatture e la riconciliazione bancaria.
-            L'integrazione ti permette di:
+            {t("integrations.sibillDescription")}
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>Sincronizzare automaticamente fatture emesse e ricevute</li>
-            <li>Collegare i conti bancari per la riconciliazione automatica</li>
-            <li>Visualizzare lo stato dei pagamenti in tempo reale</li>
-            <li>Categorizzare le transazioni per una gestione contabile semplificata</li>
+            <li>{t("integrations.sibillFeature1")}</li>
+            <li>{t("integrations.sibillFeature2")}</li>
+            <li>{t("integrations.sibillFeature3")}</li>
+            <li>{t("integrations.sibillFeature4")}</li>
           </ul>
           <p className="pt-2">
-            Per utilizzare l'integrazione, devi prima creare un account su Sibill e
-            ottenere il tuo API Token dal pannello di controllo.
+            {t("integrations.sibillSetupHint")}
           </p>
         </CardContent>
       </Card>

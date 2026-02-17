@@ -85,7 +85,7 @@ export default function AdminPriceLists() {
     onError: (error: any) => {
       toast({
         title: t("common.error"),
-        description: error.message || "Errore durante la creazione del listino.",
+        description: error.message || t("products.errorCreatingPriceList"),
         variant: "destructive",
       });
     },
@@ -187,9 +187,9 @@ export default function AdminPriceLists() {
             <ListChecks className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Listini Prezzi</h1>
+            <h1 className="text-2xl font-bold">{t("products.priceLists")}</h1>
             <p className="text-muted-foreground">
-              Gestisci i tuoi listini e visualizza quelli dei reseller
+              {t("products.priceListsDescription")}
             </p>
           </div>
         </div>
@@ -197,14 +197,14 @@ export default function AdminPriceLists() {
           <DialogTrigger asChild>
             <Button data-testid="button-create-price-list">
               <Plus className="h-4 w-4 mr-2" />
-              Crea Listino
+              {t("products.createPriceList")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t("products.createPriceList")}</DialogTitle>
               <DialogDescription>
-                Crea un listino prezzi per i reseller che acquistano da te
+                {t("products.createPriceListDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -212,7 +212,7 @@ export default function AdminPriceLists() {
                 <Label htmlFor="name">{t("products.priceListName")}</Label>
                 <Input
                   id="name"
-                  placeholder="es. Listino Reseller 2026"
+                  placeholder={t("products.priceListNamePlaceholder")}
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
                   data-testid="input-new-list-name"
@@ -243,13 +243,13 @@ export default function AdminPriceLists() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Per i reseller che acquistano da te, seleziona "Reseller"
+                  {t("products.priceListTargetHint")}
                 </p>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={handleCreateList}
@@ -257,7 +257,7 @@ export default function AdminPriceLists() {
                 data-testid="button-confirm-create-list"
               >
                 {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Crea Listino
+                {t("products.createPriceList")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -388,7 +388,7 @@ export default function AdminPriceLists() {
               {filteredOtherLists.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Nessun listino trovato
+                    {t("products.noPriceListFound")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -399,7 +399,7 @@ export default function AdminPriceLists() {
                         <span className="font-medium">{list.name}</span>
                         {list.isDefault && (
                           <Badge variant="secondary" className="w-fit mt-1 text-xs">
-                            Predefinito
+                            {t("common.default")}
                           </Badge>
                         )}
                       </div>
@@ -434,7 +434,7 @@ export default function AdminPriceLists() {
                       >
                         <Link href={`/admin/price-lists/${list.id}`}>
                           <Eye className="h-4 w-4 mr-1" />
-                          Visualizza
+                          {t("common.view")}
                         </Link>
                       </Button>
                     </TableCell>
@@ -447,7 +447,7 @@ export default function AdminPriceLists() {
       </Card>
 
       <div className="text-sm text-muted-foreground">
-        Totale: {adminLists.length + filteredOtherLists.length} listini ({adminLists.length} admin, {filteredOtherLists.length} altri)
+        {t("products.priceListTotal", { total: adminLists.length + filteredOtherLists.length, admin: adminLists.length, other: filteredOtherLists.length })}
       </div>
     </div>
   );

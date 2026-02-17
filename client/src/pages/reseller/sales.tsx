@@ -172,7 +172,7 @@ export default function ResellerSales() {
       setIsExporting(true);
       
       const csv = [
-        ['Riferimento', 'Data', 'Fonte', 'Entità', 'Cliente', 'Importo', 'Stato'].join(','),
+        [t("common.reference"), t("common.date"), t("common.source"), t("common.entity"), t("common.customer"), t("common.amount"), t("common.status")].join(','),
         ...filteredSales.map(sale => [
           sale.reference || sale.id.slice(0, 8),
           format(new Date(sale.date), "dd/MM/yyyy HH:mm"),
@@ -455,8 +455,8 @@ export default function ResellerSales() {
           {filteredSales.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p className="text-lg font-medium">Nessuna vendita trovata</p>
-              <p className="text-sm">Modifica i filtri per visualizzare i risultati</p>
+              <p className="text-lg font-medium">{t("common.noSalesFound")}</p>
+              <p className="text-sm">{t("common.adjustFilters")}</p>
             </div>
           ) : (
             <div className="rounded-md border overflow-hidden">
@@ -465,7 +465,7 @@ export default function ResellerSales() {
                   <TableRow>
                     <TableHead>{t("common.reference")}</TableHead>
                     <TableHead>{t("common.date")}</TableHead>
-                    <TableHead>Fonte</TableHead>
+                    <TableHead>{t("common.source")}</TableHead>
                     <TableHead>{t("common.entity")}</TableHead>
                     <TableHead>{t("common.customer")}</TableHead>
                     <TableHead className="text-right">{t("common.amount")}</TableHead>

@@ -357,7 +357,7 @@ export default function MarketplaceProductDetail() {
               ))}
               {sellers.length === 0 && (
                 <p className="text-muted-foreground text-center py-6">
-                  Nessun venditore disponibile per questo prodotto
+                  {t("shop.noSellerAvailable")}
                 </p>
               )}
             </div>
@@ -383,7 +383,7 @@ export default function MarketplaceProductDetail() {
           {sellers.length === 0 && (
             <div className="text-center p-4 bg-muted rounded-md">
               <p className="text-muted-foreground text-sm">
-                Questo prodotto non è attualmente disponibile per l'acquisto
+                {t("shop.productNotAvailable")}
               </p>
             </div>
           )}

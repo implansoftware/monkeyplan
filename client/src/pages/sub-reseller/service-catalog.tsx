@@ -25,11 +25,11 @@ import { useTranslation } from "react-i18next";
 
 function getServiceCategories(t: (key: string) => string) {
   return [
-    { value: "display", label: "Display" },
-    { value: "batteria", label: "Batteria" },
-    { value: "software", label: "Software" },
-    { value: "hardware", label: "Hardware" },
-    { value: "diagnostica", label: "Diagnostica" },
+    { value: "display", label: t("products.categoryDisplay") },
+    { value: "batteria", label: t("products.categoryBattery") },
+    { value: "software", label: t("products.categorySoftware") },
+    { value: "hardware", label: t("products.categoryHardware") },
+    { value: "diagnostica", label: t("products.categoryDiagnostics") },
     { value: "altro", label: t("common.other") },
   ];
 }
@@ -150,7 +150,7 @@ export default function SubResellerServiceCatalog() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Cerca per nome, codice..."
+                placeholder={t("common.searchByNameCode")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -189,7 +189,7 @@ export default function SubResellerServiceCatalog() {
               {filteredItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Nessun servizio trovato
+                    {t("common.noServiceFound")}
                   </TableCell>
                 </TableRow>
               ) : (

@@ -827,7 +827,7 @@ export default function ResellerAppointments() {
                 <div className="p-3 rounded-lg bg-muted/50 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-semibold">{selectedAppointment.customer.fullName || "Cliente"}</span>
+                    <span className="font-semibold">{selectedAppointment.customer.fullName || t("common.customer")}</span>
                   </div>
                   <div className="text-sm space-y-0.5">
                     {selectedAppointment.customer.phone && (

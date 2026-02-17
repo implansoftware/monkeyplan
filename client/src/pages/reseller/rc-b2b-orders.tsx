@@ -190,7 +190,7 @@ export default function ResellerRCB2BOrders() {
         <Card className="rounded-2xl">
           <CardContent className="py-12 text-center">
             <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nessun ordine B2B dai centri riparazione</p>
+            <p className="text-muted-foreground">{t("b2b.noB2bOrdersFromRC")}</p>
           </CardContent>
         </Card>
       ) : (

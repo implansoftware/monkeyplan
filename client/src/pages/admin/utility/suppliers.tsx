@@ -21,17 +21,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 
-const categoryLabels: Record<string, string> = {
-  fisso: "fisso",
-  mobile: "mobile",
-  centralino: "centralino",
-  luce: "luce",
-  gas: "gas",
-  altro: "altro",
-};
-
 export default function AdminUtilitySuppliers() {
   const { t } = useTranslation();
+  const categoryLabels: Record<string, string> = {
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
+    altro: t("common.other"),
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<UtilitySupplier | null>(null);
@@ -140,9 +139,9 @@ export default function AdminUtilitySuppliers() {
         <div className="flex flex-wrap items-center gap-3">
           <Building2 className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">Fornitori Utility</h1>
+            <h1 className="text-2xl font-bold">{t("utility.utilitySuppliers")}</h1>
             <p className="text-muted-foreground">
-              Gestisci provider di servizi telefonici ed energetici
+              {t("utility.manageUtilityProviders")}
             </p>
           </div>
         </div>
@@ -162,7 +161,7 @@ export default function AdminUtilitySuppliers() {
           </div>
           <Button onClick={handleNewSupplier} data-testid="button-new-supplier">
             <Plus className="h-4 w-4 mr-2" />
-            Nuovo Fornitore
+            {t("utility.newSupplierBtn")}
           </Button>
         </CardHeader>
         <CardContent>
@@ -224,12 +223,12 @@ export default function AdminUtilitySuppliers() {
                       {supplier.isActive ? (
                         <Badge className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Attivo
+                          {t("common.active")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
                           <XCircle className="h-3 w-3 mr-1" />
-                          Inattivo
+                          {t("common.inactive")}
                         </Badge>
                       )}
                     </TableCell>
@@ -254,7 +253,7 @@ export default function AdminUtilitySuppliers() {
                           variant="ghost" 
                           size="icon"
                           onClick={() => {
-                            if (confirm("Sei sicuro di voler eliminare questo fornitore?")) {
+                            if (confirm(t("utility.confirmDeleteSupplier"))) {
                               deleteMutation.mutate(supplier.id);
                             }
                           }}
@@ -280,8 +279,8 @@ export default function AdminUtilitySuppliers() {
             </DialogTitle>
             <DialogDescription>
               {editingSupplier 
-                ? "Modifica i dati del fornitore di servizi utility."
-                : "Aggiungi un nuovo fornitore di servizi telefonici o energetici."}
+                ? t("utility.editSupplierDataAdmin")
+                : t("utility.addNewUtilitySupplier")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -349,7 +348,7 @@ export default function AdminUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="portalUrl">URL Portale Partner</Label>
+              <Label htmlFor="portalUrl">{t("utility.partnerPortalUrl")}</Label>
               <Input
                 id="portalUrl"
                 name="portalUrl"
@@ -419,7 +418,7 @@ export default function AdminUtilitySuppliers() {
                 onClick={() => setDialogOpen(false)}
                 data-testid="button-cancel"
               >
-                Annulla
+                {t("common.cancel")}
               </Button>
               <Button 
                 type="submit"

@@ -221,7 +221,7 @@ export default function RepairCenterB2BCatalog() {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("sidebar.items.b2bCatalog")}</h1>
-              <p className="text-emerald-100">Acquista prodotti dal magazzino del tuo rivenditore</p>
+              <p className="text-emerald-100">{t("b2b.buyFromResellerWarehouse")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-4">

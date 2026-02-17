@@ -36,7 +36,7 @@ export default function DiagnosisList() {
     queryFn: async () => {
       const url = queryString ? `/api/diagnostics?${queryString}` : "/api/diagnostics";
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Errore nel caricamento");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -79,10 +79,10 @@ export default function DiagnosisList() {
           data-testid="button-toggle-filters"
         >
           <Filter className="h-4 w-4 mr-2" />
-          Filtri
+          {t("common.filters")}
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-2">
-              Attivi
+              {t("common.active")}
             </Badge>
           )}
         </Button>
@@ -97,7 +97,7 @@ export default function DiagnosisList() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Ordine, dispositivo, diagnosi..."
+                    placeholder={t("diagnosis.searchPlaceholder")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-9"
@@ -139,7 +139,7 @@ export default function DiagnosisList() {
               <div className="flex justify-end">
                 <Button variant="ghost" size="sm" onClick={clearFilters} data-testid="button-clear-filters">
                   <X className="h-4 w-4 mr-2" />
-                  Azzera filtri
+                  {t("quotes.clearFilters")}
                 </Button>
               </div>
             )}
@@ -149,20 +149,20 @@ export default function DiagnosisList() {
 
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 flex-wrap text-sm text-muted-foreground">
-          <span>Filtri attivi:</span>
+          <span>{t("quotes.activeFilters")}</span>
           {search && (
             <Badge variant="secondary">
-              Cerca: "{search}"
+              {t("common.search")}: "{search}"
             </Badge>
           )}
           {dateFrom && (
             <Badge variant="secondary">
-              Dal: {format(new Date(dateFrom), "dd/MM/yyyy")}
+              {t("common.from")}: {format(new Date(dateFrom), "dd/MM/yyyy")}
             </Badge>
           )}
           {dateTo && (
             <Badge variant="secondary">
-              Al: {format(new Date(dateTo), "dd/MM/yyyy")}
+              {t("common.to")}: {format(new Date(dateTo), "dd/MM/yyyy")}
             </Badge>
           )}
         </div>
@@ -171,13 +171,13 @@ export default function DiagnosisList() {
       {!diagnostics || diagnostics.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            {hasActiveFilters ? "Nessuna diagnosi trovata con i filtri applicati" : "Nessuna diagnosi trovata"}
+            {hasActiveFilters ? t("diagnosis.noDiagnosisWithFilters") : t("diagnosis.noDiagnosisFound")}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
           <div className="text-sm text-muted-foreground">
-            {diagnostics.length} diagnosi trovate
+            {t("diagnosis.diagnosisFound", { count: diagnostics.length })}
           </div>
           {diagnostics.map((diagnosis) => (
             <Card
@@ -201,7 +201,7 @@ export default function DiagnosisList() {
                     {diagnosis.requiresExternalParts && (
                       <Badge variant="outline" className="flex flex-wrap items-center gap-1">
                         <Package className="h-3 w-3" />
-                        Ricambi esterni
+                        {t("diagnosis.externalParts")}
                       </Badge>
                     )}
                   </div>

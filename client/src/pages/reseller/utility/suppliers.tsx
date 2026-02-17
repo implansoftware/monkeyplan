@@ -23,11 +23,11 @@ import { useTranslation } from "react-i18next";
 
 function getCategoryLabels(t: (key: string) => string): Record<string, string> {
   return {
-    fisso: "Fisso",
-    mobile: "Mobile",
-    centralino: "Centralino",
-    luce: "Luce",
-    gas: "Gas",
+    fisso: t("utility.types.fisso"),
+    mobile: t("utility.types.mobile"),
+    centralino: t("utility.types.centralino"),
+    luce: t("utility.types.luce"),
+    gas: t("utility.types.gas"),
     altro: t("common.other"),
   };
 }
@@ -70,7 +70,7 @@ export default function ResellerUtilitySuppliers() {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
-      toast({ title: "Fornitore aggiornato" });
+      toast({ title: t("utility.supplierUpdated") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -83,7 +83,7 @@ export default function ResellerUtilitySuppliers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
-      toast({ title: "Fornitore eliminato" });
+      toast({ title: t("utility.supplierDeleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -152,8 +152,8 @@ export default function ResellerUtilitySuppliers() {
               <Building2 className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Fornitori Utility</h1>
-              <p className="text-white/80">Gestione fornitori servizi</p>
+              <h1 className="text-2xl font-bold text-white">{t("utility.utilitySuppliers")}</h1>
+              <p className="text-white/80">{t("utility.manageServiceSuppliers")}</p>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function ResellerUtilitySuppliers() {
                   <TableHead>{t("common.code")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
                   <TableHead>{t("common.category")}</TableHead>
-                  <TableHead>Contatto</TableHead>
+                  <TableHead>{t("common.contact")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead className="text-right">{t("common.actions")}</TableHead>
                 </TableRow>
@@ -210,12 +210,12 @@ export default function ResellerUtilitySuppliers() {
                       {isOwnSupplier(supplier) ? (
                         <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
                           <User className="h-3 w-3 mr-1" />
-                          Personale
+                          {t("utility.personal")}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
                           <Globe2 className="h-3 w-3 mr-1" />
-                          Globale
+                          {t("utility.global")}
                         </Badge>
                       )}
                     </TableCell>
@@ -275,7 +275,7 @@ export default function ResellerUtilitySuppliers() {
                               variant="ghost" 
                               size="icon"
                               onClick={() => {
-                                if (confirm("Sei sicuro di voler eliminare questo fornitore?")) {
+                                if (confirm(t("utility.confirmDeleteSupplier"))) {
                                   deleteMutation.mutate(supplier.id);
                                 }
                               }}
@@ -299,18 +299,18 @@ export default function ResellerUtilitySuppliers() {
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingSupplier ? "Modifica Fornitore" : "Nuovo Fornitore Personale"}
+              {editingSupplier ? t("utility.editSupplier") : t("utility.newPersonalSupplier")}
             </DialogTitle>
             <DialogDescription>
               {editingSupplier 
-                ? "Modifica i dati del tuo fornitore."
-                : "Aggiungi un nuovo fornitore personale per i tuoi servizi."}
+                ? t("utility.editSupplierData")
+                : t("utility.addNewPersonalSupplier")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nome *</Label>
+                <Label htmlFor="name">{t("utility.nameRequired2")}</Label>
                 <Input
                   id="name"
                   name="name"
@@ -320,7 +320,7 @@ export default function ResellerUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Codice *</Label>
+                <Label htmlFor="code">{t("utility.codeRequired")}</Label>
                 <Input
                   id="code"
                   name="code"
@@ -333,7 +333,7 @@ export default function ResellerUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Categoria *</Label>
+              <Label htmlFor="category">{t("utility.categoryRequired")}</Label>
               <Select 
                 value={selectedCategory}
                 onValueChange={setSelectedCategory}
@@ -372,7 +372,7 @@ export default function ResellerUtilitySuppliers() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="portalUrl">URL Portale Partner</Label>
+              <Label htmlFor="portalUrl">{t("utility.partnerPortalUrl")}</Label>
               <Input
                 id="portalUrl"
                 name="portalUrl"
@@ -385,7 +385,7 @@ export default function ResellerUtilitySuppliers() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="referentName">Referente</Label>
+                <Label htmlFor="referentName">{t("utility.referent")}</Label>
                 <Input
                   id="referentName"
                   name="referentName"
@@ -394,7 +394,7 @@ export default function ResellerUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referentPhone">Tel. Referente</Label>
+                <Label htmlFor="referentPhone">{t("utility.referentPhone")}</Label>
                 <Input
                   id="referentPhone"
                   name="referentPhone"
@@ -403,7 +403,7 @@ export default function ResellerUtilitySuppliers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="referentEmail">Email Referente</Label>
+                <Label htmlFor="referentEmail">{t("utility.referentEmail")}</Label>
                 <Input
                   id="referentEmail"
                   name="referentEmail"
@@ -432,7 +432,7 @@ export default function ResellerUtilitySuppliers() {
                 defaultChecked={editingSupplier?.isActive ?? true}
                 data-testid="switch-active"
               />
-              <Label htmlFor="isActive">Fornitore attivo</Label>
+              <Label htmlFor="isActive">{t("utility.supplierActive")}</Label>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
@@ -447,7 +447,7 @@ export default function ResellerUtilitySuppliers() {
                 disabled={createMutation.isPending || updateMutation.isPending}
                 data-testid="button-save"
               >
-                {editingSupplier ? t("profile.saveChanges") : "Crea Fornitore"}
+                {editingSupplier ? t("profile.saveChanges") : t("utility.createSupplier")}
               </Button>
             </div>
           </form>

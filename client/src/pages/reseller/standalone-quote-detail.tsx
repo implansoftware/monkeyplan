@@ -96,12 +96,12 @@ export default function StandaloneQuoteDetail() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${quote?.quoteNumber || "preventivo"}.pdf`;
+      a.download = `${quote?.quoteNumber || "quote"}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: "PDF scaricato" });
+      toast({ title: t("common.pdfDownloaded") });
     } catch (error: any) {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     }

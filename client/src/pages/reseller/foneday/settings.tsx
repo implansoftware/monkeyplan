@@ -59,9 +59,9 @@ export default function FonedaySettingsPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/foneday/credentials"] });
       if (data.success) {
-        toast({ title: "Connessione riuscita", description: data.message });
+        toast({ title: t("integrations.connectionSuccessful"), description: data.message });
       } else {
-        toast({ title: "Connessione fallita", description: data.message, variant: "destructive" });
+        toast({ title: t("integrations.connectionFailed"), description: data.message, variant: "destructive" });
       }
     },
     onError: (error: Error) => {
@@ -75,7 +75,7 @@ export default function FonedaySettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/foneday/credentials"] });
-      toast({ title: t("pages.deleted"), description: "Credenziali Foneday eliminate" });
+      toast({ title: t("integrations.credentialsDeleted") });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -84,14 +84,14 @@ export default function FonedaySettingsPage() {
 
   const handleSave = () => {
     if (!apiToken.trim()) {
-      toast({ title: t("common.error"), description: "Inserisci il token API", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("integrations.enterApiToken"), variant: "destructive" });
       return;
     }
     saveMutation.mutate();
   };
 
   const formatDate = (date: string | null) => {
-    if (!date) return "Mai";
+    if (!date) return t("integrations.never");
     return new Date(date).toLocaleString("it-IT");
   };
 
@@ -110,15 +110,15 @@ export default function FonedaySettingsPage() {
         <div className="flex flex-wrap items-center gap-3">
           <Settings className="h-8 w-8" />
           <div>
-            <h1 className="text-2xl font-bold">Impostazioni Foneday</h1>
-            <p className="text-muted-foreground">Configura la connessione con il tuo account Foneday</p>
+            <h1 className="text-2xl font-bold">Foneday {t("integrations.settingsTitle")}</h1>
+            <p className="text-muted-foreground">{t("integrations.configureConnection")}</p>
           </div>
         </div>
         {credential && (
           <Link href="/reseller/foneday/catalog">
             <Button data-testid="button-go-catalog">
               <Package className="h-4 w-4 mr-2" />
-              Vai al Catalogo
+              {t("integrations.goToCatalog")}
             </Button>
           </Link>
         )}
@@ -131,9 +131,9 @@ export default function FonedaySettingsPage() {
               <div>
                 <CardTitle className="flex flex-wrap items-center gap-2">
                   <Key className="h-5 w-5" />
-                  Credenziali Configurate
+                  {t("integrations.configuredCredentials")}
                 </CardTitle>
-                <CardDescription>Le tue credenziali Foneday sono salvate</CardDescription>
+                <CardDescription>{t("integrations.credentialsSavedMessage")}</CardDescription>
               </div>
               <Badge variant={credential.isActive ? "default" : "secondary"}>
                 {credential.isActive ? t("common.active") : t("common.deactivated")}
@@ -143,7 +143,7 @@ export default function FonedaySettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Token API</Label>
+                <Label>{t("integrations.enterApiToken")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   <Input
                     type={showToken ? "text" : "password"}
@@ -157,12 +157,12 @@ export default function FonedaySettingsPage() {
                     size="sm"
                     onClick={() => setShowToken(!showToken)}
                   >
-                    {showToken ? "Nascondi" : "Mostra"}
+                    {showToken ? t("common.hide") : t("common.show")}
                   </Button>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Ultimo Test</Label>
+                <Label>{t("integrations.lastTestLabel")}</Label>
                 <div className="flex flex-wrap items-center gap-2">
                   {credential.testStatus === "success" ? (
                     <CheckCircle className="h-4 w-4 text-green-500" />
@@ -191,7 +191,7 @@ export default function FonedaySettingsPage() {
                 ) : (
                   <TestTube className="h-4 w-4 mr-2" />
                 )}
-                Test Connessione
+                {t("integrations.testConnection")}
               </Button>
               <Button
                 variant="destructive"
@@ -204,13 +204,13 @@ export default function FonedaySettingsPage() {
                 ) : (
                   <Trash2 className="h-4 w-4 mr-2" />
                 )}
-                Elimina Credenziali
+                {t("integrations.deleteCredentials")}
               </Button>
             </div>
 
             <Alert>
               <AlertDescription>
-                Per aggiornare le credenziali, eliminale prima e poi inseriscine di nuove.
+                {t("integrations.toUpdateCredentials")}
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -220,10 +220,10 @@ export default function FonedaySettingsPage() {
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Key className="h-5 w-5" />
-              Configura Foneday
+              {t("integrations.configureName", { name: "Foneday" })}
             </CardTitle>
             <CardDescription>
-              Inserisci il tuo API Token Foneday per accedere al catalogo ricambi
+              {t("integrations.enterApiTokenFor")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -232,20 +232,20 @@ export default function FonedaySettingsPage() {
               <Input
                 id="apiToken"
                 type="password"
-                placeholder="Inserisci il tuo API Token Foneday"
+                placeholder={t("integrations.enterApiTokenPlaceholder")}
                 value={apiToken}
                 onChange={(e) => setApiToken(e.target.value)}
                 data-testid="input-api-token"
               />
               <p className="text-sm text-muted-foreground">
-                Puoi ottenere il tuo API Token dal pannello Foneday.{" "}
+                {t("integrations.getApiTokenFrom")}{" "}
                 <a
                   href="https://www.foneday.eu"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline inline-flex items-center gap-1"
                 >
-                  Vai a Foneday <ExternalLink className="h-3 w-3" />
+                  {t("integrations.goTo", { name: "Foneday" })} <ExternalLink className="h-3 w-3" />
                 </a>
               </p>
             </div>
@@ -260,7 +260,7 @@ export default function FonedaySettingsPage() {
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              Salva Credenziali
+              {t("integrations.saveCreds")}
             </Button>
           </CardContent>
         </Card>
@@ -268,23 +268,21 @@ export default function FonedaySettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Informazioni su Foneday</CardTitle>
-          <CardDescription>Come funziona l'integrazione Foneday</CardDescription>
+          <CardTitle>{t("integrations.aboutIntegration", { name: "Foneday" })}</CardTitle>
+          <CardDescription>{t("integrations.howIntegrationWorks", { name: "Foneday" })}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
           <p>
-            Foneday è un fornitore europeo di ricambi per smartphone e tablet.
-            L'integrazione ti permette di:
+            Foneday {t("integrations.integrationDescription")}
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>Consultare il catalogo prodotti con prezzi e disponibilità in tempo reale</li>
-            <li>Aggiungere prodotti al carrello e completare ordini</li>
-            <li>Visualizzare lo storico ordini e fatture</li>
-            <li>Scaricare le fatture in formato PDF</li>
+            <li>{t("integrations.fonedayFeature1")}</li>
+            <li>{t("integrations.fonedayFeature2")}</li>
+            <li>{t("integrations.fonedayFeature3")}</li>
+            <li>{t("integrations.fonedayFeature4")}</li>
           </ul>
           <p className="pt-2">
-            Per utilizzare l'integrazione, devi prima creare un account su Foneday e
-            ottenere il tuo API Token dal pannello di controllo.
+            {t("integrations.fonedaySetupHint")}
           </p>
         </CardContent>
       </Card>

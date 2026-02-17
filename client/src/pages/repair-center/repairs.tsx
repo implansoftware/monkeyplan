@@ -257,7 +257,7 @@ export default function RepairCenterRepairs() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{t("repairs.totaleLavorazioni")}</p>
                 <p className="text-2xl sm:text-3xl font-bold tabular-nums">{totalRepairs}</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {repairs.length > 0 ? `Pagina ${page}/${totalPages}` : 'Nessun filtro'}
+                  {repairs.length > 0 ? `${t("common.page")} ${page}/${totalPages}` : t("common.noFilter")}
                 </p>
               </div>
               <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">

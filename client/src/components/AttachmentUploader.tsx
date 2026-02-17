@@ -165,7 +165,7 @@ export function AttachmentUploader({
         queryKey: ["/api/repair-orders", repairOrderId, "attachments"],
       });
       toast({
-        title: "File caricato",
+        title: t("attachment.fileUploaded"),
         description: t("attachment.uploadedSuccessfully"),
       });
       setUploadProgress(null);
@@ -190,7 +190,7 @@ export function AttachmentUploader({
         queryKey: ["/api/repair-orders", repairOrderId, "attachments"],
       });
       toast({
-        title: "File eliminato",
+        title: t("attachment.fileDeleted"),
         description: t("attachment.deletedSuccessfully"),
       });
       setDeleteDialogOpen(false);
@@ -207,7 +207,7 @@ export function AttachmentUploader({
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return `Tipo file non supportato: ${file.type}. Sono ammessi solo immagini, PDF e documenti Word.`;
+      return t("attachment.unsupportedFileType", { type: file.type });
     }
     if (file.size > MAX_FILE_SIZE) {
       return t("attachment.fileTooLarge", { size: formatFileSize(file.size) });
@@ -232,7 +232,7 @@ export function AttachmentUploader({
 
     if (errors.length > 0) {
       toast({
-        title: "Alcuni file non validi",
+        title: t("attachment.someFilesInvalid"),
         description: errors.join('\n'),
         variant: "destructive",
       });
@@ -324,10 +324,10 @@ export function AttachmentUploader({
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <Upload className="h-5 w-5" />
-              Carica Allegati
+              {t("attachment.uploadAttachments")}
             </CardTitle>
             <CardDescription>
-              Carica immagini, PDF o documenti relativi a questa riparazione (max 10MB)
+              {t("attachment.uploadDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -358,11 +358,11 @@ export function AttachmentUploader({
             >
               <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
               <p className="text-muted-foreground">
-                Trascina i file qui o{' '}
-                <span className="text-primary underline underline-offset-4">sfoglia</span>
+                {t("attachment.dragFilesHere")}{' '}
+                <span className="text-primary underline underline-offset-4">{t("attachment.browse")}</span>
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Immagini, PDF, Word - Max 10MB
+                {t("attachment.allowedFormats")}
               </p>
             </div>
 
@@ -397,7 +397,7 @@ export function AttachmentUploader({
                   <div className="space-y-2">
                     <Progress value={uploadProgress} className="h-2" />
                     <p className="text-xs text-muted-foreground text-center">
-                      Caricamento in corso... {uploadProgress}%
+                      {t("attachment.uploadingProgress", { progress: uploadProgress })}
                     </p>
                   </div>
                 )}
@@ -423,11 +423,11 @@ export function AttachmentUploader({
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <FileText className="h-5 w-5" />
-            Allegati ({attachments.length})
+            {t("attachment.attachments")} ({attachments.length})
           </CardTitle>
           {attachments.length > 0 && (
             <CardDescription>
-              File caricati per questa riparazione
+              {t("attachment.uploadedFilesForRepair")}
             </CardDescription>
           )}
         </CardHeader>
@@ -438,7 +438,7 @@ export function AttachmentUploader({
             </div>
           ) : attachments.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nessun allegato presente
+              {t("attachment.noAttachments")}
             </div>
           ) : (
             <div className="space-y-3">
@@ -493,7 +493,7 @@ export function AttachmentUploader({
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Caricato il {format(new Date(attachment.uploadedAt), "dd/MM/yyyy HH:mm")}
+                              {t("attachment.uploadedOn")} {format(new Date(attachment.uploadedAt), "dd/MM/yyyy HH:mm")}
                             </p>
                           </div>
 
@@ -560,7 +560,7 @@ export function AttachmentUploader({
           <AlertDialogHeader>
             <AlertDialogTitle>{t("common.confirmDeletion")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Sei sicuro di voler eliminare "{attachmentToDelete?.fileName}"? Questa azione non può essere annullata.
+              {t("attachment.confirmDeleteFile", { fileName: attachmentToDelete?.fileName })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
