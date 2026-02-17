@@ -70,8 +70,8 @@ export default function RepairCenterHrCalendar() {
               <Calendar className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.calendar")}</h1>
-              <p className="text-emerald-100">Visualizzazione assenze e presenze</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.calendarTitle")}</h1>
+              <p className="text-emerald-100">{t("hr.calendarSubtitle")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

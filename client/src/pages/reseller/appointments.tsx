@@ -431,7 +431,7 @@ export default function ResellerAppointments() {
         <Tabs defaultValue="calendar">
           <TabsList>
             <TabsTrigger value="calendar" className="gap-2" data-testid="tab-calendar">
-              <CalendarIcon className="h-4 w-4" />{t("hr.calendar")}</TabsTrigger>
+              <CalendarIcon className="h-4 w-4" />{t("hr.calendarTitle")}</TabsTrigger>
             <TabsTrigger value="settings" className="gap-2" data-testid="tab-settings">
               <Settings className="h-4 w-4" />{t("settings.title")}</TabsTrigger>
           </TabsList>

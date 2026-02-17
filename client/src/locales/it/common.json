@@ -3015,7 +3015,8 @@
       "statuses": {
         "pending": "In Attesa"
       }
-    }
+    },
+    "calendarSubtitle": "Visualizzazione assenze e presenze"
   },
   "warranties": {
     "title": "Garanzie",

@@ -2739,7 +2739,7 @@
       "dayNames": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
     },
     "calendarDesc": "View absence and attendance calendar",
-    "calendarTitle": "HR Calendar",
+    "calendarTitle": "Calendar",
     "certificate": "Certificate",
     "certificateNumber": "Certificate number",
     "certificateUploadError": "Certificate upload error",
@@ -3017,7 +3017,8 @@
       "statuses": {
         "pending": "Pending"
       }
-    }
+    },
+    "calendarSubtitle": "Attendance and absence overview"
   },
   "warranties": {
     "title": "Warranties",
