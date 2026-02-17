@@ -286,7 +286,7 @@ export default function ResellerInvoices() {
                   </Select>
                   <Select value={sourceFilter} onValueChange={setSourceFilter}>
                     <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-source-filter">
-                      <SelectValue placeholder="{t("invoices.source")}" />
+                      <SelectValue placeholder={t("invoices.source")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("invoices.allSources")}</SelectItem>

@@ -144,7 +144,7 @@ export default function ResellerPosTransactionDetail() {
   const handlePrintReceipt = async () => {
     try {
       const res = await fetch(`/api/reseller/pos/transaction/${transactionId}/receipt`, { credentials: "include" });
-      if (!res.ok) throw new Error("t("pos.receiptError")");
+      if (!res.ok) throw new Error(t("pos.receiptError"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const win = window.open(url, "_blank");
@@ -453,7 +453,7 @@ export default function ResellerPosTransactionDetail() {
               <Label htmlFor="void-reason">{t("pos.voidReasonRequired")}</Label>
               <Textarea
                 id="void-reason"
-                placeholder="{t("pos.enterVoidReason")}"
+                placeholder={t("pos.enterVoidReason")}
                 value={voidReason}
                 onChange={(e) => setVoidReason(e.target.value)}
                 data-testid="input-void-reason"

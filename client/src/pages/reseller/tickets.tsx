@@ -207,7 +207,7 @@ export default function ResellerTickets() {
                       onValueChange={(v) => setNewTicket({ ...newTicket, targetType: v, targetId: "" })}
                     >
                       <SelectTrigger data-testid="select-target-type">
-                        <SelectValue placeholder="{t("tickets.selectRecipient")}" />
+                        <SelectValue placeholder={t("tickets.selectRecipient")} />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">

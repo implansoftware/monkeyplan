@@ -113,7 +113,7 @@ export default function HrAttendance() {
     queryKey: ["/api/reseller/hr/clock-events", entityType, selectedEntityId, selectedDate.toDateString()],
     queryFn: async () => {
       const res = await fetch(clockEventsUrl);
-      if (!res.ok) throw new Error("{t("common.loadingError")}");
+      if (!res.ok) throw new Error(t("common.loadingError"));
       return res.json();
     },
   });
@@ -358,7 +358,7 @@ export default function HrAttendance() {
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger className="w-48" data-testid="select-user-filter">
                   <User className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="{t("hr.allEmployees")}" />
+                  <SelectValue placeholder={t("hr.allEmployees")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tutti i dipendenti</SelectItem>
@@ -382,7 +382,7 @@ export default function HrAttendance() {
           ) : filteredEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>{isToday ? "{t("hr.noClockEntriesToday")}" : `{t("hr.noClockEntriesFor")} ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
+              <p>{isToday ? t("hr.noClockEntriesToday") : `${t("hr.noClockEntriesFor")} ${format(selectedDate, "d MMMM yyyy", { locale: it })}`}</p>
             </div>
           ) : (
             <Table>
@@ -478,7 +478,7 @@ export default function HrAttendance() {
               <Textarea
                 value={newEvent.notes}
                 onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
-                placeholder="{t("hr.manualClockReason")}"
+                placeholder={t("hr.manualClockReason")}
                 data-testid="input-notes"
               />
             </div>

@@ -89,7 +89,7 @@ type Blackout = {
   reason: string | null;
 };
 
-const weekdayNames = [t("time.sunday"), t("time.monday"), t("time.tuesday"), t("time.wednesday"), t("time.thursday"), t("time.friday"), t("time.saturday")];
+const weekdayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
 
 function getStatusLabels(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
   return {
@@ -199,7 +199,7 @@ export default function ResellerAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "t("appointments.availabilitySaved")", description: "t("appointments.hoursUpdated")" });
+      toast({ title: t("appointments.availabilitySaved"), description: t("appointments.hoursUpdated") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "availability"] });
       setEditingAvailability(false);
     },
@@ -217,7 +217,7 @@ export default function ResellerAppointments() {
       });
     },
     onSuccess: () => {
-      toast({ title: "t("appointments.closureAdded")", description: "t("appointments.closureDateAdded")" });
+      toast({ title: t("appointments.closureAdded"), description: t("appointments.closureDateAdded") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
       setBlackoutDialogOpen(false);
       setNewBlackout({ date: "", reason: "" });
@@ -233,7 +233,7 @@ export default function ResellerAppointments() {
       return await apiRequest("DELETE", `/api/repair-centers/${selectedCenterId}/blackouts/${blackoutId}`);
     },
     onSuccess: () => {
-      toast({ title: "t("appointments.closureRemoved")", description: "t("appointments.closureDateRemoved")" });
+      toast({ title: t("appointments.closureRemoved"), description: t("appointments.closureDateRemoved") });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-centers", selectedCenterId, "blackouts"] });
     },
     onError: (error: any) => {
@@ -761,7 +761,7 @@ export default function ResellerAppointments() {
               <Input
                 value={newBlackout.reason}
                 onChange={(e) => setNewBlackout(prev => ({ ...prev, reason: e.target.value }))}
-                placeholder="{t("appointments.closureReasonExample")}"
+                placeholder={t("appointments.closureReasonExample")}
                 data-testid="input-blackout-reason"
               />
             </div>

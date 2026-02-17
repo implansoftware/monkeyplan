@@ -21,7 +21,7 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { useLocation } from "wouter";
-import { Repairs{t("common.kanban")}Board } from "@/components/RepairsKanbanBoard";
+import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 import { ActionGuard } from "@/components/permission-guard";
 import { useTranslation } from "react-i18next";
 

@@ -51,12 +51,12 @@ interface CustomModel {
 }
 
 const brandFormSchema = z.object({
-  name: z.string().min(1, t("catalog.brandNameRequired")),
+  name: z.string().min(1, "Brand name is required"),
   logoUrl: z.string().optional(),
 });
 
 const modelFormSchema = z.object({
-  modelName: z.string().min(1, t("catalog.modelNameRequired")),
+  modelName: z.string().min(1, "Model name is required"),
   brandId: z.string().optional(),
   brandName: z.string().optional(),
   typeId: z.string().optional(),
@@ -103,7 +103,7 @@ export default function DeviceCatalog() {
     queryKey: ["/api/reseller/device-brands", { includeGlobal: true }],
     queryFn: async () => {
       const res = await fetch("/api/reseller/device-brands?includeGlobal=true");
-      if (!res.ok) throw new Error("t("catalog.brandLoadError")");
+      if (!res.ok) throw new Error(t("catalog.brandLoadError"));
       return res.json();
     },
   });
@@ -112,7 +112,7 @@ export default function DeviceCatalog() {
     queryKey: ["/api/reseller/device-models", { includeGlobal: true }],
     queryFn: async () => {
       const res = await fetch("/api/reseller/device-models?includeGlobal=true");
-      if (!res.ok) throw new Error("t("catalog.modelLoadError")");
+      if (!res.ok) throw new Error(t("catalog.modelLoadError"));
       return res.json();
     },
   });
@@ -397,7 +397,7 @@ export default function DeviceCatalog() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="{t("catalog.searchBrand")}"
+                    placeholder={t("catalog.searchBrand")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -497,7 +497,7 @@ export default function DeviceCatalog() {
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="{t("catalog.searchModel")}"
+                    placeholder={t("catalog.searchModel")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -611,8 +611,8 @@ export default function DeviceCatalog() {
             <DialogTitle>{isEditing ? t("catalog.editBrandTitle") : t("catalog.newBrandTitle")}</DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "{t("catalog.editBrandDesc")}"
-                : "{t("catalog.addBrandDesc")}"}
+                ? t("catalog.editBrandDesc")
+                : t("catalog.addBrandDesc")}
             </DialogDescription>
           </DialogHeader>
           <Form {...brandForm}>
@@ -666,7 +666,7 @@ export default function DeviceCatalog() {
                     ? t("profile.saving")
                     : isEditing
                     ? t("profile.saveChanges")
-                    : "{t("catalog.createBrand")}"}
+                    : t("catalog.createBrand")}
                 </Button>
               </DialogFooter>
             </form>
@@ -681,8 +681,8 @@ export default function DeviceCatalog() {
             <DialogTitle>{isEditing ? t("products.editModel") : t("products.newModel")}</DialogTitle>
             <DialogDescription>
               {isEditing
-                ? "{t("catalog.editModelDesc")}"
-                : "{t("catalog.addModelDesc")}"}
+                ? t("catalog.editModelDesc")
+                : t("catalog.addModelDesc")}
             </DialogDescription>
           </DialogHeader>
           <Form {...modelForm}>
@@ -713,7 +713,7 @@ export default function DeviceCatalog() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-model-brand">
-                          <SelectValue placeholder="{t("catalog.selectBrand")}" />
+                          <SelectValue placeholder={t("catalog.selectBrand")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -737,7 +737,7 @@ export default function DeviceCatalog() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-model-type">
-                          <SelectValue placeholder="{t("catalog.selectType")}" />
+                          <SelectValue placeholder={t("catalog.selectType")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -822,7 +822,7 @@ export default function DeviceCatalog() {
                     ? t("profile.saving")
                     : isEditing
                     ? t("profile.saveChanges")
-                    : "{t("catalog.createModel")}"}
+                    : t("catalog.createModel")}
                 </Button>
               </DialogFooter>
             </form>

@@ -161,7 +161,7 @@ export default function ResellerMarketplaceSales() {
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "t("shipping.shipmentConfirmed")", description: "t("shipping.buyerNotified")" });
+      toast({ title: t("shipping.shipmentConfirmed"), description: t("shipping.buyerNotified") });
       queryClient.invalidateQueries({ queryKey: ['/api/reseller/marketplace/sales'] });
       setShipDialogOpen(false);
       setSelectedOrder(null);
@@ -392,7 +392,7 @@ export default function ResellerMarketplaceSales() {
                 <div className="space-y-2">
                   <Label>Note per l'acquirente (opzionale)</Label>
                   <Textarea 
-                    placeholder="{t("common.addNotesPlaceholder")}"
+                    placeholder={t("common.addNotesPlaceholder")}
                     value={sellerNotes}
                     onChange={(e) => setSellerNotes(e.target.value)}
                     data-testid="textarea-seller-notes"

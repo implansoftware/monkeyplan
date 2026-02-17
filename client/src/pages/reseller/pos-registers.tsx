@@ -110,12 +110,13 @@ function SessionCell({
   isOpenPending: boolean;
   isClosePending: boolean;
 }) {
+  const { t } = useTranslation();
   if (session) {
     return (
       <div className="flex flex-col items-center gap-1">
         <Badge variant="default" className="bg-green-500">
           <PlayCircle className="h-3 w-3 mr-1" />
-          Aperta
+          {t("common.open")}
         </Badge>
         <div className="flex gap-1">
           <Link href={`/reseller/pos/terminal/${register.repairCenterId}/${register.id}`}>
@@ -196,7 +197,7 @@ export default function ResellerPosRegistersPage() {
         ? "/api/reseller/pos/registers"
         : `/api/reseller/pos/registers?repairCenterId=${centerFilter}`;
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("t("pos.loadingError")");
+      if (!res.ok) throw new Error(t("pos.loadingError"));
       return res.json();
     },
   });
@@ -638,8 +639,8 @@ export default function ResellerPosRegistersPage() {
             </DialogTitle>
             <DialogDescription>
               {editingRegister 
-                ? "{t("pos.editRegisterDesc")}"
-                : "{t("pos.createRegisterDesc")}"
+                ? t("pos.editRegisterDesc")
+                : t("pos.createRegisterDesc")
               }
             </DialogDescription>
           </DialogHeader>
@@ -666,7 +667,7 @@ export default function ResellerPosRegistersPage() {
               <Label htmlFor="name">{t("pos.registerNameLabel")} *</Label>
               <Input
                 id="name"
-                placeholder="{t("pos.registerNameExample")}"
+                placeholder={t("pos.registerNameExample")}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 data-testid="input-register-name"
