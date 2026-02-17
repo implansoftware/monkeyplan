@@ -498,7 +498,7 @@ export default function AdminRepairCenterDetail() {
                     <X className="h-4 w-4 text-slate-400" />
                   )}
                   <span className={paymentConfig.bankTransferEnabled && paymentConfig.iban ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.bankTransferEnabled && paymentConfig.iban ? "Configurato" : "Non attivo"}
+                    {paymentConfig.bankTransferEnabled && paymentConfig.iban ? t("common.configured") : t("common.notActive")}
                   </span>
                 </div>
               </div>
@@ -514,7 +514,7 @@ export default function AdminRepairCenterDetail() {
                     <X className="h-4 w-4 text-slate-400" />
                   )}
                   <span className={paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? "Configurato" : "Non attivo"}
+                    {paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? t("common.configured") : t("common.notActive")}
                   </span>
                 </div>
               </div>
@@ -643,12 +643,12 @@ export default function AdminRepairCenterDetail() {
                           </TableCell>
                           <TableCell>
                             <Badge className={UTILITY_STATUS_COLORS[practice.status] || ""}>
-                              {UTILITY_t(`repair.statuses.${practice.status}`) || practice.status}
+                              {t(`repair.statuses.${practice.status}`) || practice.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             {practice.priceType === "mensile" 
-                              ? formatCurrency(practice.monthlyPriceCents) + "/mese"
+                              ? formatCurrency(practice.monthlyPriceCents) + t("common.perMonth")
                               : formatCurrency(practice.flatPriceCents)
                             }
                           </TableCell>
@@ -700,7 +700,7 @@ export default function AdminRepairCenterDetail() {
                           <TableCell className="font-mono text-sm">{order.orderNumber}</TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {B2B_t(`repair.statuses.${order.status}`) || order.status}
+                              {t(`repair.statuses.${order.status}`) || order.status}
                             </Badge>
                           </TableCell>
                           <TableCell>

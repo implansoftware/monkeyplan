@@ -67,11 +67,11 @@ function getPaymentMethodName(method: string): string {
   return names[method] || method;
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t: (key: string) => string) {
   const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("common.pending"), variant: "secondary" },
     approved: { label: t("repairs.status.approved"), variant: "default" },
-    paid: { label: "Pagato", variant: "default" },
+    paid: { label: t("common.paid"), variant: "default" },
     shipped: { label: t("b2b.status.shipped"), variant: "default" },
     delivered: { label: t("repairs.status.delivered"), variant: "default" },
     rejected: { label: t("b2b.status.cancelled"), variant: "destructive" },
@@ -216,7 +216,7 @@ export default function ResellerRCB2BOrders() {
                     <TableCell>
                       {format(new Date(order.createdAt), "dd MMM yyyy", { locale: it })}
                     </TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
+                    <TableCell>{getStatusBadge(order.status, t)}</TableCell>
                     <TableCell>{order.items.length} articoli</TableCell>
                     <TableCell className="text-right font-semibold">{formatPrice(order.total)}</TableCell>
                     <TableCell>
@@ -243,7 +243,7 @@ export default function ResellerRCB2BOrders() {
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 Ordine {selectedOrder.orderNumber}
-                {getStatusBadge(selectedOrder.status)}
+                {getStatusBadge(selectedOrder.status, t)}
               </DialogTitle>
               <DialogDescription>
                 Da: {selectedOrder.repairCenter?.name || 'Centro sconosciuto'} - 

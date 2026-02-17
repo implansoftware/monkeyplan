@@ -79,7 +79,7 @@ export default function AdminLicenses() {
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
       const res = await fetch("/api/admin/users");
-      if (!res.ok) throw new Error("Errore");
+      if (!res.ok) throw new Error(t("common.error"));
       return res.json();
     },
   });

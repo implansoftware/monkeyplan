@@ -858,7 +858,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   </div>
                   <div>
                     <h1 className="text-2xl font-bold tracking-tight" data-testid="text-page-title">
-                      Lavorazione #{repair.orderNumber}
+                      {t("repairs.repairOrder")} #{repair.orderNumber}
                     </h1>
                     <p className="text-sm text-muted-foreground" data-testid="text-order-number">
                       {repair.deviceType} - {repair.deviceModel}

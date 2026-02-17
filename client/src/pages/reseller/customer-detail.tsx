@@ -358,11 +358,11 @@ export default function ResellerCustomerDetail() {
                                 variant="secondary"
                                 className="font-normal"
                                 style={{ 
-                                  backgroundColor: statusConfig.color + "15",
-                                  color: statusConfig.color 
+                                  backgroundColor: (statusConfig?.color || '#888') + "15",
+                                  color: statusConfig?.color || '#888'
                                 }}
                               >
-                                {statusConfig.label}
+                                {t(statusConfig?.labelKey || '') || statusConfig?.label || order.status}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
@@ -527,6 +527,7 @@ function CustomerEditForm({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     fullName: customer.fullName,
     username: customer.username,

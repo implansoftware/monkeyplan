@@ -456,7 +456,7 @@ export default function RepairCenterRemoteRequests() {
             <div>
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <Truck className="h-5 w-5 text-blue-500" />
-                In Lavorazione ({activeRequests.length})
+                {t("repairs.status.inProgress")} ({activeRequests.length})
               </h2>
               <div className="space-y-4">
                 {activeRequests.map((request) => (
@@ -709,7 +709,7 @@ export default function RepairCenterRemoteRequests() {
                           {request.devices?.some(d => d.repairOrderId && d.status === 'repair_created') && (
                             <Link href={`/repair-center/repairs/${request.devices.find(d => d.repairOrderId)?.repairOrderId}`}>
                               <Button size="sm" variant="outline" data-testid={`button-view-repair-${request.id}`}>
-                                Vai alla Lavorazione
+                                {t("common.goToRepair")}
                               </Button>
                             </Link>
                           )}

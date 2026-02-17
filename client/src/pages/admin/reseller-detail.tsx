@@ -322,7 +322,7 @@ export default function AdminResellerDetail() {
                     <X className="h-4 w-4 text-slate-400" />
                   )}
                   <span className={paymentConfig.bankTransferEnabled && paymentConfig.iban ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.bankTransferEnabled && paymentConfig.iban ? "Configurato" : "Non attivo"}
+                    {paymentConfig.bankTransferEnabled && paymentConfig.iban ? t("common.configured") : t("common.notActive")}
                   </span>
                 </div>
               </div>
@@ -338,7 +338,7 @@ export default function AdminResellerDetail() {
                     <X className="h-4 w-4 text-slate-400" />
                   )}
                   <span className={paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? "text-emerald-600 font-medium text-sm" : "text-slate-400 text-sm"}>
-                    {paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? "Configurato" : "Non attivo"}
+                    {paymentConfig.paypalEnabled && paymentConfig.paypalEmail ? t("common.configured") : t("common.notActive")}
                   </span>
                 </div>
               </div>

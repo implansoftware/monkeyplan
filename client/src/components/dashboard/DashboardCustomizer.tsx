@@ -18,8 +18,8 @@ import {
   WidgetConfig, 
   getWidgetRegistry, 
   getDefaultLayout,
-  getCategoryLabel,
-  DashboardLayoutConfig 
+  DashboardLayoutConfig,
+  CATEGORY_LABEL_KEYS
 } from "./widget-registry";
 
 interface DashboardCustomizerProps {
@@ -141,7 +141,7 @@ export function DashboardCustomizer({
           {Object.entries(groupedWidgets).map(([category, items]) => (
             <div key={category}>
               <h4 className="text-sm font-medium text-muted-foreground mb-3">
-                {getCategoryLabel(category as WidgetConfig["category"])}
+                {t(CATEGORY_LABEL_KEYS[category as WidgetConfig["category"]])}
               </h4>
               <div className="space-y-2">
                 {items.map(({ widget, config }) => {
@@ -163,9 +163,9 @@ export function DashboardCustomizer({
                       <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
                       
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{config.name}</div>
+                        <div className="font-medium text-sm">{t(config.nameKey)}</div>
                         <div className="text-xs text-muted-foreground truncate">
-                          {config.description}
+                          {t(config.descriptionKey)}
                         </div>
                       </div>
 

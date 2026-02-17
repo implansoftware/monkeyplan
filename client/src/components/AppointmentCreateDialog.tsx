@@ -175,7 +175,7 @@ export function AppointmentCreateDialog({
         
         <div className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">Ordine di Riparazione</Label>
+            <Label className="text-sm font-medium">{t("repairs.repairOrder")}</Label>
             {loadingRepairs ? (
               <Skeleton className="h-10 w-full mt-1" />
             ) : repairsWithoutAppointment.length === 0 ? (

@@ -10,6 +10,16 @@ export interface CategorySpecsConfig {
   description: boolean;
 }
 
+export const DEVICE_CATEGORY_LABEL_KEYS: Record<string, string> = {
+  smartphone: "products.categorySmartphone",
+  tablet: "products.categoryTablet",
+  portatile: "products.categoryLaptop",
+  pc_fisso: "products.categoryDesktop",
+  smartwatch: "products.categorySmartwatch",
+  console: "products.categoryConsole",
+  altro: "products.categoryOther",
+};
+
 export const DEVICE_CATEGORY_LABELS: Record<string, string> = {
   smartphone: "Smartphone",
   tablet: "Tablet",
@@ -18,6 +28,12 @@ export const DEVICE_CATEGORY_LABELS: Record<string, string> = {
   smartwatch: "Smartwatch",
   console: "Console",
   altro: "Altro",
+};
+
+export const PRODUCT_TYPE_LABEL_KEYS: Record<string, string> = {
+  dispositivo: "products.typeDevice",
+  ricambio: "products.typeSparePart",
+  accessorio: "products.typeAccessory",
 };
 
 export const PRODUCT_TYPE_LABELS: Record<string, string> = {

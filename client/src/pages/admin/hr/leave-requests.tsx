@@ -67,9 +67,9 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "pending",
-  approved: "Approvata",
-  rejected: "Rifiutata",
+  pending: "common.pending",
+  approved: "common.approved",
+  rejected: "common.rejected",
 };
 
 export default function AdminLeaveRequestsPage() {
@@ -223,7 +223,7 @@ export default function AdminLeaveRequestsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge className={statusColors[req.status]}>
-                        {statusLabels[req.status] || req.status}
+                        {t(statusLabels[req.status]) || req.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -311,10 +311,10 @@ export default function AdminLeaveRequestsPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Annulla
+              {t("common.cancel")}
             </Button>
             <Button onClick={handleEdit} disabled={editMutation.isPending} data-testid="button-save-edit">
-              {editMutation.isPending ? t("settings.savingRate") : "Salva"}
+              {editMutation.isPending ? t("settings.savingRate") : t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

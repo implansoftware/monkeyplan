@@ -107,7 +107,7 @@ export default function AdminRemoteRequests() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex flex-wrap items-center gap-1">
-              <Truck className="h-4 w-4" /> In Lavorazione
+              <Truck className="h-4 w-4" /> {t("repairs.status.inProgress")}
             </CardDescription>
             <CardTitle className="text-3xl">{inProgressCount}</CardTitle>
           </CardHeader>

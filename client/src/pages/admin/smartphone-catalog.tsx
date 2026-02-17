@@ -80,9 +80,26 @@ const CONDITION_OPTIONS = [
 const BRANDS = ["Apple", "Samsung", "Xiaomi", "Huawei", "OPPO", "OnePlus", "Google", "Motorola", "Sony", "Nokia", "Altro"];
 
 const COLOR_OPTIONS = [
-  "Nero", "Bianco", "Argento", "Grigio", "Oro", "Oro Rosa", "Blu", "Blu Notte", 
-  "Verde", "Verde Alpino", "Viola", "Rosso", "Giallo", "Arancione", "Rosa", "Titanio Nero", 
-  "Titanio Naturale", "Titanio Blu", "Titanio Bianco", "Altro"
+  { value: "Nero", labelKey: "colors.black" },
+  { value: "Bianco", labelKey: "colors.white" },
+  { value: "Argento", labelKey: "colors.silver" },
+  { value: "Grigio", labelKey: "colors.grey" },
+  { value: "Oro", labelKey: "colors.gold" },
+  { value: "Oro Rosa", labelKey: "colors.roseGold" },
+  { value: "Blu", labelKey: "colors.blue" },
+  { value: "Blu Notte", labelKey: "colors.nightBlue" },
+  { value: "Verde", labelKey: "colors.green" },
+  { value: "Verde Alpino", labelKey: "colors.alpineGreen" },
+  { value: "Viola", labelKey: "colors.purple" },
+  { value: "Rosso", labelKey: "colors.red" },
+  { value: "Giallo", labelKey: "colors.yellow" },
+  { value: "Arancione", labelKey: "colors.orange" },
+  { value: "Rosa", labelKey: "colors.pink" },
+  { value: "Titanio Nero", labelKey: "colors.blackTitanium" },
+  { value: "Titanio Naturale", labelKey: "colors.naturalTitanium" },
+  { value: "Titanio Blu", labelKey: "colors.blueTitanium" },
+  { value: "Titanio Bianco", labelKey: "colors.whiteTitanium" },
+  { value: "Altro", labelKey: "common.other" },
 ];
 
 const BATTERY_OPTIONS = [
@@ -903,7 +920,7 @@ export default function AdminSmartphoneCatalog() {
                         <div>
                           <div className="font-medium">{smartphone.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            {smartphone.brand} {smartphone.color && `• ${smartphone.color}`}
+                            {smartphone.brand} {smartphone.color && `• ${COLOR_OPTIONS.find(c => c.value === smartphone.color)?.labelKey ? t(COLOR_OPTIONS.find(c => c.value === smartphone.color)!.labelKey) : smartphone.color}`}
                           </div>
                           <div className="text-xs text-muted-foreground">SKU: {smartphone.sku}</div>
                         </div>
@@ -1086,7 +1103,7 @@ export default function AdminSmartphoneCatalog() {
                   </SelectTrigger>
                   <SelectContent>
                     {COLOR_OPTIONS.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>{t(c.labelKey)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

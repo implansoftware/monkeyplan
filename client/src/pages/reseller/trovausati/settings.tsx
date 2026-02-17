@@ -370,7 +370,7 @@ export default function TrovausatiSettingsPage() {
                           Token Marketplace configurato
                           {credential.lastTestResult && (
                             <Badge variant={credential.lastTestResult === "success" ? "default" : "destructive"} className="ml-2">
-                              {credential.lastTestResult === "success" ? "Funzionante" : t("common.error")}
+                              {credential.lastTestResult === "success" ? t("common.working") : t("common.error")}
                             </Badge>
                           )}
                         </span>
@@ -470,7 +470,7 @@ export default function TrovausatiSettingsPage() {
                           Token Valutatore configurato
                           {credential.storesLastTestResult && (
                             <Badge variant={credential.storesLastTestResult === "success" ? "default" : "destructive"} className="ml-2">
-                              {credential.storesLastTestResult === "success" ? "Funzionante" : t("common.error")}
+                              {credential.storesLastTestResult === "success" ? t("common.working") : t("common.error")}
                             </Badge>
                           )}
                         </span>

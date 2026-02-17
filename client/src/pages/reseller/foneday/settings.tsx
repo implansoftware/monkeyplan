@@ -43,7 +43,7 @@ export default function FonedaySettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/foneday/credentials"] });
-      toast({ title: "Salvato", description: "Credenziali Foneday salvate con successo" });
+      toast({ title: t("common.saved"), description: t("integrations.credentialsSavedDesc") });
       setApiToken("");
     },
     onError: (error: Error) => {
@@ -136,7 +136,7 @@ export default function FonedaySettingsPage() {
                 <CardDescription>Le tue credenziali Foneday sono salvate</CardDescription>
               </div>
               <Badge variant={credential.isActive ? "default" : "secondary"}>
-                {credential.isActive ? t("common.active") : "Disattivato"}
+                {credential.isActive ? t("common.active") : t("common.deactivated")}
               </Badge>
             </div>
           </CardHeader>

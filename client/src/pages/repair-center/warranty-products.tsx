@@ -11,9 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function getCoverageLabels(t: (key: string) => string): Record<string, string> {
   return {
-    basic: "Base",
+    basic: t("warranties.basic"),
     extended: t("warranties.extended"),
-    full: "Completa",
+    full: t("warranties.full"),
   };
 }
 

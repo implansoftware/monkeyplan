@@ -59,7 +59,7 @@ export function EntityFilterSelector({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <span className="text-sm text-muted-foreground">Visualizza dati di:</span>
+      <span className="text-sm text-muted-foreground">{t("common.viewDataOf")}</span>
       
       <Select
         value={entityType}

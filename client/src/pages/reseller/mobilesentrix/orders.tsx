@@ -340,7 +340,7 @@ export default function MobilesentrixOrdersPage() {
                           <Package className="h-6 w-6 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{item.name || "Prodotto"}</p>
+                          <p className="font-medium text-sm">{item.name || t("common.product")}</p>
                           <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
                           <p className="text-xs text-muted-foreground">{formatPrice(unitPrice)} cad.</p>
                         </div>

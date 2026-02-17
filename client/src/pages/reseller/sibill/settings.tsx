@@ -75,7 +75,7 @@ export default function SibillSettingsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sibill/credentials"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/integrations/summary"] });
-      toast({ title: "Salvato", description: "Credenziali Sibill salvate con successo" });
+      toast({ title: t("common.saved"), description: t("integrations.credentialsSavedDesc") });
       setApiToken("");
     },
     onError: (error: Error) => {
@@ -187,10 +187,10 @@ export default function SibillSettingsPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
-                    {credential.environment === "production" ? "Produzione" : "Sviluppo"}
+                    {credential.environment === "production" ? t("common.production") : t("common.development")}
                   </Badge>
                   <Badge variant={credential.isActive ? "default" : "secondary"}>
-                    {credential.isActive ? t("common.active") : "Disattivato"}
+                    {credential.isActive ? t("common.active") : t("common.deactivated")}
                   </Badge>
                 </div>
               </div>
@@ -385,12 +385,12 @@ export default function SibillSettingsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="production">Produzione</SelectItem>
-                  <SelectItem value="development">Sviluppo (Sandbox)</SelectItem>
+                  <SelectItem value="production">{t("common.production")}</SelectItem>
+                  <SelectItem value="development">{t("common.development")} (Sandbox)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Usa "Sviluppo" per test, "Produzione" per dati reali.
+                {t("integrations.envHint")}
               </p>
             </div>
 

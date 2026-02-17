@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Image as ImageIcon, Loader2, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ export function DiagnosisPhotoUploader({
   photos,
   onPhotosChange,
 }: DiagnosisPhotoUploaderProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -201,7 +203,7 @@ export function DiagnosisPhotoUploader({
         {isUploading ? (
           <div className="flex flex-col items-center gap-3">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">Caricamento in corso...</p>
+            <p className="text-sm text-muted-foreground">{t("common.uploading")}</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">

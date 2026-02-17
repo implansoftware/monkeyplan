@@ -65,12 +65,12 @@ function formatPrice(cents: number): string {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, t: (key: string) => string) {
   const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     pending: { label: t("hr.pending"), variant: "secondary" },
     approved: { label: t("repairs.status.approved"), variant: "default" },
     rejected: { label: t("b2b.status.cancelled"), variant: "destructive" },
-    processing: { label: "In elaborazione", variant: "secondary" },
+    processing: { label: t("marketplace.processing"), variant: "secondary" },
     shipped: { label: t("b2b.status.shipped"), variant: "default" },
     received: { label: t("repairs.status.received"), variant: "default" },
     cancelled: { label: t("repairs.status.cancelled"), variant: "destructive" },
@@ -177,7 +177,7 @@ export default function ResellerMarketplaceOrders() {
                   <TableCell>
                     <div className="flex flex-wrap items-center gap-2">
                       {getStatusIcon(order.status)}
-                      {getStatusBadge(order.status)}
+                      {getStatusBadge(order.status, t)}
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -210,7 +210,7 @@ export default function ResellerMarketplaceOrders() {
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                   {getStatusIcon(selectedOrder.status)}
-                  {getStatusBadge(selectedOrder.status)}
+                  {getStatusBadge(selectedOrder.status, t)}
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {format(new Date(selectedOrder.createdAt), 'dd MMMM yyyy HH:mm', { locale: it })}

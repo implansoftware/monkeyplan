@@ -338,11 +338,11 @@ export default function AdminCustomerDetail() {
                             <Badge 
                               className="text-xs"
                               style={{ 
-                                backgroundColor: statusConfig.color + "20",
-                                color: statusConfig.color 
+                                backgroundColor: (statusConfig?.color || '#888') + "20",
+                                color: statusConfig?.color || '#888'
                               }}
                             >
-                              {statusConfig.label}
+                              {t(statusConfig?.labelKey || '') || statusConfig?.label || order.status}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-slate-500">

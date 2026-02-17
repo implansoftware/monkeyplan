@@ -117,7 +117,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
     if (!name.trim() || !priceCents) return;
     const selectedLabels = AVAILABLE_FEATURES
       .filter(f => selectedFeatures.has(f.id))
-      .map(f => f.label);
+      .map(f => f.id);
     const allFeatures = [...selectedLabels, ...customFeatures];
     const featuresString = allFeatures.length > 0 ? allFeatures.join("\n") : null;
 
@@ -428,12 +428,18 @@ export default function AdminLicensePlans() {
                 )}
                 {plan.features && (
                   <div className="text-sm space-y-1 pt-2 border-t">
-                    {plan.features.split("\n").filter(Boolean).map((f, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className="text-emerald-500 shrink-0">&#10003;</span>
-                        <span>{f.trim()}</span>
-                      </div>
-                    ))}
+                    {plan.features.split("\n").filter(Boolean).map((f, i) => {
+                      const trimmed = f.trim();
+                      const feature = AVAILABLE_FEATURES.find(
+                        feat => feat.id === trimmed || feat.label.toLowerCase() === trimmed.toLowerCase()
+                      );
+                      return (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className="text-emerald-500 shrink-0">&#10003;</span>
+                          <span>{feature ? t(feature.labelKey) : trimmed}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

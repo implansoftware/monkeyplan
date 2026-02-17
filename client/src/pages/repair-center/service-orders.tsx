@@ -62,7 +62,7 @@ export default function RepairCenterServiceOrders() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/repair-center/service-orders"] });
-      toast({ title: "Lavorazione avviata" });
+      toast({ title: t("repairs.processingStarted") });
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });

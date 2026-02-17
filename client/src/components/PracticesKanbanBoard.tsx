@@ -37,14 +37,14 @@ function getPracticeColumns(t: (key: string) => string): KanbanColumn[] {
     },
     {
       key: "in_lavorazione",
-      label: "In Lavorazione",
+      label: t("utility.practiceStatus.inLavorazione"),
       color: "text-yellow-700 dark:text-yellow-300",
       bgColor: "bg-yellow-50 dark:bg-yellow-950/30",
       borderColor: "border-yellow-300 dark:border-yellow-700",
     },
     {
       key: "attesa_documenti",
-      label: "Attesa Documenti",
+      label: t("utility.practiceStatus.attesaDocumenti"),
       color: "text-orange-700 dark:text-orange-300",
       bgColor: "bg-orange-50 dark:bg-orange-950/30",
       borderColor: "border-orange-300 dark:border-orange-700",

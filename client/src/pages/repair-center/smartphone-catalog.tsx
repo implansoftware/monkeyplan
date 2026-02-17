@@ -395,28 +395,28 @@ export default function RepairCenterSmartphoneCatalog() {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Specifiche Tecniche</h4>
+                  <h4 className="font-semibold mb-2">{t("products.technicalSpecs")}</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Storage:</span>
                       <span>{selectedPhone.specs?.storage || "N/D"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Batteria:</span>
+                      <span className="text-muted-foreground">{t("products.battery")}:</span>
                       <span>{selectedPhone.specs?.batteryHealth ? `${selectedPhone.specs.batteryHealth}%` : "N/D"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Colore:</span>
+                      <span className="text-muted-foreground">{t("products.color")}:</span>
                       <span>{selectedPhone.color || "N/D"}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Blocco rete:</span>
-                      <span>{selectedPhone.specs?.networkLock === "unlocked" ? "Sbloccato" : selectedPhone.specs?.networkLock || "N/D"}</span>
+                      <span className="text-muted-foreground">{t("products.networkLock")}:</span>
+                      <span>{selectedPhone.specs?.networkLock === "unlocked" ? t("products.unlocked") : selectedPhone.specs?.networkLock || "N/D"}</span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">Identificativi</h4>
+                  <h4 className="font-semibold mb-2">{t("products.identifiers")}</h4>
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">IMEI:</span>

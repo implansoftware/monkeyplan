@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Smartphone, Calendar, Euro, Eye, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { KANBAN_COLUMNS, getStatusConfig } from "@/lib/repair-status-config";
+import { KANBAN_COLUMNS, REPAIR_STATUS_CONFIG } from "@/lib/repair-status-config";
 import type { RepairOrder } from "@shared/schema";
 
 interface RepairOrderWithSLA extends RepairOrder {
@@ -86,7 +86,7 @@ export function RepairsKanbanBoard({
               <div
                 className={`p-3 rounded-t-lg ${col.bgColor} ${col.borderColor} border-b-2 flex items-center justify-between`}
               >
-                <span className={`font-medium text-sm ${col.color}`}>{col.label}</span>
+                <span className={`font-medium text-sm ${col.color}`}>{t(col.labelKey)}</span>
                 <Badge variant="secondary" className="text-xs">
                   {columnRepairs.length}
                 </Badge>
@@ -95,7 +95,7 @@ export function RepairsKanbanBoard({
                 <div className="bg-muted/20 rounded-b-lg p-2 space-y-2 min-h-full">
                   {columnRepairs.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground text-sm">
-                      Nessuna lavorazione
+                      {t("repairs.noRepairs")}
                     </div>
                   ) : (
                     columnRepairs.map((repair) => (
@@ -125,7 +125,8 @@ interface KanbanCardProps {
 }
 
 function KanbanCard({ repair, onClick, formatCurrency }: KanbanCardProps) {
-  const statusConfig = getStatusConfig(repair.status);
+  const { t } = useTranslation();
+  const statusConfig = REPAIR_STATUS_CONFIG[repair.status];
   const price = formatCurrency(repair.totalQuoteCents || repair.estimatedCost || repair.finalCost);
 
   return (
@@ -156,7 +157,7 @@ function KanbanCard({ repair, onClick, formatCurrency }: KanbanCardProps) {
             variant={repair.slaSeverity === "urgent" ? "destructive" : "outline"}
             className="text-xs"
           >
-            {repair.slaSeverity === "urgent" ? t("sla.urgent") : "In ritardo"}
+            {repair.slaSeverity === "urgent" ? t("sla.urgent") : t("sla.late")}
           </Badge>
         )}
 

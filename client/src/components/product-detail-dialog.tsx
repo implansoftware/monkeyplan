@@ -13,7 +13,9 @@ import {
 import type { Product, SmartphoneSpecs, AccessorySpecs } from "@shared/schema";
 import { 
   DEVICE_CATEGORY_LABELS, 
+  DEVICE_CATEGORY_LABEL_KEYS,
   PRODUCT_TYPE_LABELS, 
+  PRODUCT_TYPE_LABEL_KEYS,
   getSpecsConfig 
 } from "@/lib/device-category-config";
 
@@ -143,8 +145,8 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline">
                       {data.product.productType === 'dispositivo' && data.product.category
-                        ? DEVICE_CATEGORY_LABELS[data.product.category] || data.product.category
-                        : PRODUCT_TYPE_LABELS[data.product.productType || 'ricambio'] || data.product.productType}
+                        ? t(DEVICE_CATEGORY_LABEL_KEYS[data.product.category] || '') || DEVICE_CATEGORY_LABELS[data.product.category] || data.product.category
+                        : t(PRODUCT_TYPE_LABEL_KEYS[data.product.productType || 'ricambio'] || '') || PRODUCT_TYPE_LABELS[data.product.productType || 'ricambio'] || data.product.productType}
                     </Badge>
                     {data.product.condition && (
                       <Badge variant="secondary">
@@ -184,7 +186,7 @@ export function ProductDetailDialog({ open, onOpenChange, productId, hideStock =
                     <div>
                       <h3 className="font-medium flex items-center gap-2 mb-3">
                         <Smartphone className="h-4 w-4" />
-                        {t("products.specs")} {DEVICE_CATEGORY_LABELS[data.product.category || ''] || t('products.device')}
+                        {t("products.specs")} {t(DEVICE_CATEGORY_LABEL_KEYS[data.product.category || ''] || '') || DEVICE_CATEGORY_LABELS[data.product.category || ''] || t('products.device')}
                       </h3>
                       {specs ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
