@@ -322,7 +322,7 @@ export default function AdminUtilityCommissionDetail() {
                     </Link>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t("utility.practiceStatus")}</p>
+                    <p className="text-sm text-muted-foreground">{t("utility.practiceStatusTitle")}</p>
                     <p className="text-sm font-medium mt-1" data-testid="text-practice-status">
                       {practice.status === "completata" ? t("utility.statusCompleted") :
                        practice.status === "in_lavorazione" ? t("utility.statusInProgress") :

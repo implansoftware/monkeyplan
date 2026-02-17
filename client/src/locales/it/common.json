@@ -3016,7 +3016,11 @@
         "pending": "In Attesa"
       }
     },
-    "calendarSubtitle": "Visualizzazione assenze e presenze"
+    "calendarSubtitle": "Visualizzazione assenze e presenze",
+    "expensesTitle": "Note Spese",
+    "sickLeaveTitle": "Malattia",
+    "expensesListDesc": "Elenco di tutte le note spese",
+    "sickLeaveSubtitle": "Certificati e assenze per malattia"
   },
   "warranties": {
     "title": "Garanzie",
@@ -3711,7 +3715,9 @@
     "saveChangesBtn": "Salva Modifiche",
     "createServiceBtn": "Crea Servizio",
     "newSupplier": "Nuovo Fornitore Utility",
-    "createSupplierBtn": "Crea Fornitore"
+    "createSupplierBtn": "Crea Fornitore",
+    "categoriesTitle": "Categorie",
+    "practiceStatusTitle": "Stato Pratica"
   },
   "suppliers": {
     "title": "Fornitori",

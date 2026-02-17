@@ -3018,7 +3018,11 @@
         "pending": "Pending"
       }
     },
-    "calendarSubtitle": "Attendance and absence overview"
+    "calendarSubtitle": "Attendance and absence overview",
+    "expensesTitle": "Expenses",
+    "sickLeaveTitle": "Sick Leave",
+    "expensesListDesc": "List of all expense reports",
+    "sickLeaveSubtitle": "Certificates and sick leave absences"
   },
   "warranties": {
     "title": "Warranties",
@@ -3713,7 +3717,9 @@
     "saveChangesBtn": "Save Changes",
     "createServiceBtn": "Create Service",
     "newSupplier": "New Utility Supplier",
-    "createSupplierBtn": "Create Supplier"
+    "createSupplierBtn": "Create Supplier",
+    "categoriesTitle": "Categories",
+    "practiceStatusTitle": "Practice Status"
   },
   "suppliers": {
     "title": "Suppliers",

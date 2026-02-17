@@ -25,7 +25,7 @@ export default function RepairCenterHrCalendar() {
     vacation: { label: t("hr.vacation"), icon: CalendarDays, color: "text-emerald-600", bgColor: "bg-emerald-100 dark:bg-emerald-900/30" },
     permit: { label: t("hr.calendar.types.permit"), icon: CalendarDays, color: "text-blue-600", bgColor: "bg-blue-100 dark:bg-blue-900/30" },
     rol: { label: t("hr.calendar.types.rol"), icon: CalendarDays, color: "text-cyan-600", bgColor: "bg-cyan-100 dark:bg-cyan-900/30" },
-    sick: { label: t("hr.sickLeave"), icon: Thermometer, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/30" },
+    sick: { label: t("hr.sickLeaveTitle"), icon: Thermometer, color: "text-red-600", bgColor: "bg-red-100 dark:bg-red-900/30" },
     expense: { label: t("hr.calendar.types.expense"), icon: Receipt, color: "text-amber-600", bgColor: "bg-amber-100 dark:bg-amber-900/30" },
   };
   const [currentMonth, setCurrentMonth] = useState(new Date());

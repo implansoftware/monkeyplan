@@ -153,8 +153,8 @@ export default function RepairCenterHrSickLeave() {
               <HeartPulse className="h-5 w-5 sm:h-7 sm:w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.sickLeave")}</h1>
-              <p className="text-emerald-100">Certificati e assenze per malattia</p>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight">{t("hr.sickLeaveTitle")}</h1>
+              <p className="text-emerald-100">{t("hr.sickLeaveSubtitle")}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">

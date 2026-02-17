@@ -177,7 +177,7 @@ export default function HrSickLeave() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/hr/sick-leaves"] });
       const statusLabel = variables.status === 'confirmed' ? t('hr.confirmed') : t('hr.closed');
-      toast({ title: t("tickets.statusUpdated"), description: `${t("hr.sickLeave")} ${statusLabel}` });
+      toast({ title: t("tickets.statusUpdated"), description: `${t("hr.sickLeaveTitle")} ${statusLabel}` });
     },
     onError: (error: any) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });

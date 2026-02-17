@@ -346,8 +346,8 @@ export default function HrExpenses() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="flex flex-wrap items-center gap-2">
-                <FileText className="h-5 w-5 text-muted-foreground" />{t("hr.expenses")}</CardTitle>
-              <CardDescription>Elenco di tutte le note spese</CardDescription>
+                <FileText className="h-5 w-5 text-muted-foreground" />{t("hr.expensesTitle")}</CardTitle>
+              <CardDescription>{t("hr.expensesListDesc")}</CardDescription>
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40" data-testid="select-status-filter">

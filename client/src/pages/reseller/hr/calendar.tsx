@@ -131,7 +131,7 @@ export default function HrCalendar() {
           <Badge variant="secondary" className="gap-1">
             <div className="w-3 h-3 rounded-full bg-blue-500" />{t("common.permissions")}</Badge>
           <Badge variant="secondary" className="gap-1">
-            <div className="w-3 h-3 rounded-full bg-red-500" />{t("hr.sickLeave")}</Badge>
+            <div className="w-3 h-3 rounded-full bg-red-500" />{t("hr.sickLeaveTitle")}</Badge>
           <Badge variant="secondary" className="gap-1">
             <div className="w-3 h-3 rounded-full bg-purple-500" />
             ROL

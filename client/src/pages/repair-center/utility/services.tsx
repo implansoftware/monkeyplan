@@ -323,7 +323,7 @@ export default function RepairCenterUtilityServices() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{t("utility.categories")}</p>
+                <p className="text-sm text-muted-foreground">{t("utility.categoriesTitle")}</p>
                 <p className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400" data-testid="stat-value-categories">
                   {stats.categoriesCount}
                 </p>

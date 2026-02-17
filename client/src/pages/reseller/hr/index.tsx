@@ -39,7 +39,7 @@ export default function HrDashboard() {
 
   const quickActions = [
     {
-      title: t("hr.attendance"),
+      title: t("hr.attendanceTitle"),
       description: t("hr.attendanceManagement"),
       icon: Clock,
       href: "/reseller/hr/attendance",
