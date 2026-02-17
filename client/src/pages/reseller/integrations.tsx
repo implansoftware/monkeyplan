@@ -84,6 +84,7 @@ const INTEGRATION_COLORS: Record<string, string> = {
 };
 
 function IntegrationCard({ integration }: { integration: IntegrationSummary }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   const testMutation = useMutation({

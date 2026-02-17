@@ -160,7 +160,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-0.5">
                   <p className="font-medium text-sm truncate" data-testid={`task-title-${task.id}`}>
-                    {task.title}
+                    {task.titleKey ? String(t(task.titleKey, task.titleParams || {})) : task.title}
                   </p>
                   {task.priority === 'alta' && (
                     <AlertTriangle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
@@ -170,7 +170,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
-                  {task.description}
+                  {task.descriptionKey ? String(t(task.descriptionKey, task.descriptionParams || {})) : task.description}
                 </p>
               </div>
               
@@ -181,7 +181,7 @@ export function OperationalTaskList({ maxItems = 8 }: OperationalTaskListProps) 
                   className="flex-shrink-0"
                   data-testid={`task-action-${task.id}`}
                 >
-                  {task.actionLabel}
+                  {task.actionLabelKey ? t(task.actionLabelKey) : task.actionLabel}
                   <ChevronRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               </Link>

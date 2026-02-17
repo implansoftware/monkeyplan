@@ -6050,9 +6050,14 @@ export interface OperationalTask {
   id: string;
   type: OperationalTaskType;
   priority: OperationalTaskPriority;
-  title: string;
-  description: string;
-  actionLabel: string;
+  title?: string;
+  description?: string;
+  actionLabel?: string;
+  titleKey?: string;
+  titleParams?: Record<string, any>;
+  descriptionKey?: string;
+  descriptionParams?: Record<string, any>;
+  actionLabelKey?: string;
   actionUrl: string;
   dueDate?: string;
   relatedId?: string;

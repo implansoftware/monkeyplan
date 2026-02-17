@@ -22377,21 +22377,23 @@ export function registerRoutes(app: Express): Server {
             customerMap.set(cid, customer.fullName || customer.username);
           }
         }
-        const getCustomerName = (cid: string) => customerMap.get(cid) || 'Cliente';
+        const getCustomerName = (cid: string) => customerMap.get(cid) || 'Customer';
 
-        // Alta priorità: Riparazioni bloccate da più di 3 giorni
         repairs.forEach(repair => {
           const updatedAt = new Date(repair.updatedAt);
           const isOld = updatedAt < threeDaysAgo;
+          const days = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
           
           if (repair.status === 'ingressato' && isOld) {
             tasks.push({
               id: `repair-diagnosi-${repair.id}`,
               type: 'repair',
               priority: 'alta',
-              title: `Diagnosi in attesa: ${getCustomerName(repair.customerId)}`,
-              description: `Il dispositivo è in attesa di diagnosi da ${Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24))} giorni`,
-              actionLabel: 'Avvia diagnosi',
+              titleKey: 'operationalTasks.titles.diagnosisPending',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.awaitingDiagnosis',
+              descriptionParams: { days },
+              actionLabelKey: 'operationalTasks.actions.startDiagnosis',
               actionUrl: `/reseller/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22403,9 +22405,10 @@ export function registerRoutes(app: Express): Server {
               id: `repair-preventivo-${repair.id}`,
               type: 'quote',
               priority: isOld ? 'alta' : 'media',
-              title: `Preventivo da emettere: ${getCustomerName(repair.customerId)}`,
-              description: `Diagnosi completata, emettere preventivo`,
-              actionLabel: 'Crea preventivo',
+              titleKey: 'operationalTasks.titles.quoteNeeded',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.diagnosisCompleteQuote',
+              actionLabelKey: 'operationalTasks.actions.createQuote',
               actionUrl: `/reseller/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22417,9 +22420,10 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ritiro-${repair.id}`,
               type: 'repair',
               priority: isOld ? 'media' : 'bassa',
-              title: `Pronto per ritiro: ${getCustomerName(repair.customerId)}`,
-              description: `Contattare cliente per ritiro`,
-              actionLabel: 'Gestisci',
+              titleKey: 'operationalTasks.titles.readyForPickup',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.contactCustomerPickup',
+              actionLabelKey: 'operationalTasks.actions.manage',
               actionUrl: `/reseller/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22431,9 +22435,10 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ricambi-${repair.id}`,
               type: 'repair',
               priority: 'media',
-              title: `Attesa ricambi: ${getCustomerName(repair.customerId)}`,
-              description: `Verificare stato ordine ricambi`,
-              actionLabel: 'Verifica',
+              titleKey: 'operationalTasks.titles.awaitingParts',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.checkPartsOrder',
+              actionLabelKey: 'operationalTasks.actions.check',
               actionUrl: `/reseller/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22441,7 +22446,6 @@ export function registerRoutes(app: Express): Server {
           }
         });
         
-        // Fatture scadute e in scadenza
         const invoices = await storage.listInvoices({ resellerId });
         invoices.forEach(invoice => {
           if (invoice.paymentStatus === 'overdue') {
@@ -22449,9 +22453,10 @@ export function registerRoutes(app: Express): Server {
               id: `invoice-overdue-${invoice.id}`,
               type: 'invoice',
               priority: 'alta',
-              title: `Fattura scaduta: ${invoice.invoiceNumber}`,
-              description: `Sollecitare pagamento cliente`,
-              actionLabel: 'Visualizza',
+              titleKey: 'operationalTasks.titles.invoiceOverdue',
+              titleParams: { number: invoice.invoiceNumber },
+              descriptionKey: 'operationalTasks.descriptions.chasePayment',
+              actionLabelKey: 'operationalTasks.actions.view',
               actionUrl: `/reseller/invoices`,
               relatedId: invoice.id,
               createdAt: invoice.createdAt,
@@ -22464,9 +22469,10 @@ export function registerRoutes(app: Express): Server {
                 id: `invoice-pending-${invoice.id}`,
                 type: 'invoice',
                 priority: 'media',
-                title: `Fattura in scadenza: ${invoice.invoiceNumber}`,
-                description: `Scadenza imminente`,
-                actionLabel: 'Visualizza',
+                titleKey: 'operationalTasks.titles.invoiceDueSoon',
+                titleParams: { number: invoice.invoiceNumber },
+                descriptionKey: 'operationalTasks.descriptions.dueSoon',
+                actionLabelKey: 'operationalTasks.actions.view',
                 actionUrl: `/reseller/invoices`,
                 dueDate: invoice.dueDate,
                 relatedId: invoice.id,
@@ -22476,7 +22482,6 @@ export function registerRoutes(app: Express): Server {
           }
         });
         
-        // Stock sotto scorta
         try {
           const warehouses = await storage.listWarehouses({ ownerId: resellerId, ownerType: 'reseller' });
           for (const warehouse of warehouses) {
@@ -22487,9 +22492,11 @@ export function registerRoutes(app: Express): Server {
                 id: `stock-low-${warehouse.id}`,
                 type: 'stock',
                 priority: lowStockItems.length > 5 ? 'alta' : 'media',
-                title: `${lowStockItems.length} articoli sotto scorta`,
-                description: `Magazzino: ${warehouse.name}`,
-                actionLabel: 'Gestisci stock',
+                titleKey: 'operationalTasks.titles.lowStock',
+                titleParams: { count: lowStockItems.length },
+                descriptionKey: 'operationalTasks.descriptions.warehouse',
+                descriptionParams: { name: warehouse.name },
+                actionLabelKey: 'operationalTasks.actions.manageStock',
                 actionUrl: `/reseller/warehouse`,
                 relatedId: warehouse.id,
                 createdAt: now.toISOString(),
@@ -22498,7 +22505,6 @@ export function registerRoutes(app: Express): Server {
           }
         } catch (e) {}
         
-        // Ordini B2B in attesa
         try {
           const b2bOrders = await storage.listResellerPurchaseOrders({ sellerId: resellerId });
           const pendingB2B = b2bOrders.filter(o => o.status === 'pending');
@@ -22507,9 +22513,10 @@ export function registerRoutes(app: Express): Server {
               id: `b2b-pending-${order.id}`,
               type: 'b2b',
               priority: 'media',
-              title: `Ordine B2B da confermare`,
-              description: `Ordine #${order.id.slice(0, 8)} in attesa approvazione`,
-              actionLabel: 'Gestisci',
+              titleKey: 'operationalTasks.titles.b2bToConfirm',
+              descriptionKey: 'operationalTasks.descriptions.b2bPendingApproval',
+              descriptionParams: { id: order.id.slice(0, 8) },
+              actionLabelKey: 'operationalTasks.actions.manage',
               actionUrl: `/reseller/b2b-orders`,
               relatedId: order.id,
               createdAt: order.createdAt,
@@ -22517,7 +22524,6 @@ export function registerRoutes(app: Express): Server {
           });
         } catch (e) {}
         
-        // Ticket aperti
         try {
           const tickets = await storage.listTickets({ targetId: resellerId });
           const openTickets = tickets.filter(t => t.status === 'open');
@@ -22526,9 +22532,10 @@ export function registerRoutes(app: Express): Server {
               id: `ticket-open-${ticket.id}`,
               type: 'ticket',
               priority: 'media',
-              title: `Ticket aperto: ${ticket.subject}`,
-              description: `Richiede risposta`,
-              actionLabel: 'Rispondi',
+              titleKey: 'operationalTasks.titles.openTicket',
+              titleParams: { subject: ticket.subject },
+              descriptionKey: 'operationalTasks.descriptions.needsReply',
+              actionLabelKey: 'operationalTasks.actions.reply',
               actionUrl: `/reseller/tickets/${ticket.id}`,
               relatedId: ticket.id,
               createdAt: ticket.createdAt,
@@ -22552,20 +22559,23 @@ export function registerRoutes(app: Express): Server {
             rcCustomerMap.set(cid, customer.fullName || customer.username);
           }
         }
-        const getCustomerName = (cid: string) => rcCustomerMap.get(cid) || 'Cliente';
+        const getCustomerName = (cid: string) => rcCustomerMap.get(cid) || 'Customer';
 
         repairs.forEach(repair => {
           const updatedAt = new Date(repair.updatedAt);
           const isOld = updatedAt < threeDaysAgo;
+          const days = Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24));
           
           if (repair.status === 'ingressato' && isOld) {
             tasks.push({
               id: `repair-diagnosi-${repair.id}`,
               type: 'repair',
               priority: 'alta',
-              title: `Diagnosi in attesa: ${getCustomerName(repair.customerId)}`,
-              description: `Il dispositivo è in attesa di diagnosi da ${Math.floor((now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24))} giorni`,
-              actionLabel: 'Avvia diagnosi',
+              titleKey: 'operationalTasks.titles.diagnosisPending',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.awaitingDiagnosis',
+              descriptionParams: { days },
+              actionLabelKey: 'operationalTasks.actions.startDiagnosis',
               actionUrl: `/repair-center/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22577,9 +22587,10 @@ export function registerRoutes(app: Express): Server {
               id: `repair-preventivo-${repair.id}`,
               type: 'quote',
               priority: isOld ? 'alta' : 'media',
-              title: `Preventivo da emettere: ${getCustomerName(repair.customerId)}`,
-              description: `Diagnosi completata, emettere preventivo`,
-              actionLabel: 'Crea preventivo',
+              titleKey: 'operationalTasks.titles.quoteNeeded',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.diagnosisCompleteQuote',
+              actionLabelKey: 'operationalTasks.actions.createQuote',
               actionUrl: `/repair-center/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22591,9 +22602,10 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ritiro-${repair.id}`,
               type: 'repair',
               priority: isOld ? 'media' : 'bassa',
-              title: `Pronto per ritiro: ${getCustomerName(repair.customerId)}`,
-              description: `Contattare cliente per ritiro`,
-              actionLabel: 'Gestisci',
+              titleKey: 'operationalTasks.titles.readyForPickup',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.contactCustomerPickup',
+              actionLabelKey: 'operationalTasks.actions.manage',
               actionUrl: `/repair-center/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22605,9 +22617,10 @@ export function registerRoutes(app: Express): Server {
               id: `repair-ricambi-${repair.id}`,
               type: 'repair',
               priority: 'media',
-              title: `Attesa ricambi: ${getCustomerName(repair.customerId)}`,
-              description: `Verificare stato ordine ricambi`,
-              actionLabel: 'Verifica',
+              titleKey: 'operationalTasks.titles.awaitingParts',
+              titleParams: { customer: getCustomerName(repair.customerId) },
+              descriptionKey: 'operationalTasks.descriptions.checkPartsOrder',
+              actionLabelKey: 'operationalTasks.actions.check',
               actionUrl: `/repair-center/repairs/${repair.id}`,
               relatedId: repair.id,
               createdAt: repair.updatedAt,
@@ -22615,7 +22628,6 @@ export function registerRoutes(app: Express): Server {
           }
         });
         
-        // Fatture
         const invoices = await storage.listInvoices({ repairCenterId });
         invoices.forEach(invoice => {
           if (invoice.paymentStatus === 'overdue') {
@@ -22623,9 +22635,10 @@ export function registerRoutes(app: Express): Server {
               id: `invoice-overdue-${invoice.id}`,
               type: 'invoice',
               priority: 'alta',
-              title: `Fattura scaduta: ${invoice.invoiceNumber}`,
-              description: `Sollecitare pagamento`,
-              actionLabel: 'Visualizza',
+              titleKey: 'operationalTasks.titles.invoiceOverdue',
+              titleParams: { number: invoice.invoiceNumber },
+              descriptionKey: 'operationalTasks.descriptions.chasePayment',
+              actionLabelKey: 'operationalTasks.actions.view',
               actionUrl: `/repair-center/invoices`,
               relatedId: invoice.id,
               createdAt: invoice.createdAt,
@@ -22633,7 +22646,6 @@ export function registerRoutes(app: Express): Server {
           }
         });
         
-        // Stock sotto scorta
         try {
           const warehouses = await storage.listWarehouses({ ownerId: repairCenterId, ownerType: 'repair_center' });
           for (const warehouse of warehouses) {
@@ -22644,9 +22656,11 @@ export function registerRoutes(app: Express): Server {
                 id: `stock-low-${warehouse.id}`,
                 type: 'stock',
                 priority: lowStockItems.length > 5 ? 'alta' : 'media',
-                title: `${lowStockItems.length} articoli sotto scorta`,
-                description: `Magazzino: ${warehouse.name}`,
-                actionLabel: 'Gestisci stock',
+                titleKey: 'operationalTasks.titles.lowStock',
+                titleParams: { count: lowStockItems.length },
+                descriptionKey: 'operationalTasks.descriptions.warehouse',
+                descriptionParams: { name: warehouse.name },
+                actionLabelKey: 'operationalTasks.actions.manageStock',
                 actionUrl: `/repair-center/warehouse`,
                 relatedId: warehouse.id,
                 createdAt: now.toISOString(),
@@ -22655,7 +22669,6 @@ export function registerRoutes(app: Express): Server {
           }
         } catch (e) {}
         
-        // Ordini B2B
         try {
           const b2bOrders = await storage.listRepairCenterPurchaseOrders({ repairCenterId });
           const pendingB2B = b2bOrders.filter(o => o.status === 'pending' || o.status === 'shipped');
@@ -22664,9 +22677,10 @@ export function registerRoutes(app: Express): Server {
               id: `b2b-${order.status}-${order.id}`,
               type: 'b2b',
               priority: order.status === 'shipped' ? 'media' : 'bassa',
-              title: order.status === 'shipped' ? `Ordine B2B in arrivo` : `Ordine B2B in attesa`,
-              description: `Ordine #${order.id.slice(0, 8)}`,
-              actionLabel: order.status === 'shipped' ? 'Conferma ricezione' : 'Visualizza',
+              titleKey: order.status === 'shipped' ? 'operationalTasks.titles.b2bIncoming' : 'operationalTasks.titles.b2bPending',
+              descriptionKey: 'operationalTasks.descriptions.b2bOrder',
+              descriptionParams: { id: order.id.slice(0, 8) },
+              actionLabelKey: order.status === 'shipped' ? 'operationalTasks.actions.confirmReceipt' : 'operationalTasks.actions.view',
               actionUrl: `/repair-center/b2b-orders`,
               relatedId: order.id,
               createdAt: order.createdAt,
@@ -22674,7 +22688,6 @@ export function registerRoutes(app: Express): Server {
           });
         } catch (e) {}
         
-        // Ticket aperti
         try {
           const tickets = await storage.listTickets({ initiatorId: repairCenterId });
           const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
@@ -22683,9 +22696,10 @@ export function registerRoutes(app: Express): Server {
               id: `ticket-${ticket.id}`,
               type: 'ticket',
               priority: 'bassa',
-              title: `Ticket: ${ticket.subject}`,
-              description: `Stato: ${ticket.status === 'open' ? 'Aperto' : 'In corso'}`,
-              actionLabel: 'Visualizza',
+              titleKey: 'operationalTasks.titles.ticket',
+              titleParams: { subject: ticket.subject },
+              descriptionKey: ticket.status === 'open' ? 'operationalTasks.descriptions.statusOpen' : 'operationalTasks.descriptions.statusInProgress',
+              actionLabelKey: 'operationalTasks.actions.view',
               actionUrl: `/repair-center/tickets/${ticket.id}`,
               relatedId: ticket.id,
               createdAt: ticket.createdAt,

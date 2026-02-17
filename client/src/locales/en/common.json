@@ -8988,7 +8988,46 @@
     "allDone": "All done!",
     "noPendingTasks": "No pending tasks",
     "pending": "Pending",
-    "urgent": "Urgent"
+    "urgent": "Urgent",
+    "titles": {
+      "diagnosisPending": "Diagnosis pending: {{customer}}",
+      "quoteNeeded": "Quote needed: {{customer}}",
+      "readyForPickup": "Ready for pickup: {{customer}}",
+      "awaitingParts": "Awaiting parts: {{customer}}",
+      "invoiceOverdue": "Overdue invoice: {{number}}",
+      "invoiceDueSoon": "Invoice due soon: {{number}}",
+      "lowStock": "{{count}} items low on stock",
+      "b2bToConfirm": "B2B order to confirm",
+      "b2bIncoming": "B2B order incoming",
+      "b2bPending": "B2B order pending",
+      "openTicket": "Open ticket: {{subject}}",
+      "ticket": "Ticket: {{subject}}"
+    },
+    "descriptions": {
+      "awaitingDiagnosis": "Device awaiting diagnosis for {{days}} days",
+      "diagnosisCompleteQuote": "Diagnosis complete, issue quote",
+      "contactCustomerPickup": "Contact customer for pickup",
+      "checkPartsOrder": "Check parts order status",
+      "chasePayment": "Chase customer payment",
+      "dueSoon": "Due date approaching",
+      "warehouse": "Warehouse: {{name}}",
+      "b2bPendingApproval": "Order #{{id}} pending approval",
+      "b2bOrder": "Order #{{id}}",
+      "needsReply": "Needs reply",
+      "statusOpen": "Status: Open",
+      "statusInProgress": "Status: In progress"
+    },
+    "actions": {
+      "startDiagnosis": "Start diagnosis",
+      "createQuote": "Create quote",
+      "manage": "Manage",
+      "check": "Check",
+      "view": "View",
+      "manageStock": "Manage stock",
+      "confirmReceipt": "Confirm receipt",
+      "reply": "Reply"
+    },
+    "moreTasks": "{{count}} more tasks"
   },
   "patternLock": {
     "noSequence": "No sequence",

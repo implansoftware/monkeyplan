@@ -8975,7 +8975,46 @@
     "allDone": "Tutto fatto!",
     "noPendingTasks": "Nessuna attività in sospeso",
     "pending": "In sospeso",
-    "urgent": "Urgente"
+    "urgent": "Urgente",
+    "titles": {
+      "diagnosisPending": "Diagnosi in attesa: {{customer}}",
+      "quoteNeeded": "Preventivo da emettere: {{customer}}",
+      "readyForPickup": "Pronto per ritiro: {{customer}}",
+      "awaitingParts": "Attesa ricambi: {{customer}}",
+      "invoiceOverdue": "Fattura scaduta: {{number}}",
+      "invoiceDueSoon": "Fattura in scadenza: {{number}}",
+      "lowStock": "{{count}} articoli sotto scorta",
+      "b2bToConfirm": "Ordine B2B da confermare",
+      "b2bIncoming": "Ordine B2B in arrivo",
+      "b2bPending": "Ordine B2B in attesa",
+      "openTicket": "Ticket aperto: {{subject}}",
+      "ticket": "Ticket: {{subject}}"
+    },
+    "descriptions": {
+      "awaitingDiagnosis": "Il dispositivo è in attesa di diagnosi da {{days}} giorni",
+      "diagnosisCompleteQuote": "Diagnosi completata, emettere preventivo",
+      "contactCustomerPickup": "Contattare cliente per ritiro",
+      "checkPartsOrder": "Verificare stato ordine ricambi",
+      "chasePayment": "Sollecitare pagamento cliente",
+      "dueSoon": "Scadenza imminente",
+      "warehouse": "Magazzino: {{name}}",
+      "b2bPendingApproval": "Ordine #{{id}} in attesa approvazione",
+      "b2bOrder": "Ordine #{{id}}",
+      "needsReply": "Richiede risposta",
+      "statusOpen": "Stato: Aperto",
+      "statusInProgress": "Stato: In corso"
+    },
+    "actions": {
+      "startDiagnosis": "Avvia diagnosi",
+      "createQuote": "Crea preventivo",
+      "manage": "Gestisci",
+      "check": "Verifica",
+      "view": "Visualizza",
+      "manageStock": "Gestisci stock",
+      "confirmReceipt": "Conferma ricezione",
+      "reply": "Rispondi"
+    },
+    "moreTasks": "Altre {{count}} attività"
   },
   "patternLock": {
     "noSequence": "Nessuna sequenza",
