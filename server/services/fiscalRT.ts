@@ -556,18 +556,24 @@ class OpenApiComRTProvider implements IFiscalRTProvider {
     return data;
   }
 
-  private mapPaymentType(method: string): string {
+  private isElectronicPayment(method: string): boolean {
     switch (method) {
       case "card":
       case "pos_terminal":
-        return "electronic";
       case "stripe_link":
       case "paypal":
-        return "electronic";
+        return true;
       case "cash":
       default:
-        return "cash";
+        return false;
     }
+  }
+
+  private mapVatRateCode(vatRate: number): string {
+    const validCodes = ["4", "5", "10", "22", "2", "6.4", "7", "7.3", "7.5", "7.65", "7.95", "8.3", "8.5", "8.8", "9.5", "12.3", "N1", "N2", "N3", "N4", "N5", "N6"];
+    const rateStr = String(vatRate);
+    if (validCodes.includes(rateStr)) return rateStr;
+    return "22";
   }
 
   async submitReceipt(data: RTReceiptData, config: RTProviderConfig): Promise<RTSubmissionResult> {
@@ -580,24 +586,21 @@ class OpenApiComRTProvider implements IFiscalRTProvider {
         const vatRate = item.vatRate ?? 22;
         const unitPrice = item.totalPrice / item.quantity / 100;
         return {
-          description: item.productName || "Article",
-          quantity: item.quantity,
+          description: (item.productName || "Article").substring(0, 1000),
+          quantity: parseFloat(item.quantity.toFixed(2)),
           unit_price: parseFloat(unitPrice.toFixed(2)),
-          tax_rate: vatRate,
+          vat_rate_code: this.mapVatRateCode(vatRate),
         };
       });
 
       const totalEur = data.transaction.total / 100;
+      const isElectronic = this.isElectronicPayment(data.transaction.paymentMethod || "cash");
 
       const receiptPayload: any = {
         fiscal_id: config.entityId,
         items,
-        payment_methods: [
-          {
-            type: this.mapPaymentType(data.transaction.paymentMethod || "cash"),
-            amount: parseFloat(totalEur.toFixed(2)),
-          },
-        ],
+        cash_payment_amount: isElectronic ? 0 : parseFloat(totalEur.toFixed(2)),
+        electronic_payment_amount: isElectronic ? parseFloat(totalEur.toFixed(2)) : 0,
       };
 
       if (data.transaction.lotteryCode) {
@@ -605,9 +608,7 @@ class OpenApiComRTProvider implements IFiscalRTProvider {
       }
 
       if (data.transaction.discountAmount && data.transaction.discountAmount > 0) {
-        receiptPayload.discount = {
-          amount: parseFloat((data.transaction.discountAmount / 100).toFixed(2)),
-        };
+        receiptPayload.discount = parseFloat((data.transaction.discountAmount / 100).toFixed(2));
       }
 
       const result = await this.apiCall("POST", "/IT-receipts", config, receiptPayload);
