@@ -517,9 +517,7 @@ class OpenApiComRTProvider implements IFiscalRTProvider {
 
   private getBaseUrl(config: RTProviderConfig): string {
     if (config.endpoint) return config.endpoint;
-    return config.sandboxMode
-      ? "https://test.invoice.openapi.com"
-      : "https://invoice.openapi.com";
+    return "https://invoice.openapi.com";
   }
 
   private async apiCall(
