@@ -5966,7 +5966,9 @@
     "fiscalTransmission": "Trasmissione Fiscale",
     "submittedAt": "Inviato il",
     "retryCount": "Tentativi di reinvio",
-    "fiscalDocument": "Documento fiscale"
+    "fiscalDocument": "Documento fiscale",
+    "downloadFiscalReceipt": "Scarica ricevuta fiscale",
+    "fiscallyValid": "Documento fiscalmente valido"
   },
   "remoteRequests": {
     "title": "Richieste Remote",

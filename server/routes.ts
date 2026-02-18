@@ -41531,6 +41531,11 @@ export function registerRoutes(app: Express): Server {
           changeGiven: transaction.changeGiven,
           lotteryCode: transaction.lotteryCode,
           documentType: transaction.documentType,
+          rtStatus: transaction.rtStatus,
+          rtSubmissionId: transaction.rtSubmissionId,
+          rtSubmittedAt: transaction.rtSubmittedAt,
+          rtProvider: transaction.rtProvider,
+          rtDocumentUrl: transaction.rtDocumentUrl,
         },
         items: items.map(item => ({
           productName: item.productName,
@@ -43593,6 +43598,11 @@ export function registerRoutes(app: Express): Server {
           changeGiven: transaction.changeGiven,
           lotteryCode: transaction.lotteryCode,
           documentType: transaction.documentType,
+          rtStatus: transaction.rtStatus,
+          rtSubmissionId: transaction.rtSubmissionId,
+          rtSubmittedAt: transaction.rtSubmittedAt,
+          rtProvider: transaction.rtProvider,
+          rtDocumentUrl: transaction.rtDocumentUrl,
         },
         items: items.map(item => ({
           productName: item.productName,

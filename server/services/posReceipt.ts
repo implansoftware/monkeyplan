@@ -17,6 +17,11 @@ export interface PosReceiptData {
     changeGiven: number | null;
     lotteryCode?: string | null;
     documentType?: string | null;
+    rtStatus?: string | null;
+    rtSubmissionId?: string | null;
+    rtSubmittedAt?: Date | null;
+    rtProvider?: string | null;
+    rtDocumentUrl?: string | null;
   };
   items: Array<{
     productName: string;
@@ -113,8 +118,10 @@ export async function generatePosReceiptPdf(data: PosReceiptData): Promise<Buffe
       margin = 10;
       contentWidth = receiptWidth - margin * 2;
       pageWidth = receiptWidth;
+      const hasFiscalSection = transaction.rtStatus && transaction.rtStatus !== "not_required";
       const estimatedHeight = 350 + (items.length * 45) + 
-        (isInvoice && billingData ? 80 : 0);
+        (isInvoice && billingData ? 80 : 0) +
+        (hasFiscalSection ? 80 : 0);
       
       doc = new PDFDocument({ 
         size: [receiptWidth, Math.max(estimatedHeight, 450)],
@@ -380,6 +387,52 @@ function generateA4Invoice(
     y += 20;
   }
 
+  if (transaction.rtStatus && transaction.rtStatus !== "not_required") {
+    y += 10;
+    doc.moveTo(margin, y).lineTo(pageWidth - margin, y).stroke();
+    y += 15;
+
+    doc.fontSize(11).font("Helvetica-Bold");
+    doc.text("TRASMISSIONE FISCALE", margin, y, { width: contentWidth, align: "center" });
+    y += 18;
+
+    doc.fontSize(10).font("Helvetica");
+
+    const rtStatusLabels: Record<string, string> = {
+      submitted: "Inviato",
+      confirmed: "Confermato",
+      error: "Errore",
+      pending: "In attesa",
+    };
+    doc.text(`Stato: ${rtStatusLabels[transaction.rtStatus] || transaction.rtStatus}`, margin, y);
+    y += 14;
+
+    if (transaction.rtProvider) {
+      doc.text(`Provider: ${transaction.rtProvider}`, margin, y);
+      y += 14;
+    }
+
+    if (transaction.rtSubmissionId) {
+      doc.text(`ID Trasmissione: ${transaction.rtSubmissionId}`, margin, y);
+      y += 14;
+    }
+
+    if (transaction.rtSubmittedAt) {
+      doc.text(
+        `Data invio: ${format(new Date(transaction.rtSubmittedAt), "dd/MM/yyyy HH:mm:ss", { locale: it })}`,
+        margin, y
+      );
+      y += 14;
+    }
+
+    if (transaction.rtStatus === "confirmed") {
+      y += 5;
+      doc.fontSize(10).font("Helvetica-Bold");
+      doc.text("DOCUMENTO FISCALMENTE VALIDO", margin, y, { width: contentWidth, align: "center" });
+      y += 14;
+    }
+  }
+
   y += 30;
   doc.fontSize(10).font("Helvetica");
   doc.text("Grazie per la fiducia!", margin, y, { width: contentWidth, align: "center" });
@@ -565,6 +618,54 @@ function generateThermalReceipt(
     y += 5;
     doc.fontSize(6).text(`Op: ${operator.fullName}`, margin, y);
     y += 8;
+  }
+
+  if (transaction.rtStatus && transaction.rtStatus !== "not_required") {
+    y += 5;
+    drawDashedLine();
+
+    doc.fontSize(7).font("Helvetica-Bold");
+    doc.text("TRASMISSIONE FISCALE", margin, y, { width: contentWidth, align: "center" });
+    y += 10;
+
+    doc.fontSize(6).font("Helvetica");
+
+    const rtStatusLabels: Record<string, string> = {
+      submitted: "Inviato",
+      confirmed: "Confermato",
+      error: "Errore",
+      pending: "In attesa",
+    };
+    doc.text(`Stato: ${rtStatusLabels[transaction.rtStatus] || transaction.rtStatus}`, margin, y);
+    y += 8;
+
+    if (transaction.rtProvider) {
+      doc.text(`Provider: ${transaction.rtProvider}`, margin, y);
+      y += 8;
+    }
+
+    if (transaction.rtSubmissionId) {
+      const subId = transaction.rtSubmissionId.length > 30
+        ? transaction.rtSubmissionId.substring(0, 30) + "..."
+        : transaction.rtSubmissionId;
+      doc.text(`ID: ${subId}`, margin, y);
+      y += 8;
+    }
+
+    if (transaction.rtSubmittedAt) {
+      doc.text(
+        `Invio: ${format(new Date(transaction.rtSubmittedAt), "dd/MM/yy HH:mm", { locale: it })}`,
+        margin, y
+      );
+      y += 8;
+    }
+
+    if (transaction.rtStatus === "confirmed") {
+      y += 3;
+      doc.fontSize(7).font("Helvetica-Bold");
+      doc.text("DOC. FISCALE VALIDO", margin, y, { width: contentWidth, align: "center" });
+      y += 10;
+    }
   }
 
   y += 10;

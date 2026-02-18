@@ -640,6 +640,23 @@ export default function PosTransactionDetailPage() {
                 </div>
               </div>
             )}
+
+            {(transaction.rtStatus === "submitted" || transaction.rtStatus === "confirmed") && (
+              <div className="mt-3 pt-3 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  data-testid="button-download-fiscal-receipt"
+                  onClick={() => {
+                    window.open(`/api/repair-center/pos/transaction/${transaction.id}/receipt`, '_blank');
+                  }}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  {t("fiscal.downloadFiscalReceipt")}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

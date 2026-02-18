@@ -526,6 +526,23 @@ export default function ResellerPosTransactionDetail() {
                     </div>
                   </div>
                 )}
+
+                {(transaction.rtStatus === "submitted" || transaction.rtStatus === "confirmed") && (
+                  <div className="mt-3 pt-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      data-testid="button-download-fiscal-receipt"
+                      onClick={() => {
+                        window.open(`/api/reseller/pos/transaction/${transaction.id}/receipt`, '_blank');
+                      }}
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      {t("fiscal.downloadFiscalReceipt")}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

@@ -5968,7 +5968,9 @@
     "fiscalTransmission": "Fiscal Transmission",
     "submittedAt": "Submitted at",
     "retryCount": "Retry attempts",
-    "fiscalDocument": "Fiscal document"
+    "fiscalDocument": "Fiscal document",
+    "downloadFiscalReceipt": "Download fiscal receipt",
+    "fiscallyValid": "Fiscally valid document"
   },
   "remoteRequests": {
     "title": "Remote Requests",
