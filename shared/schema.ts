@@ -1403,6 +1403,10 @@ export const repairOrders = pgTable("repair_orders", {
   ingressatoAt: timestamp("ingressato_at"), // Data ingresso in laboratorio
   quoteBypassReason: quoteBypassReasonEnum("quote_bypass_reason"), // Motivo bypass preventivo (garanzia/omaggio)
   quoteBypassedAt: timestamp("quote_bypassed_at"), // Data bypass preventivo
+  warrantySupplier: text("warranty_supplier"), // Fornitore garanzia (quando quoteBypassReason='garanzia')
+  warrantyPurchaseDate: timestamp("warranty_purchase_date"), // Data acquisto originale
+  warrantyPurchasePrice: integer("warranty_purchase_price"), // Prezzo acquisto in centesimi
+  warrantyProofAttachmentId: varchar("warranty_proof_attachment_id"), // FK a repair_attachments (foto scontrino/ricevuta)
   skipDiagnosis: boolean("skip_diagnosis").notNull().default(false), // Flag: diagnosi saltata
   skipDiagnosisReason: text("skip_diagnosis_reason"), // Motivo salto diagnosi
   createdAt: timestamp("created_at").notNull().defaultNow(),

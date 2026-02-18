@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +39,8 @@ import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
-  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag
+  HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag,
+  Upload
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -211,6 +213,13 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   const [deliveryDialogOpen, setDeliveryDialogOpen] = useState(false);
   const [skipQuoteDialogOpen, setSkipQuoteDialogOpen] = useState(false);
   const [skipQuoteReason, setSkipQuoteReason] = useState<'garanzia' | 'omaggio' | null>(null);
+  const [warrantySupplier, setWarrantySupplier] = useState("");
+  const [warrantyPurchaseDate, setWarrantyPurchaseDate] = useState("");
+  const [warrantyPurchasePrice, setWarrantyPurchasePrice] = useState("");
+  const [warrantyProofFile, setWarrantyProofFile] = useState<File | null>(null);
+  const [warrantyProofUploading, setWarrantyProofUploading] = useState(false);
+  const [warrantyProofAttachmentId, setWarrantyProofAttachmentId] = useState<string | null>(null);
+  const [warrantyProofPreview, setWarrantyProofPreview] = useState<string | null>(null);
   const [skipDiagnosisDialogOpen, setSkipDiagnosisDialogOpen] = useState(false);
   const [skipDiagnosisReason, setSkipDiagnosisReason] = useState("");
   const [dataRecoveryDialogOpen, setDataRecoveryDialogOpen] = useState(false);
@@ -606,7 +615,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
   const skipQuoteMutation = useMutation({
     mutationFn: async (reason: 'garanzia' | 'omaggio') => {
-      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/skip-quote`, { reason });
+      const body: any = { reason };
+      if (reason === 'garanzia') {
+        if (warrantySupplier) body.warrantySupplier = warrantySupplier;
+        if (warrantyPurchaseDate) body.warrantyPurchaseDate = warrantyPurchaseDate;
+        if (warrantyPurchasePrice !== "") body.warrantyPurchasePrice = Math.round(parseFloat(warrantyPurchasePrice) * 100);
+        if (warrantyProofAttachmentId) body.warrantyProofAttachmentId = warrantyProofAttachmentId;
+      }
+      return await apiRequest("POST", `/api/repair-orders/${repairOrderId}/skip-quote`, body);
     },
     onSuccess: () => {
       toast({ title: t("standalone.quoteSkipped"), description: t("standalone.repairProceedsWithoutQuote") });
@@ -614,6 +630,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       setSkipQuoteDialogOpen(false);
       setSkipQuoteReason(null);
+      setWarrantySupplier("");
+      setWarrantyPurchaseDate("");
+      setWarrantyPurchasePrice("");
+      setWarrantyProofFile(null);
+      setWarrantyProofAttachmentId(null);
+      setWarrantyProofPreview(null);
     },
     onError: (error: Error) => {
       toast({ title: t("auth.error"), description: error.message, variant: "destructive" });
@@ -2487,8 +2509,19 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         </DialogContent>
       </Dialog>
 
-      <Dialog open={skipQuoteDialogOpen} onOpenChange={setSkipQuoteDialogOpen}>
-        <DialogContent>
+      <Dialog open={skipQuoteDialogOpen} onOpenChange={(open) => {
+        setSkipQuoteDialogOpen(open);
+        if (!open) {
+          setSkipQuoteReason(null);
+          setWarrantySupplier("");
+          setWarrantyPurchaseDate("");
+          setWarrantyPurchasePrice("");
+          setWarrantyProofFile(null);
+          setWarrantyProofAttachmentId(null);
+          setWarrantyProofPreview(null);
+        }
+      }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{t("standalone.skipQuoteTitle")}</DialogTitle>
             <DialogDescription>
@@ -2516,6 +2549,129 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <span>{t("standalone.gift")}</span>
               </Button>
             </div>
+
+            {skipQuoteReason === 'garanzia' && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="warranty-proof" data-testid="label-warranty-proof">{t("warranties.proofPhoto")}</Label>
+                  <div className="flex items-center gap-3">
+                    {warrantyProofPreview ? (
+                      <div className="relative">
+                        <img
+                          src={warrantyProofPreview}
+                          alt={t("warranties.proofPhoto")}
+                          className="h-20 w-20 rounded-md object-cover border"
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="absolute -top-2 -right-2 rounded-full bg-background border"
+                          onClick={() => {
+                            setWarrantyProofFile(null);
+                            setWarrantyProofAttachmentId(null);
+                            setWarrantyProofPreview(null);
+                          }}
+                          data-testid="button-remove-warranty-proof"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="warranty-proof"
+                        className="flex flex-col items-center justify-center gap-1 h-20 w-20 rounded-md border-2 border-dashed cursor-pointer hover-elevate"
+                        data-testid="label-upload-warranty-proof"
+                      >
+                        {warrantyProofUploading ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        ) : (
+                          <>
+                            <Upload className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{t("warranties.upload")}</span>
+                          </>
+                        )}
+                      </label>
+                    )}
+                    <input
+                      id="warranty-proof"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      data-testid="input-warranty-proof"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !repairOrderId) return;
+                        setWarrantyProofFile(file);
+                        const reader = new FileReader();
+                        reader.onload = (ev) => setWarrantyProofPreview(ev.target?.result as string);
+                        reader.readAsDataURL(file);
+                        setWarrantyProofUploading(true);
+                        try {
+                          const formData = new FormData();
+                          formData.append("file", file);
+                          const resp = await fetch(`/api/repair-orders/${repairOrderId}/attachments`, {
+                            method: "POST",
+                            credentials: "include",
+                            body: formData,
+                          });
+                          if (!resp.ok) throw new Error(t("attachment.uploadFailed"));
+                          const data = await resp.json();
+                          setWarrantyProofAttachmentId(data.id);
+                        } catch (err: any) {
+                          toast({ title: t("auth.error"), description: err.message, variant: "destructive" });
+                          setWarrantyProofFile(null);
+                          setWarrantyProofPreview(null);
+                          setWarrantyProofAttachmentId(null);
+                        } finally {
+                          setWarrantyProofUploading(false);
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground">{t("warranties.proofPhotoDesc")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="warranty-supplier" data-testid="label-warranty-supplier">{t("warranties.supplier")}</Label>
+                  <Input
+                    id="warranty-supplier"
+                    value={warrantySupplier}
+                    onChange={(e) => setWarrantySupplier(e.target.value)}
+                    placeholder={t("warranties.supplierPlaceholder")}
+                    data-testid="input-warranty-supplier"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="warranty-purchase-date" data-testid="label-warranty-purchase-date">{t("warranties.purchaseDate")}</Label>
+                    <Input
+                      id="warranty-purchase-date"
+                      type="date"
+                      value={warrantyPurchaseDate}
+                      onChange={(e) => setWarrantyPurchaseDate(e.target.value)}
+                      data-testid="input-warranty-purchase-date"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="warranty-purchase-price" data-testid="label-warranty-purchase-price">{t("warranties.purchasePrice")}</Label>
+                    <Input
+                      id="warranty-purchase-price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={warrantyPurchasePrice}
+                      onChange={(e) => setWarrantyPurchasePrice(e.target.value)}
+                      placeholder="0.00"
+                      data-testid="input-warranty-purchase-price"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSkipQuoteDialogOpen(false)}>
@@ -2523,7 +2679,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             </Button>
             <Button
               onClick={() => skipQuoteReason && skipQuoteMutation.mutate(skipQuoteReason)}
-              disabled={!skipQuoteReason || skipQuoteMutation.isPending}
+              disabled={!skipQuoteReason || skipQuoteMutation.isPending || warrantyProofUploading}
               data-testid="button-confirm-skip"
             >
               {skipQuoteMutation.isPending ? (

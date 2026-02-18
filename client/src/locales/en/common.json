@@ -3680,7 +3680,14 @@
     "validityPeriod": "Validity Period",
     "warrantyDeleted": "Warranty deleted",
     "warrantyNotFound": "Warranty not found",
-    "warrantyRemovedSuccess": "Warranty removed successfully"
+    "warrantyRemovedSuccess": "Warranty removed successfully",
+    "proofPhoto": "Receipt/Invoice Photo",
+    "proofPhotoDesc": "Upload a photo of the purchase receipt or invoice as proof",
+    "supplier": "Supplier",
+    "supplierPlaceholder": "e.g. Amazon, MediaWorld, Original Manufacturer...",
+    "purchaseDate": "Purchase Date",
+    "purchasePrice": "Purchase Price",
+    "upload": "Upload"
   },
   "utility": {
     "activateContract": "Activate contract",

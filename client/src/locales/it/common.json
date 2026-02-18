@@ -3678,7 +3678,14 @@
     "validityPeriod": "Periodo di Validità",
     "warrantyDeleted": "Garanzia eliminata",
     "warrantyNotFound": "Garanzia non trovata",
-    "warrantyRemovedSuccess": "Garanzia rimossa con successo"
+    "warrantyRemovedSuccess": "Garanzia rimossa con successo",
+    "proofPhoto": "Foto scontrino/ricevuta",
+    "proofPhotoDesc": "Carica una foto dello scontrino o della ricevuta di acquisto come prova",
+    "supplier": "Fornitore",
+    "supplierPlaceholder": "es. Amazon, MediaWorld, Produttore originale...",
+    "purchaseDate": "Data di acquisto",
+    "purchasePrice": "Prezzo di acquisto",
+    "upload": "Carica"
   },
   "utility": {
     "activateContract": "Attiva contratto",

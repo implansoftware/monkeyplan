@@ -17982,7 +17982,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Validate bypass reason
-      const { reason } = req.body;
+      const { reason, warrantySupplier, warrantyPurchaseDate, warrantyPurchasePrice, warrantyProofAttachmentId } = req.body;
       if (!reason || !['garanzia', 'omaggio'].includes(reason)) {
         return res.status(400).send("Motivo non valido. Deve essere 'garanzia' o 'omaggio'");
       }
@@ -17991,11 +17991,20 @@ export function registerRoutes(app: Express): Server {
       // If diagnosis was skipped, default to in_riparazione
       const nextStatus = diagnosis?.requiresExternalParts ? 'attesa_ricambi' : 'in_riparazione';
       
-      await storage.updateRepairOrder(req.params.id, {
+      const updateData: any = {
         status: nextStatus as any,
         quoteBypassReason: reason as any,
         quoteBypassedAt: new Date(),
-      });
+      };
+
+      if (reason === 'garanzia') {
+        if (warrantySupplier) updateData.warrantySupplier = warrantySupplier;
+        if (warrantyPurchaseDate) updateData.warrantyPurchaseDate = new Date(warrantyPurchaseDate);
+        if (warrantyPurchasePrice !== undefined && warrantyPurchasePrice !== null) updateData.warrantyPurchasePrice = Number(warrantyPurchasePrice);
+        if (warrantyProofAttachmentId) updateData.warrantyProofAttachmentId = warrantyProofAttachmentId;
+      }
+
+      await storage.updateRepairOrder(req.params.id, updateData);
       
       res.json({ 
         message: `Preventivo saltato (${reason === 'garanzia' ? 'In Garanzia' : 'Omaggio'}). Stato aggiornato a: ${nextStatus}`,
