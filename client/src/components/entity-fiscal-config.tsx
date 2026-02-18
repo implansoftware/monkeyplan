@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, Key, Server, Info, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { Loader2, Shield, Key, Server, Info, CheckCircle, XCircle, AlertTriangle, Wifi, FileText } from "lucide-react";
 
 interface EntityFiscalConfigProps {
   entityType: "repair_center" | "reseller";
@@ -77,6 +77,30 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     }
   }, [entityConfig]);
 
+  const [regCompanyName, setRegCompanyName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regTaxCode, setRegTaxCode] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regPin, setRegPin] = useState("");
+
+  const entityBasePath = entityType === "repair_center"
+    ? "/api/repair-center/fiscal"
+    : "/api/reseller/fiscal";
+
+  const { data: openApiStatus, isLoading: statusLoading } = useQuery<{
+    registered: boolean;
+    provider?: string;
+    missingCredentials?: boolean;
+    fiscalId?: string;
+    receiptsEnabled?: boolean;
+    hasReceiptsAuth?: boolean;
+    configDetails?: { name?: string; email?: string; active?: boolean } | null;
+  }>({
+    queryKey: [entityBasePath, "openapi-status"],
+    queryFn: () => fetch(`${entityBasePath}/openapi-status`).then(r => r.json()),
+    enabled: rtEnabled && adminConfig?.provider === "openapi_com",
+  });
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("PUT", `${basePath}/config`, {
@@ -91,7 +115,47 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [basePath, "config"] });
+      queryClient.invalidateQueries({ queryKey: [entityBasePath, "openapi-status"] });
       toast({ title: t("fiscal.configSaved") });
+    },
+    onError: (err: any) => {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    },
+  });
+
+  const testConnectionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `${entityBasePath}/test-connection`);
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.success) {
+        toast({ title: t("fiscal.connectionSuccess") });
+      } else {
+        toast({ title: t("fiscal.connectionFailed"), description: data.message, variant: "destructive" });
+      }
+    },
+    onError: (err: any) => {
+      toast({ title: t("fiscal.connectionFailed"), description: err.message, variant: "destructive" });
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `${entityBasePath}/openapi-register`, {
+        companyName: regCompanyName || undefined,
+        email: regEmail || undefined,
+        taxCode: regTaxCode || undefined,
+        password: regPassword || undefined,
+        pin: regPin || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: [entityBasePath, "openapi-status"] });
+      toast({
+        title: data.action === "updated" ? t("fiscal.openApiUpdated") : t("fiscal.openApiRegistered"),
+      });
     },
     onError: (err: any) => {
       toast({ title: t("common.error"), description: err.message, variant: "destructive" });
@@ -278,16 +342,182 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
             </div>
           )}
 
-          <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending}
-            data-testid="button-save-fiscal-config"
-          >
-            {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t("fiscal.saveConfig")}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => saveMutation.mutate()}
+              disabled={saveMutation.isPending}
+              data-testid="button-save-fiscal-config"
+            >
+              {saveMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t("fiscal.saveConfig")}
+            </Button>
+            {rtEnabled && rtApiKey && rtApiKey !== "****" && (
+              <Button
+                variant="outline"
+                onClick={() => testConnectionMutation.mutate()}
+                disabled={testConnectionMutation.isPending}
+                data-testid="button-test-connection"
+              >
+                {testConnectionMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Wifi className="mr-2 h-4 w-4" />
+                )}
+                {t("fiscal.testConnection")}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
+
+      {rtEnabled && adminConfig?.provider === "openapi_com" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2" data-testid="text-openapi-title">
+              <FileText className="h-5 w-5" />
+              {t("fiscal.openApiRegistration")}
+            </CardTitle>
+            <CardDescription>
+              {t("fiscal.openApiRegistrationDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {statusLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
+              </div>
+            ) : openApiStatus?.missingCredentials ? (
+              <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm text-amber-800 dark:text-amber-200">
+                    {t("fiscal.saveCredentialsFirst")}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="rounded-md border p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{t("fiscal.registrationStatus")}</span>
+                    {openApiStatus?.registered ? (
+                      <Badge variant="default" data-testid="badge-openapi-registered">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        {t("fiscal.registered")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" data-testid="badge-openapi-not-registered">
+                        <XCircle className="mr-1 h-3 w-3" />
+                        {t("fiscal.notRegistered")}
+                      </Badge>
+                    )}
+                  </div>
+                  {openApiStatus?.registered && openApiStatus.configDetails && (
+                    <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                      <div>
+                        <span className="text-muted-foreground">{t("fiscal.companyName")}:</span>{" "}
+                        {openApiStatus.configDetails.name || "-"}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">{t("fiscal.receiptsEnabled")}:</span>{" "}
+                        {openApiStatus.receiptsEnabled ? (
+                          <CheckCircle className="inline h-3 w-3 text-green-600" />
+                        ) : (
+                          <XCircle className="inline h-3 w-3 text-red-600" />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">{t("fiscal.rtAuth")}:</span>{" "}
+                        {openApiStatus.hasReceiptsAuth ? (
+                          <CheckCircle className="inline h-3 w-3 text-green-600" />
+                        ) : (
+                          <XCircle className="inline h-3 w-3 text-red-600" />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 rounded-md border p-4">
+                  <span className="text-sm font-medium">
+                    {openApiStatus?.registered ? t("fiscal.updateRegistration") : t("fiscal.registerFiscalId")}
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-company">{t("fiscal.companyName")}</Label>
+                      <Input
+                        id="reg-company"
+                        value={regCompanyName}
+                        onChange={(e) => setRegCompanyName(e.target.value)}
+                        placeholder={t("fiscal.enterCompanyName")}
+                        data-testid="input-reg-company"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-email">{t("fiscal.email")}</Label>
+                      <Input
+                        id="reg-email"
+                        type="email"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        placeholder={t("fiscal.enterEmail")}
+                        data-testid="input-reg-email"
+                      />
+                    </div>
+                  </div>
+                  <div className="border-t pt-3 mt-2">
+                    <span className="text-sm font-medium">{t("fiscal.rtAuthCredentials")}</span>
+                    <p className="text-xs text-muted-foreground mb-2">{t("fiscal.rtAuthDesc")}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="reg-taxcode">{t("fiscal.taxCode")}</Label>
+                        <Input
+                          id="reg-taxcode"
+                          value={regTaxCode}
+                          onChange={(e) => setRegTaxCode(e.target.value)}
+                          placeholder={t("fiscal.enterTaxCode")}
+                          data-testid="input-reg-taxcode"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="reg-password">{t("fiscal.rtPassword")}</Label>
+                        <Input
+                          id="reg-password"
+                          type="password"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          placeholder={t("fiscal.enterRtPassword")}
+                          data-testid="input-reg-password"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="reg-pin">{t("fiscal.rtPin")}</Label>
+                        <Input
+                          id="reg-pin"
+                          type="password"
+                          value={regPin}
+                          onChange={(e) => setRegPin(e.target.value)}
+                          placeholder={t("fiscal.enterRtPin")}
+                          data-testid="input-reg-pin"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => registerMutation.mutate()}
+                    disabled={registerMutation.isPending}
+                    data-testid="button-openapi-register"
+                  >
+                    {registerMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {openApiStatus?.registered ? t("fiscal.updateRegistration") : t("fiscal.registerNow")}
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {rtEnabled && rtStats && (
         <Card>

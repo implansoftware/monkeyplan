@@ -51,7 +51,7 @@ import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { getAvailableProviders, testRTConnection, submitTransactionToRT, getProvider } from "./services/fiscalRT";
-import { testOpenApiConnection, getConfigurations as getOpenApiConfigurations, createConfiguration as createOpenApiConfiguration, sendInvoice as sendOpenApiInvoice, getInvoices as getOpenApiInvoices } from "./services/openApiInvoice";
+import { testOpenApiConnection, getConfigurations as getOpenApiConfigurations, createConfiguration as createOpenApiConfiguration, updateConfiguration as updateOpenApiConfiguration, sendInvoice as sendOpenApiInvoice, getInvoices as getOpenApiInvoices } from "./services/openApiInvoice";
 import OpenAI from "openai";
 
 // Helper: Attempt automatic RT submission for a completed POS transaction
@@ -43065,6 +43065,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Repair Center: Test RT connection
+  app.post("/api/repair-center/fiscal/test-connection", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "No repair center associated" });
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (!adminConfig?.defaultRtProvider || adminConfig.defaultRtProvider === "none") {
+        return res.json({ success: false, message: "RT provider not configured by admin" });
+      }
+      const entityConfig = await storage.getEntityFiscalConfig("repair_center", String(repairCenterId));
+      if (!entityConfig?.rtApiKey) {
+        return res.json({ success: false, message: "RT credentials not configured" });
+      }
+      const result = await testRTConnection(adminConfig.defaultRtProvider, {
+        apiKey: entityConfig.rtApiKey,
+        apiSecret: entityConfig.rtApiSecret || "",
+        entityId: entityConfig.rtEntityId || "",
+        systemId: entityConfig.rtSystemId || "",
+        endpoint: entityConfig.rtEndpoint || "",
+        sandboxMode: adminConfig.sandboxMode ?? true,
+      });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Repair Center: OpenAPI.com registration status
+  app.get("/api/repair-center/fiscal/openapi-status", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "No repair center associated" });
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (adminConfig?.defaultRtProvider !== "openapi_com") {
+        return res.json({ registered: false, provider: adminConfig?.defaultRtProvider || "none" });
+      }
+      const entityConfig = await storage.getEntityFiscalConfig("repair_center", String(repairCenterId));
+      if (!entityConfig?.rtApiKey || !entityConfig?.rtEntityId) {
+        return res.json({ registered: false, missingCredentials: true });
+      }
+      const configs = await getOpenApiConfigurations({ token: entityConfig.rtApiKey, sandboxMode: adminConfig.sandboxMode ?? true });
+      const found = configs.find((c) => c.fiscal_id === entityConfig.rtEntityId);
+      res.json({
+        registered: !!found,
+        fiscalId: entityConfig.rtEntityId,
+        receiptsEnabled: found?.receipts ?? false,
+        hasReceiptsAuth: !!found?.receipts_authentication?.taxCode,
+        configDetails: found ? { name: found.name, email: found.email, active: found.active } : null,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Register/update OpenAPI.com configuration
+  app.post("/api/repair-center/fiscal/openapi-register", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "No repair center associated" });
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (adminConfig?.defaultRtProvider !== "openapi_com") {
+        return res.status(400).json({ error: "OpenAPI.com provider not active" });
+      }
+      const entityConfig = await storage.getEntityFiscalConfig("repair_center", String(repairCenterId));
+      if (!entityConfig?.rtApiKey || !entityConfig?.rtEntityId) {
+        return res.status(400).json({ error: "Token and Fiscal ID must be saved first" });
+      }
+      const { companyName, email, taxCode, password, pin } = req.body;
+      const tokenConfig = { token: entityConfig.rtApiKey, sandboxMode: adminConfig.sandboxMode ?? true };
+      const configs = await getOpenApiConfigurations(tokenConfig);
+      const existing = configs.find((c) => c.fiscal_id === entityConfig.rtEntityId);
+      if (existing) {
+        const updateData: any = {};
+        if (companyName) updateData.name = companyName;
+        if (email) updateData.email = email;
+        if (taxCode) {
+          updateData.receiptsAuthentication = { taxCode, password, pin };
+        }
+        const result = await updateOpenApiConfiguration(tokenConfig, entityConfig.rtEntityId, updateData);
+        return res.json({ success: true, action: "updated", data: result?.data });
+      } else {
+        const result = await createOpenApiConfiguration(tokenConfig, {
+          fiscalId: entityConfig.rtEntityId,
+          name: companyName || "Company",
+          email: email || "noreply@example.com",
+          receipts: true,
+          receiptsAuthentication: taxCode ? { taxCode, password, pin } : undefined,
+        });
+        return res.json({ success: true, action: "created", data: result?.data });
+      }
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
 
   // ==== ENTITY FISCAL RT CONFIG (Reseller + Repair Center) ====
@@ -43195,6 +43290,98 @@ export function registerRoutes(app: Express): Server {
       const { resellerId } = getEffectiveContext(req);
       const transactions = await storage.getFailedRtTransactions({ resellerId: String(resellerId) });
       res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Test RT connection
+  app.post("/api/reseller/fiscal/test-connection", requireRole("reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (!adminConfig?.defaultRtProvider || adminConfig.defaultRtProvider === "none") {
+        return res.json({ success: false, message: "RT provider not configured by admin" });
+      }
+      const entityConfig = await storage.getEntityFiscalConfig("reseller", String(resellerId));
+      if (!entityConfig?.rtApiKey) {
+        return res.json({ success: false, message: "RT credentials not configured" });
+      }
+      const result = await testRTConnection(adminConfig.defaultRtProvider, {
+        apiKey: entityConfig.rtApiKey,
+        apiSecret: entityConfig.rtApiSecret || "",
+        entityId: entityConfig.rtEntityId || "",
+        systemId: entityConfig.rtSystemId || "",
+        endpoint: entityConfig.rtEndpoint || "",
+        sandboxMode: adminConfig.sandboxMode ?? true,
+      });
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Reseller: OpenAPI.com registration status
+  app.get("/api/reseller/fiscal/openapi-status", requireRole("reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (adminConfig?.defaultRtProvider !== "openapi_com") {
+        return res.json({ registered: false, provider: adminConfig?.defaultRtProvider || "none" });
+      }
+      const entityConfig = await storage.getEntityFiscalConfig("reseller", String(resellerId));
+      if (!entityConfig?.rtApiKey || !entityConfig?.rtEntityId) {
+        return res.json({ registered: false, missingCredentials: true });
+      }
+      const configs = await getOpenApiConfigurations({ token: entityConfig.rtApiKey, sandboxMode: adminConfig.sandboxMode ?? true });
+      const found = configs.find((c) => c.fiscal_id === entityConfig.rtEntityId);
+      res.json({
+        registered: !!found,
+        fiscalId: entityConfig.rtEntityId,
+        receiptsEnabled: found?.receipts ?? false,
+        hasReceiptsAuth: !!found?.receipts_authentication?.taxCode,
+        configDetails: found ? { name: found.name, email: found.email, active: found.active } : null,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Register/update OpenAPI.com configuration
+  app.post("/api/reseller/fiscal/openapi-register", requireRole("reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const adminConfig = await storage.getPlatformFiscalConfig();
+      if (adminConfig?.defaultRtProvider !== "openapi_com") {
+        return res.status(400).json({ error: "OpenAPI.com provider not active" });
+      }
+      const entityConfig = await storage.getEntityFiscalConfig("reseller", String(resellerId));
+      if (!entityConfig?.rtApiKey || !entityConfig?.rtEntityId) {
+        return res.status(400).json({ error: "Token and Fiscal ID must be saved first" });
+      }
+      const { companyName, email, taxCode, password, pin } = req.body;
+      const tokenConfig = { token: entityConfig.rtApiKey, sandboxMode: adminConfig.sandboxMode ?? true };
+      const configs = await getOpenApiConfigurations(tokenConfig);
+      const existing = configs.find((c) => c.fiscal_id === entityConfig.rtEntityId);
+      if (existing) {
+        const updateData: any = {};
+        if (companyName) updateData.name = companyName;
+        if (email) updateData.email = email;
+        if (taxCode) {
+          updateData.receiptsAuthentication = { taxCode, password, pin };
+        }
+        const result = await updateOpenApiConfiguration(tokenConfig, entityConfig.rtEntityId, updateData);
+        return res.json({ success: true, action: "updated", data: result?.data });
+      } else {
+        const result = await createOpenApiConfiguration(tokenConfig, {
+          fiscalId: entityConfig.rtEntityId,
+          name: companyName || "Company",
+          email: email || "noreply@example.com",
+          receipts: true,
+          receiptsAuthentication: taxCode ? { taxCode, password, pin } : undefined,
+        });
+        return res.json({ success: true, action: "created", data: result?.data });
+      }
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
