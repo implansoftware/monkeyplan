@@ -48385,21 +48385,220 @@ export function registerRoutes(app: Express): Server {
           console.error("AI context: customers error:", custErr);
         }
 
-      } catch (ctxError) {
+      
+
+        // --- TICKETS SECTION ---
+        try {
+          const ticketFilters: any = {};
+          if (resellerId) ticketFilters.resellerId = resellerId;
+          else if (repairCenterId) ticketFilters.repairCenterId = repairCenterId;
+          if (resellerId || repairCenterId || userRole === "admin") {
+            const tickets = await storage.listTickets(Object.keys(ticketFilters).length > 0 ? ticketFilters : undefined);
+            const openTickets = tickets.filter(t => t.status !== "closed" && t.status !== "resolved");
+            if (openTickets.length > 0) {
+              dataContext += `\n\n--- TICKET APERTI (${openTickets.length} su ${tickets.length} totali) ---\n`;
+              dataContext += openTickets.slice(0, 15).map(t =>
+                `- #${t.id.slice(0, 8)}: ${t.subject || "Senza oggetto"}, stato: ${t.status}, priorità: ${t.priority || "normale"}, tipo: ${t.ticketType || "support"}`
+              ).join("\n");
+            } else {
+              dataContext += "\n\n--- TICKET: Nessun ticket aperto ---";
+            }
+          }
+        } catch (tickErr) {
+          console.error("AI context: tickets error:", tickErr);
+        }
+
+        // --- INVOICES SECTION ---
+        try {
+          if (resellerId) {
+            const invoices = await storage.getInvoicesByReseller(resellerId);
+            if (invoices.length > 0) {
+              const unpaid = invoices.filter(i => i.paymentStatus === "unpaid" || i.paymentStatus === "partial");
+              const totalRevenue = invoices.filter(i => i.paymentStatus === "paid").reduce((sum, i) => sum + (Number(i.totalCents) || 0), 0);
+              dataContext += `\n\n--- FATTURE (${invoices.length} totali, ${unpaid.length} non pagate) ---\n`;
+              dataContext += `Fatturato incassato: ${(totalRevenue / 100).toFixed(2)}€\n`;
+              dataContext += unpaid.slice(0, 10).map(i =>
+                `- Fatt. ${i.invoiceNumber || i.id.slice(0, 8)}: ${(Number(i.totalCents) / 100).toFixed(2)}€, stato: ${i.paymentStatus}, cliente: ${i.customerName || "N/D"}`
+              ).join("\n");
+            }
+          } else if (repairCenterId) {
+            const invoices = await storage.getInvoicesByRepairCenter(repairCenterId);
+            if (invoices.length > 0) {
+              const unpaid = invoices.filter(i => i.paymentStatus === "unpaid" || i.paymentStatus === "partial");
+              dataContext += `\n\n--- FATTURE (${invoices.length} totali, ${unpaid.length} non pagate) ---\n`;
+              dataContext += unpaid.slice(0, 10).map(i =>
+                `- Fatt. ${i.invoiceNumber || i.id.slice(0, 8)}: ${(Number(i.totalCents) / 100).toFixed(2)}€, stato: ${i.paymentStatus}`
+              ).join("\n");
+            }
+          } else if (userRole === "admin") {
+            const invoices = await storage.listInvoices({ adminOnly: true });
+            if (invoices.length > 0) {
+              const unpaid = invoices.filter(i => i.paymentStatus === "unpaid" || i.paymentStatus === "partial");
+              const totalRevenue = invoices.filter(i => i.paymentStatus === "paid").reduce((sum, i) => sum + (Number(i.totalCents) || 0), 0);
+              dataContext += `\n\n--- FATTURE ADMIN (${invoices.length} totali, ${unpaid.length} non pagate, fatturato: ${(totalRevenue / 100).toFixed(2)}€) ---\n`;
+              dataContext += unpaid.slice(0, 10).map(i =>
+                `- Fatt. ${i.invoiceNumber || i.id.slice(0, 8)}: ${(Number(i.totalCents) / 100).toFixed(2)}€, stato: ${i.paymentStatus}, cliente: ${i.customerName || "N/D"}`
+              ).join("\n");
+            }
+          }
+        } catch (invErr) {
+          console.error("AI context: invoices error:", invErr);
+        }
+
+        // --- REPAIR CENTERS SECTION ---
+        try {
+          if (resellerId) {
+            const centers = await storage.getRepairCentersForReseller(resellerId);
+            if (centers.length > 0) {
+              dataContext += `\n\n--- CENTRI RIPARAZIONE (${centers.length}) ---\n`;
+              dataContext += centers.slice(0, 10).map(c =>
+                `- ${c.name || c.businessName || "Centro"}: ${c.city || ""} ${c.province || ""}, tel: ${c.phone || "N/D"}, email: ${c.email || "N/D"}`
+              ).join("\n");
+            }
+          }
+        } catch (rcErr) {
+          console.error("AI context: repair centers error:", rcErr);
+        }
+
+        // --- SALES ORDERS (B2B) SECTION ---
+        try {
+          if (resellerId) {
+            const salesOrders = await storage.listSalesOrders({ resellerId });
+            if (salesOrders.length > 0) {
+              const activeSO = salesOrders.filter(o => o.status !== "completed" && o.status !== "cancelled");
+              dataContext += `\n\n--- ORDINI B2B (${activeSO.length} attivi su ${salesOrders.length} totali) ---\n`;
+              dataContext += activeSO.slice(0, 10).map(o =>
+                `- #${o.orderNumber || o.id.slice(0, 8)}: stato: ${o.status}, totale: ${(Number(o.totalCents || 0) / 100).toFixed(2)}€`
+              ).join("\n");
+            }
+          }
+        } catch (soErr) {
+          console.error("AI context: sales orders error:", soErr);
+        }
+
+        // --- STANDALONE QUOTES SECTION ---
+        try {
+          const quoteFilters: any = {};
+          if (resellerId) quoteFilters.resellerId = resellerId;
+          else if (repairCenterId) quoteFilters.repairCenterId = repairCenterId;
+          if (Object.keys(quoteFilters).length > 0) {
+            const quotes = await storage.listStandaloneQuotes(quoteFilters);
+            if (quotes.length > 0) {
+              const pending = quotes.filter(q => q.status === "pending" || q.status === "sent");
+              dataContext += `\n\n--- PREVENTIVI (${quotes.length} totali, ${pending.length} in attesa) ---\n`;
+              dataContext += pending.slice(0, 10).map(q =>
+                `- Prev. ${q.quoteNumber || q.id.slice(0, 8)}: ${q.customerName || "N/D"}, totale: ${(Number(q.totalCents || 0) / 100).toFixed(2)}€, stato: ${q.status}`
+              ).join("\n");
+            }
+          }
+        } catch (qErr) {
+          console.error("AI context: quotes error:", qErr);
+        }
+
+        // --- SUPPLIERS SECTION ---
+        try {
+          if (resellerId || repairCenterId || userRole === "admin") {
+            const suppliers = await storage.listSuppliers(true);
+            if (suppliers.length > 0) {
+              dataContext += `\n\n--- FORNITORI (${suppliers.length}) ---\n`;
+              dataContext += suppliers.slice(0, 10).map(s =>
+                `- ${s.name}: ${s.category || "generico"}, contatto: ${s.contactEmail || s.contactPhone || "N/D"}`
+              ).join("\n");
+            }
+          }
+        } catch (supErr) {
+          console.error("AI context: suppliers error:", supErr);
+        }
+
+        // --- SUPPLIER ORDERS SECTION ---
+        try {
+          const soFilters: any = {};
+          if (repairCenterId) soFilters.repairCenterId = repairCenterId;
+          else if (resellerId) { soFilters.ownerType = "reseller"; soFilters.ownerId = resellerId; }
+          if (Object.keys(soFilters).length > 0 || userRole === "admin") {
+            const supOrders = await storage.listSupplierOrders(Object.keys(soFilters).length > 0 ? soFilters : undefined);
+            const activeSupOrders = supOrders.filter(o => o.status !== "delivered" && o.status !== "cancelled");
+            if (activeSupOrders.length > 0) {
+              dataContext += `\n\n--- ORDINI FORNITORI IN CORSO (${activeSupOrders.length}) ---\n`;
+              dataContext += activeSupOrders.slice(0, 10).map(o =>
+                `- Ordine ${o.orderNumber || o.id.slice(0, 8)}: stato: ${o.status}, totale: ${(Number(o.totalCents || 0) / 100).toFixed(2)}€`
+              ).join("\n");
+            }
+          }
+        } catch (supOrdErr) {
+          console.error("AI context: supplier orders error:", supOrdErr);
+        }
+
+        // --- WARRANTIES SECTION ---
+        try {
+          if (resellerId) {
+            const warranties = await storage.listRepairWarranties({ resellerId });
+            if (warranties.length > 0) {
+              const active = warranties.filter(w => w.status === "active");
+              dataContext += `\n\n--- GARANZIE (${warranties.length} totali, ${active.length} attive) ---\n`;
+              dataContext += active.slice(0, 10).map(w =>
+                `- Garanzia #${w.id.slice(0, 8)}: prodotto: ${w.productName || "N/D"}, scadenza: ${w.expiryDate || "N/D"}`
+              ).join("\n");
+            }
+          }
+        } catch (warErr) {
+          console.error("AI context: warranties error:", warErr);
+        }
+
+        // --- DELIVERY APPOINTMENTS SECTION ---
+        try {
+          const aptFilters: any = {};
+          if (resellerId) aptFilters.resellerId = resellerId;
+          else if (repairCenterId) aptFilters.repairCenterId = repairCenterId;
+          if (Object.keys(aptFilters).length > 0) {
+            const appointments = await storage.listDeliveryAppointments(aptFilters);
+            const upcoming = appointments.filter(a => a.status !== "completed" && a.status !== "cancelled");
+            if (upcoming.length > 0) {
+              dataContext += `\n\n--- APPUNTAMENTI CONSEGNA (${upcoming.length} in programma) ---\n`;
+              dataContext += upcoming.slice(0, 10).map(a =>
+                `- ${a.scheduledDate || "data N/D"} ${a.scheduledTime || ""}: stato ${a.status}`
+              ).join("\n");
+            }
+          }
+        } catch (aptErr) {
+          console.error("AI context: appointments error:", aptErr);
+        }
+
+        // --- PRODUCTS SECTION ---
+        try {
+          if (resellerId) {
+            const products = await storage.listProductsByReseller(resellerId);
+            if (products.length > 0) {
+              dataContext += `\n\n--- PRODOTTI (${products.length}) ---\n`;
+              dataContext += products.slice(0, 20).map(p =>
+                `- ${p.name}: ${p.sku || "no SKU"}, prezzo: ${p.priceCents ? (Number(p.priceCents) / 100).toFixed(2) + "€" : "N/D"}, categoria: ${p.category || "N/D"}`
+              ).join("\n");
+            }
+          }
+        } catch (prodErr) {
+          console.error("AI context: products error:", prodErr);
+        }
+
+        } catch (ctxError) {
         console.error("AI context loading error:", ctxError);
         dataContext = "\n\n[Nota: impossibile caricare alcuni dati di contesto]";
       }
 
       const systemPrompt = `Sei MonkeyPlan AI, un assistente intelligente per la piattaforma di gestione riparazioni MonkeyPlan. Hai accesso ai dati reali dell'utente e puoi rispondere su:
 - Servizi offerti e catalogo prezzi
-- Ricambi e giacenze in magazzino
+- Ricambi, prodotti e giacenze in magazzino
 - Stato delle riparazioni attive
-- Lista clienti
+- Lista clienti e loro informazioni
+- Fatturazione: fatture emesse, non pagate, fatturato totale
+- Preventivi standalone
+- Ticket di supporto aperti e risolti
+- Centri riparazione associati
+- Ordini B2B e vendite
+- Fornitori e ordini fornitori
+- Garanzie attive e scadute
+- Appuntamenti di consegna
 - Gestione ordini di riparazione e workflow
-- Fatturazione e preventivi
-- Ticketing e supporto clienti
-- Gestione garanzie e assicurazioni
-- Ordini B2B e supply chain
+- Supply chain e logistica
 
 L'utente corrente ha ruolo: ${req.user.role}, nome: ${req.user.fullName || req.user.username}.
 
