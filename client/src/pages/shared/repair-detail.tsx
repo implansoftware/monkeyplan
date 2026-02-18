@@ -40,7 +40,7 @@ import {
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag,
-  Upload
+  Upload, ChevronDown, ChevronUp, Printer, Info
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -228,6 +228,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   const [skipDiagnosisReason, setSkipDiagnosisReason] = useState("");
   const [dataRecoveryDialogOpen, setDataRecoveryDialogOpen] = useState(false);
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
+  const [docsExpanded, setDocsExpanded] = useState(false);
 
   const { data: repair, isLoading, error } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
@@ -1110,10 +1111,10 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       </p>
                       <div className="flex gap-2">
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           onClick={() => updateQuoteStatusMutation.mutate('rejected')}
                           disabled={updateQuoteStatusMutation.isPending}
-                          className="flex-1 bg-[#ff0808] text-[#ffffff]"
+                          className="flex-1"
                           data-testid="button-reject-quote"
                         >
                           <XCircle className="mr-2 h-4 w-4" />
@@ -1131,8 +1132,8 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       </div>
                       <div className="pt-3 border-t">
                         <Button
-                          variant="secondary"
-                          className="w-full bg-[#ffff00] text-[#000000]"
+                          variant="outline"
+                          className="w-full"
                           onClick={() => setDiagnosisDialogOpen(true)}
                           data-testid="button-add-diagnosis-later"
                         >
@@ -1275,6 +1276,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {repair.status === 'in_riparazione' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       <p className="text-sm" dangerouslySetInnerHTML={{ __html: t("repairs.repairInProgressDesc") }} />
+                      <Button
+                        onClick={() => setTestDialogOpen(true)}
+                        className="w-full"
+                        data-testid="button-start-test"
+                      >
+                        <ClipboardCheck className="mr-2 h-4 w-4" />
+                        {t("standalone.startTesting")}
+                      </Button>
                       <div className="flex gap-2 flex-wrap">
                         <Button
                           variant="outline"
@@ -1294,14 +1303,6 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           <ClipboardList className="mr-2 h-4 w-4" />
                           {t("repairs.logActivity")}
                         </Button>
-                        <Button
-                          onClick={() => setTestDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-start-test"
-                        >
-                          <ClipboardCheck className="mr-2 h-4 w-4" />
-                          {t("standalone.startTesting")}
-                        </Button>
                       </div>
                     </div>
                   )}
@@ -1311,30 +1312,28 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       <p className="text-sm">
                         <span dangerouslySetInnerHTML={{ __html: t("standalone.testingInProgressMsg") }} />
                       </p>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => setTestDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-continue-test"
-                        >
-                          <ClipboardCheck className="mr-2 h-4 w-4" />
-                          {t("standalone.manageTesting")}
-                        </Button>
-                        <Button
-                          onClick={() => readyForPickupMutation.mutate()}
-                          disabled={readyForPickupMutation.isPending}
-                          className="flex-1"
-                          data-testid="button-ready-pickup"
-                        >
-                          {readyForPickupMutation.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <PackageCheck className="mr-2 h-4 w-4" />
-                          )}
-                          {t("standalone.readyForPickupBtn")}
-                        </Button>
-                      </div>
+                      <Button
+                        onClick={() => readyForPickupMutation.mutate()}
+                        disabled={readyForPickupMutation.isPending}
+                        className="w-full"
+                        data-testid="button-ready-pickup"
+                      >
+                        {readyForPickupMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <PackageCheck className="mr-2 h-4 w-4" />
+                        )}
+                        {t("standalone.readyForPickupBtn")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setTestDialogOpen(true)}
+                        className="w-full"
+                        data-testid="button-continue-test"
+                      >
+                        <ClipboardCheck className="mr-2 h-4 w-4" />
+                        {t("standalone.manageTesting")}
+                      </Button>
                     </div>
                   )}
 
@@ -1742,58 +1741,87 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               )}
 
               <div className="mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground mb-3">{t("standalone.documentsTitle")}</p>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/intake-document`, '_blank')}
-                    disabled={!acceptance}
-                    data-testid="button-download-acceptance"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {t("standalone.acceptanceDoc")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/labels`, '_blank')}
-                    disabled={!acceptance}
-                    data-testid="button-download-labels"
-                  >
-                    <Tag className="mr-2 h-4 w-4" />
-                    {t("standalone.labelsDoc")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/diagnosis-document`, '_blank')}
-                    disabled={!diagnosis}
-                    data-testid="button-download-diagnosis"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {t("standalone.diagnosisDoc")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/quote-document`, '_blank')}
-                    disabled={!quote}
-                    data-testid="button-download-quote"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {t("standalone.quoteDoc")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => window.open(`/api/repair-orders/${repairOrderId}/delivery-document`, '_blank')}
-                    disabled={repair.status !== 'consegnato'}
-                    data-testid="button-download-delivery"
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {t("standalone.deliveryWarrantyDoc")}
-                  </Button>
-                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setDocsExpanded(!docsExpanded)}
+                  className="w-full justify-between px-3"
+                  data-testid="button-toggle-documents"
+                >
+                  <span className="flex items-center gap-2">
+                    <Printer className="h-4 w-4" />
+                    <span className="text-sm font-medium">{t("standalone.printAndDocuments")}</span>
+                  </span>
+                  {docsExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+                {docsExpanded && (
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-dashed">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repairOrderId}/intake-document`, '_blank')}
+                      disabled={!acceptance}
+                      data-testid="button-download-acceptance"
+                    >
+                      <Download className="mr-2 h-3.5 w-3.5" />
+                      {t("standalone.acceptanceDoc")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repairOrderId}/labels`, '_blank')}
+                      disabled={!acceptance}
+                      data-testid="button-download-labels"
+                    >
+                      <Tag className="mr-2 h-3.5 w-3.5" />
+                      {t("standalone.labelsDoc")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repairOrderId}/diagnosis-document`, '_blank')}
+                      disabled={!diagnosis}
+                      data-testid="button-download-diagnosis"
+                    >
+                      <Download className="mr-2 h-3.5 w-3.5" />
+                      {t("standalone.diagnosisDoc")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repairOrderId}/quote-document`, '_blank')}
+                      disabled={!quote}
+                      data-testid="button-download-quote"
+                    >
+                      <Download className="mr-2 h-3.5 w-3.5" />
+                      {t("standalone.quoteDoc")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/repair-orders/${repairOrderId}/delivery-document`, '_blank')}
+                      disabled={repair.status !== 'consegnato'}
+                      data-testid="button-download-delivery"
+                    >
+                      <Download className="mr-2 h-3.5 w-3.5" />
+                      {t("standalone.deliveryWarrantyDoc")}
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
+
+        <div className="flex items-center gap-3 pt-2">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Info className="h-4 w-4 text-primary" />
+          </div>
+          <h2 className="text-lg font-semibold tracking-tight" data-testid="text-repair-summary-title">{t("standalone.repairSummaryTitle")}</h2>
+        </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card data-testid="card-device" className="relative overflow-hidden">
@@ -2012,11 +2040,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           </Card>
 
           {acceptance && (
-            <Card data-testid="card-acceptance">
-              <CardHeader className="pb-3">
+            <Card data-testid="card-acceptance" className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="pb-3 relative">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  {t("standalone.acceptanceDataTitle")}
+                  <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <ClipboardCheck className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <span>{t("standalone.acceptanceDataTitle")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2089,11 +2120,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           )}
 
           {diagnosis && (
-            <Card data-testid="card-diagnosis">
-              <CardHeader className="pb-3">
+            <Card data-testid="card-diagnosis" className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="pb-3 relative">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Stethoscope className="h-4 w-4" />
-                  {t("repairs.diagnosisData")}
+                  <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Stethoscope className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span>{t("repairs.diagnosisData")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2198,11 +2232,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           )}
 
           {testChecklist && (
-            <Card data-testid="card-test-checklist">
-              <CardHeader className="pb-3">
+            <Card data-testid="card-test-checklist" className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="pb-3 relative">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  {t("repairs.testData")}
+                  <div className="h-8 w-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                    <ClipboardCheck className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  </div>
+                  <span>{t("repairs.testData")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2263,11 +2300,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             const customerData = repair?.customer || customer;
             if (!customerData) return null;
             return (
-              <Card data-testid="card-customer">
-                <CardHeader className="pb-3">
+              <Card data-testid="card-customer" className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent pointer-events-none" />
+                <CardHeader className="pb-3 relative">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    {t("repairs.customerData")}
+                    <div className="h-8 w-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                      <User className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                    </div>
+                    <span>{t("repairs.customerData")}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -2325,11 +2365,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           })()}
 
           {quote && (
-            <Card data-testid="card-quote">
-              <CardHeader className="pb-3">
+            <Card data-testid="card-quote" className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="pb-3 relative">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Euro className="h-4 w-4" />
-                  {t("repairs.quote")}
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Euro className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <span>{t("repairs.quote")}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -2412,11 +2455,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
           )}
         </div>
 
-        <Card data-testid="card-attachments">
-          <CardHeader className="pb-3">
+        <Card data-testid="card-attachments" className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="pb-3 relative">
             <CardTitle className="text-base flex items-center gap-2">
-              <Paperclip className="h-4 w-4" />
-              {t("standalone.attachmentsTitle")}
+              <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                <Paperclip className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <span>{t("standalone.attachmentsTitle")}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -2429,11 +2475,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         </Card>
 
         {diagnosis && diagnosis.dataRecoveryRequested && (
-          <Card data-testid="card-data-recovery">
-            <CardHeader className="pb-3">
+          <Card data-testid="card-data-recovery" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 relative">
               <CardTitle className="text-base flex items-center gap-2">
-                <HardDrive className="h-4 w-4" />
-                {t("standalone.dataRecoveryTitle")}
+                <div className="h-8 w-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                  <HardDrive className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+                </div>
+                <span>{t("standalone.dataRecoveryTitle")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2472,11 +2521,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         )}
 
         {appointment && (
-          <Card data-testid="card-appointment">
-            <CardHeader className="pb-3">
+          <Card data-testid="card-appointment" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 relative">
               <CardTitle className="text-base flex items-center gap-2">
-                <CalendarCheck className="h-4 w-4" />
-                {t("repairs.deliveryAppointment")}
+                <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                  <CalendarCheck className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                </div>
+                <span>{t("repairs.deliveryAppointment")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -2498,11 +2550,14 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
         )}
 
         {repair.notes && (
-          <Card data-testid="card-notes">
-            <CardHeader className="pb-3">
+          <Card data-testid="card-notes" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 to-transparent pointer-events-none" />
+            <CardHeader className="pb-3 relative">
               <CardTitle className="text-base flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                {t("common.notes")}
+                <div className="h-8 w-8 rounded-lg bg-slate-500/10 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                </div>
+                <span>{t("common.notes")}</span>
               </CardTitle>
             </CardHeader>
             <CardContent>

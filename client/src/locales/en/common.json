@@ -7530,6 +7530,8 @@
     "bookPickupAppointmentBtn": "Book pickup",
     "manageAppointmentBtn": "Manage appointment",
     "documentsTitle": "Documents",
+    "repairSummaryTitle": "Repair summary",
+    "printAndDocuments": "Prints and documents",
     "acceptanceDoc": "Acceptance document",
     "diagnosisDoc": "Diagnosis document",
     "quoteDoc": "Quote document",
