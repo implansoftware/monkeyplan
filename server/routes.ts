@@ -294,6 +294,16 @@ function requireRole(...roles: string[]) {
   };
 }
 
+// Helper to get the effective reseller ID for the current user
+// For reseller_staff, returns the parent reseller ID; for reseller, returns user ID
+function getResellerId(req: Request): string {
+  if (!req.user) throw new Error("User not authenticated");
+  if (req.user.role === "reseller_staff") {
+    return req.user.resellerId || req.user.id;
+  }
+  return req.user.id;
+}
+
 function requireActiveLicense() {
   return async (req: Request, res: Response, next: Function) => {
     if (!req.isAuthenticated() || !req.user) {
@@ -1434,19 +1444,19 @@ export function registerRoutes(app: Express): Server {
       
       // Get reseller's repair centers first (needed for filtering)
       const repairCenters = await storage.listRepairCenters();
-      const myRepairCenters = repairCenters.filter(rc => rc.resellerId === req.user!.id);
+      const myRepairCenters = repairCenters.filter(rc => rc.resellerId === getResellerId(req));
       
       // Include: global items (no owner) + reseller items + items owned by reseller's repair centers
       const activeItems = items.filter(item => 
         item.isActive && (
           (!item.resellerId && !item.repairCenterId) || // Global items
-          item.resellerId === req.user!.id || // Reseller own items
+          item.resellerId === getResellerId(req) || // Reseller own items
           myRepairCenters.some(rc => rc.id === item.repairCenterId) // Repair center items
         )
       );
 
       // Get all custom prices for this reseller
-      const resellerPrices = await storage.listServiceItemPricesByReseller(req.user.id);
+      const resellerPrices = await storage.listServiceItemPricesByReseller(getResellerId(req));
       
       // Get custom prices for each repair center
       const centerPricesMap: { [centerId: string]: any[] } = {};
@@ -1492,7 +1502,7 @@ export function registerRoutes(app: Express): Server {
       // If repairCenterId is provided, verify it belongs to this reseller
       if (repairCenterId) {
         const center = await storage.getRepairCenter(repairCenterId);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getResellerId(req)) {
           return res.status(403).send("This repair center does not belong to you");
         }
       }
@@ -1503,7 +1513,7 @@ export function registerRoutes(app: Express): Server {
         const centerPrices = await storage.listServiceItemPricesByRepairCenter(repairCenterId);
         existingPrice = centerPrices.find(p => p.serviceItemId === serviceItemId);
       } else {
-        const resellerPrices = await storage.listServiceItemPricesByReseller(req.user.id);
+        const resellerPrices = await storage.listServiceItemPricesByReseller(getResellerId(req));
         existingPrice = resellerPrices.find(p => p.serviceItemId === serviceItemId);
       }
       
@@ -1514,7 +1524,7 @@ export function registerRoutes(app: Express): Server {
             return res.status(403).send("Price record does not match repair center");
           }
         } else {
-          if (existingPrice.resellerId !== req.user.id) {
+          if (existingPrice.resellerId !== getResellerId(req)) {
             return res.status(403).send("Price record does not belong to you");
           }
         }
@@ -1529,7 +1539,7 @@ export function registerRoutes(app: Express): Server {
         // Create new
         const created = await storage.createServiceItemPrice({
           serviceItemId,
-          resellerId: repairCenterId ? null : req.user.id,
+          resellerId: repairCenterId ? null : getResellerId(req),
           repairCenterId: repairCenterId || null,
           priceCents,
           laborMinutes: laborMinutes || null,
@@ -1557,13 +1567,13 @@ export function registerRoutes(app: Express): Server {
       // Check ownership based on whether it's a reseller or center price
       if (priceToDelete.resellerId) {
         // It's a reseller-level price - verify it belongs to this reseller
-        if (priceToDelete.resellerId !== req.user.id) {
+        if (priceToDelete.resellerId !== getResellerId(req)) {
           return res.status(403).send("This price does not belong to you");
         }
       } else if (priceToDelete.repairCenterId) {
         // It's a center-level price - verify the center belongs to this reseller
         const center = await storage.getRepairCenter(priceToDelete.repairCenterId);
-        if (!center || center.resellerId !== req.user.id) {
+        if (!center || center.resellerId !== getResellerId(req)) {
           return res.status(403).send("This price does not belong to your repair centers");
         }
       } else {
@@ -1829,7 +1839,7 @@ export function registerRoutes(app: Express): Server {
       
       // Verify ownership based on role
       if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
-        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        const resellerId = getResellerId(req);
         if (repair.resellerId !== resellerId) {
           // Also check if customer belongs to this reseller
           const customer = await storage.getUser(repair.customerId);
@@ -5387,7 +5397,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Reseller ID non trovato");
       
       const { id } = req.params;
@@ -5739,13 +5749,13 @@ export function registerRoutes(app: Express): Server {
         }
         
         // Check if center belongs to reseller
-        let isAllowed = center.resellerId === req.user.id;
+        let isAllowed = center.resellerId === getResellerId(req);
         
         // Franchising/GDO can also use sub-reseller centers
         if (!isAllowed && (req.user.resellerCategory === 'franchising' || req.user.resellerCategory === 'gdo')) {
           const allUsers = await storage.listUsers();
           const subResellerIds = allUsers
-            .filter(u => u.role === 'reseller' && u.parentResellerId === req.user!.id && u.isActive)
+            .filter(u => u.role === 'reseller' && u.parentResellerId === getResellerId(req) && u.isActive)
             .map(u => u.id);
           
           isAllowed = subResellerIds.includes(center.resellerId || '');
@@ -5758,7 +5768,7 @@ export function registerRoutes(app: Express): Server {
 
       const repair = await storage.createRepairOrder({
         customerId: validatedData.customerId,
-        resellerId: req.user.id, // Force reseller ID from session
+        resellerId: getResellerId(req), // Force reseller ID from session
         repairCenterId: validatedData.repairCenterId,
         deviceType: validatedData.deviceType,
         deviceModel: validatedData.deviceModel,
@@ -5884,7 +5894,7 @@ export function registerRoutes(app: Express): Server {
       if (!repair) return res.status(404).send("Ordine di riparazione non trovato");
       
       // Verify reseller owns this repair
-      if (repair.resellerId !== req.user.id) {
+      if (repair.resellerId !== getResellerId(req)) {
         return res.status(403).send("Non puoi modificare riparazioni di altri rivenditori");
       }
       
@@ -5965,7 +5975,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).send("Unauthorized");
       
       // Get effective reseller context (for staff, use their reseller's ID)
-      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
+      const effectiveResellerId = getResellerId(req);
       
       const baseSchema = insertUserSchema.pick({
         username: true,
@@ -6050,7 +6060,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "read"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
+      const effectiveResellerId = getResellerId(req);
       
       const customerId = req.params.id;
       
@@ -6107,7 +6117,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "update"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
+      const effectiveResellerId = getResellerId(req);
       
       const customerId = req.params.id;
       
@@ -6228,7 +6238,7 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/reseller/customers/:id", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "delete"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
-      const effectiveResellerId = req.user.role === 'reseller_staff' ? req.user.resellerId : req.user.id;
+      const effectiveResellerId = getResellerId(req);
       
       const customerId = req.params.id;
       
@@ -6566,7 +6576,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/repair-center-staff", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const staff = await storage.listRepairCenterStaffHierarchical(resellerId);
@@ -6623,7 +6633,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const { name, logoUrl } = req.body;
@@ -6649,7 +6659,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const brandId = req.params.id;
@@ -6679,7 +6689,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const brandId = req.params.id;
@@ -6763,7 +6773,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const { modelName, brandId, typeId, photoUrl, marketCodes } = req.body;
@@ -6802,7 +6812,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const modelId = req.params.id;
@@ -6847,7 +6857,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Rivenditore non trovato");
       
       const modelId = req.params.id;
@@ -7672,7 +7682,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (repairCenter.resellerId !== req.user.id) {
+      if (repairCenter.resellerId !== getResellerId(req)) {
         return res.status(403).send("Non puoi modificare lo stock in centri che non ti appartengono");
       }
       
@@ -7723,7 +7733,7 @@ export function registerRoutes(app: Express): Server {
       if (!repairCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (repairCenter.resellerId !== req.user.id) {
+      if (repairCenter.resellerId !== getResellerId(req)) {
         return res.status(403).send("Non puoi creare movimenti in centri che non ti appartengono");
       }
       
@@ -7842,7 +7852,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Centro di riparazione non trovato");
       }
       // Verify this center belongs to the reseller
-      if (center.resellerId !== req.user.id) {
+      if (center.resellerId !== getResellerId(req)) {
         return res.status(403).send("Non autorizzato ad accedere a questo centro");
       }
       res.json(center);
@@ -7860,7 +7870,7 @@ export function registerRoutes(app: Express): Server {
       // Validate input using schema
       const validationResult = insertRepairCenterSchema.safeParse({
         ...req.body,
-        resellerId: req.user.id, // Force resellerId to logged-in reseller
+        resellerId: getResellerId(req), // Force resellerId to logged-in reseller
         isActive: true,
       });
       
@@ -7884,7 +7894,7 @@ export function registerRoutes(app: Express): Server {
         provincia: validated.provincia || null,
         phone: validated.phone,
         email: validated.email,
-        resellerId: req.user.id, // Always set to current reseller
+        resellerId: getResellerId(req), // Always set to current reseller
         isActive: true,
         hourlyRateCents: validated.hourlyRateCents || null,
         ragioneSociale: validated.ragioneSociale || null,
@@ -7955,7 +7965,7 @@ export function registerRoutes(app: Express): Server {
       if (!existingCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (existingCenter.resellerId !== req.user.id) {
+      if (existingCenter.resellerId !== getResellerId(req)) {
         return res.status(403).send("Non autorizzato a modificare questo centro");
       }
 
@@ -8020,7 +8030,7 @@ export function registerRoutes(app: Express): Server {
       if (!existingCenter) {
         return res.status(404).send("Centro di riparazione non trovato");
       }
-      if (existingCenter.resellerId !== req.user.id) {
+      if (existingCenter.resellerId !== getResellerId(req)) {
         return res.status(403).send("Non autorizzato a eliminare questo centro");
       }
 
@@ -21820,7 +21830,7 @@ export function registerRoutes(app: Express): Server {
       
       // Verify access rights
       if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
-        if (customer.resellerId !== (req.user.role === 'reseller' ? req.user.id : req.user.resellerId)) {
+        if (customer.resellerId !== getResellerId(req)) {
           return res.status(403).send("Forbidden");
         }
       } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
@@ -21875,7 +21885,7 @@ export function registerRoutes(app: Express): Server {
       
       // Verify access rights
       if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
-        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        const resellerId = getResellerId(req);
         if (customer.resellerId !== resellerId || relatedCustomer.resellerId !== resellerId) {
           return res.status(403).send("Both customers must belong to your organization");
         }
@@ -21937,7 +21947,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
-        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        const resellerId = getResellerId(req);
         if (customer.resellerId !== resellerId) {
           return res.status(403).send("Forbidden");
         }
@@ -26113,7 +26123,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Reseller ID non trovato");
       
       // Check which integrations the reseller has configured
@@ -26147,7 +26157,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).send("Reseller ID non trovato");
       
       const integrations: Array<{
@@ -31734,7 +31744,7 @@ export function registerRoutes(app: Express): Server {
       if (req.user.role === 'customer') {
         filters.customerId = req.user.id;
       } else if (['reseller', 'reseller_staff'].includes(req.user.role)) {
-        filters.resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        filters.resellerId = getResellerId(req);
       }
       // Admin sees all
       
@@ -31761,7 +31771,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ error: "Accesso negato" });
       }
       if (['reseller', 'reseller_staff'].includes(req.user.role)) {
-        const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+        const resellerId = getResellerId(req);
         if (returnOrder.resellerId !== resellerId) {
           return res.status(403).json({ error: "Accesso negato" });
         }
@@ -37695,7 +37705,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/work-profiles", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       // Use hierarchical query to include sub-resellers and repair centers
       const profiles = await storage.listHrWorkProfilesHierarchical(resellerId);
@@ -37709,7 +37719,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/work-profiles", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const profile = await storage.createHrWorkProfile({ ...req.body, resellerId });
       await storage.createHrAuditLog({
@@ -37732,7 +37742,7 @@ export function registerRoutes(app: Express): Server {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
       const oldProfile = await storage.getHrWorkProfile(req.params.id);
       const profile = await storage.updateHrWorkProfile(req.params.id, req.body);
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (resellerId) {
         await storage.createHrAuditLog({
           resellerId,
@@ -37754,7 +37764,7 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/reseller/hr/work-profiles/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       await storage.deleteHrWorkProfile(req.params.id);
       if (resellerId) {
         await storage.createHrAuditLog({
@@ -37776,7 +37786,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/work-profiles/sync-from-entity", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const { entityType, entityId, profileName } = req.body;
@@ -37887,7 +37897,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/work-profiles/sync-all", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       // Get all repair centers in hierarchy (recursive sub-resellers)
@@ -37982,7 +37992,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/clock-events", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { startDate, endDate, userId, entityType, entityId } = req.query;
       
@@ -38025,7 +38035,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/clock-events", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const { eventType, latitude, longitude, notes } = req.body;
@@ -38086,7 +38096,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/leave-requests", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { status, userId, entityType, entityId } = req.query;
       
@@ -38128,7 +38138,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/leave-requests", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const totalDays = req.body.totalDays || 1;
@@ -38168,7 +38178,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/reseller/hr/leave-requests/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       
       const oldRequest = await storage.getHrLeaveRequest(req.params.id);
       
@@ -38210,7 +38220,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/sick-leaves", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status, entityType, entityId } = req.query;
       
@@ -38252,7 +38262,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/sick-leaves", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const sickLeave = await storage.createHrSickLeave({
@@ -38292,7 +38302,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/sick-leaves/:id/certificate", requireRole("reseller", "reseller_staff"), upload.single("certificate"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
 
       const sickLeaveId = req.params.id;
@@ -38363,7 +38373,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/sick-leaves/:id/certificate", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
 
       const sickLeave = await storage.getHrSickLeave(req.params.id);
@@ -38400,7 +38410,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/expense-reports", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status, entityType, entityId } = req.query;
       
@@ -38442,7 +38452,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/expense-reports", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const report = await storage.createHrExpenseReport({
@@ -38461,7 +38471,7 @@ export function registerRoutes(app: Express): Server {
   app.patch("/api/reseller/hr/expense-reports/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       
       const updateData: any = { ...req.body };
       if (req.body.status === "pending") {
@@ -38494,7 +38504,7 @@ export function registerRoutes(app: Express): Server {
   app.delete("/api/reseller/hr/expense-reports/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       
       await storage.deleteHrExpenseReport(req.params.id);
       
@@ -38564,7 +38574,7 @@ export function registerRoutes(app: Express): Server {
       const report = await storage.getHrExpenseReport(item.expenseReportId);
       if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
 
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (report.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
@@ -38613,7 +38623,7 @@ export function registerRoutes(app: Express): Server {
       const report = await storage.getHrExpenseReport(item.expenseReportId);
       if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
 
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (report.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
@@ -38640,7 +38650,7 @@ export function registerRoutes(app: Express): Server {
       const report = await storage.getHrExpenseReport(item.expenseReportId);
       if (!report) return res.status(404).json({ error: "Report spesa non trovato" });
 
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (report.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
@@ -38671,7 +38681,7 @@ export function registerRoutes(app: Express): Server {
       const report = await storage.getHrExpenseReport(reportId);
       if (!report) return res.status(404).json({ error: "Nota spese non trovata" });
 
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (report.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
@@ -38717,7 +38727,7 @@ export function registerRoutes(app: Express): Server {
       if (!report) return res.status(404).json({ error: "Nota spese non trovata" });
       if (!report.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
 
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (report.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
@@ -38741,7 +38751,7 @@ export function registerRoutes(app: Express): Server {
       if (!report) return res.status(404).json({ error: "Nota spese non trovata" });
       if (!report.receiptUrl) return res.status(404).json({ error: "Nessun allegato presente" });
 
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (report.resellerId !== resellerId) {
         return res.status(403).json({ error: "Non autorizzato" });
       }
@@ -38766,7 +38776,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/absences", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       const { userId, status } = req.query;
       const accessibleResellerIds = await storage.getAccessibleResellerIds(resellerId);
@@ -38785,7 +38795,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/absences", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const absence = await storage.createHrAbsence({
@@ -38805,7 +38815,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/justifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const justification = await storage.createHrJustification({
@@ -38842,7 +38852,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/calendar/entities", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const entities = await storage.getAccessibleEntitiesForCalendar(resellerId);
@@ -38857,7 +38867,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/calendar", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const { startDate, endDate, entityType, entityId } = req.query;
@@ -39448,7 +39458,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/notifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const { unreadOnly } = req.query;
@@ -39468,7 +39478,7 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/reseller/hr/notifications", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const notification = await storage.createHrNotification({
@@ -39557,7 +39567,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/leave-balances/:userId", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const balance = await storage.getHrLeaveBalance(req.params.userId, new Date().getFullYear());
@@ -39589,7 +39599,7 @@ export function registerRoutes(app: Express): Server {
   app.get("/api/reseller/hr/clocking-policy", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).json({ error: "Non autenticato" });
-      const resellerId = req.user.role === 'reseller' ? req.user.id : req.user.resellerId;
+      const resellerId = getResellerId(req);
       if (!resellerId) return res.status(400).json({ error: "Reseller ID non trovato" });
       
       const policy = await storage.getHrClockingPolicy(resellerId);
