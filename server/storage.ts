@@ -13445,6 +13445,32 @@ export class DatabaseStorage implements IStorage {
   }
 
 
+  async getSubmittedRtTransactions(filters?: { repairCenterId?: string; resellerId?: string }, limit = 50): Promise<PosTransaction[]> {
+    let conditions: SQL[] = [
+      inArray(posTransactions.rtStatus, ["submitted", "confirmed"])
+    ];
+    if (filters?.repairCenterId) {
+      conditions.push(eq(posTransactions.repairCenterId, filters.repairCenterId));
+    }
+    if (filters?.resellerId) {
+      const rcs = await db.select({ id: repairCenters.id })
+        .from(repairCenters)
+        .where(eq(repairCenters.resellerId, filters.resellerId));
+      const rcIds = rcs.map(rc => rc.id);
+      if (rcIds.length > 0) {
+        conditions.push(inArray(posTransactions.repairCenterId, rcIds));
+      } else {
+        return [];
+      }
+    }
+    return db.select()
+      .from(posTransactions)
+      .where(and(...conditions))
+      .orderBy(desc(posTransactions.rtSubmittedAt))
+      .limit(limit);
+  }
+
+
   async getEntityFiscalConfig(entityType: string, entityId: string): Promise<EntityFiscalConfig | undefined> {
     const [config] = await db.select()
       .from(entityFiscalConfig)

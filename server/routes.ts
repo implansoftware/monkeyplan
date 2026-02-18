@@ -42988,6 +42988,18 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.get("/api/admin/fiscal/submitted-transactions", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const filters: any = {};
+      if (req.query.repairCenterId) filters.repairCenterId = String(req.query.repairCenterId);
+      if (req.query.resellerId) filters.resellerId = String(req.query.resellerId);
+      const transactions = await storage.getSubmittedRtTransactions(Object.keys(filters).length > 0 ? filters : undefined);
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/admin/fiscal/retry-transaction/:id", requireRole("admin"), async (req, res) => {
     try {
       const transaction = await storage.getPosTransaction(req.params.id);
@@ -43059,6 +43071,17 @@ export function registerRoutes(app: Express): Server {
       const repairCenterId = req.user!.repairCenterId;
       if (!repairCenterId) return res.status(400).json({ error: "Nessun centro riparazione associato" });
       const transactions = await storage.getFailedRtTransactions({ repairCenterId });
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/repair-center/fiscal/submitted-transactions", requireRole("repair_center"), async (req, res) => {
+    try {
+      const repairCenterId = req.user!.repairCenterId;
+      if (!repairCenterId) return res.status(400).json({ error: "No repair center associated" });
+      const transactions = await storage.getSubmittedRtTransactions({ repairCenterId });
       res.json(transactions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -43289,6 +43312,16 @@ export function registerRoutes(app: Express): Server {
     try {
       const { resellerId } = getEffectiveContext(req);
       const transactions = await storage.getFailedRtTransactions({ resellerId: String(resellerId) });
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/reseller/fiscal/submitted-transactions", requireRole("reseller"), async (req, res) => {
+    try {
+      const { resellerId } = getEffectiveContext(req);
+      const transactions = await storage.getSubmittedRtTransactions({ resellerId: String(resellerId) });
       res.json(transactions);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

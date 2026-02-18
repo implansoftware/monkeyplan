@@ -77,6 +77,12 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
     }
   }, [entityConfig]);
 
+  const { data: submittedTransactions, isLoading: submittedLoading } = useQuery<any[]>({
+    queryKey: [basePath, "submitted-transactions"],
+    queryFn: () => fetch(`${basePath}/submitted-transactions`).then(r => r.json()),
+    enabled: rtEnabled,
+  });
+
   const [regCompanyName, setRegCompanyName] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regTaxCode, setRegTaxCode] = useState("");
@@ -583,6 +589,79 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {rtEnabled && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2" data-testid="text-submitted-title">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              {t("fiscal.submittedTransmissions")}
+            </CardTitle>
+            <CardDescription>
+              {t("fiscal.submittedTransmissionsDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {submittedLoading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
+              </div>
+            ) : !submittedTransactions || submittedTransactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground" data-testid="text-no-submitted">
+                {t("fiscal.noSubmittedTransactions")}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {submittedTransactions.map((tx: any) => (
+                  <div key={tx.id} className="flex items-center justify-between gap-2 rounded-md border p-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium" data-testid={`text-tx-number-${tx.id}`}>
+                        {t("fiscal.transaction")} #{tx.transactionNumber || tx.id.substring(0, 8)}
+                      </div>
+                      <div className="text-xs text-muted-foreground" data-testid={`text-tx-date-${tx.id}`}>
+                        {tx.rtSubmittedAt
+                          ? new Date(tx.rtSubmittedAt).toLocaleString()
+                          : tx.createdAt
+                            ? new Date(tx.createdAt).toLocaleString()
+                            : t("common.notAvailable")}
+                        {tx.totalAmount != null && (
+                          <span className="ml-2 font-medium" data-testid={`text-tx-amount-${tx.id}`}>
+                            {Number(tx.totalAmount).toFixed(2)} €
+                          </span>
+                        )}
+                      </div>
+                      {tx.rtSubmissionId && (
+                        <div className="text-xs text-muted-foreground truncate" data-testid={`text-tx-submission-${tx.id}`}>
+                          {t("fiscal.submissionId")}: {tx.rtSubmissionId}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {tx.rtProvider && (
+                        <Badge variant="secondary" data-testid={`badge-provider-${tx.id}`}>
+                          {tx.rtProvider}
+                        </Badge>
+                      )}
+                      <Badge
+                        variant={tx.rtStatus === "confirmed" ? "default" : "outline"}
+                        data-testid={`badge-status-${tx.id}`}
+                      >
+                        {tx.rtStatus === "confirmed" ? (
+                          <CheckCircle className="mr-1 h-3 w-3" />
+                        ) : (
+                          <Server className="mr-1 h-3 w-3" />
+                        )}
+                        {tx.rtStatus === "confirmed" ? t("fiscal.confirmed") : t("fiscal.submitted")}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

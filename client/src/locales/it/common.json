@@ -881,7 +881,8 @@
     "noServiceFound": "Nessun servizio trovato",
     "vatSummary": "Riepilogo IVA (Corrispettivi)",
     "syncAll": "Sincronizza Tutti",
-    "syncing": "Sincronizzazione..."
+    "syncing": "Sincronizzazione...",
+    "notAvailable": "N/D"
   },
   "roles": {
     "admin": "Amministratore",
@@ -5957,7 +5958,11 @@
     "rtPassword": "Password RT",
     "enterRtPassword": "Inserisci password RT",
     "rtPin": "PIN RT",
-    "enterRtPin": "Inserisci PIN RT"
+    "enterRtPin": "Inserisci PIN RT",
+    "submittedTransmissions": "Trasmissioni Inviate",
+    "submittedTransmissionsDesc": "Elenco degli scontrini inviati con successo all'autorità fiscale",
+    "noSubmittedTransactions": "Nessuna trasmissione inviata ancora",
+    "submissionId": "ID Invio"
   },
   "remoteRequests": {
     "title": "Richieste Remote",

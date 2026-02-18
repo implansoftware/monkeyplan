@@ -881,7 +881,8 @@
     "noServiceFound": "No service found",
     "vatSummary": "VAT Summary (Receipts)",
     "syncAll": "Sync All",
-    "syncing": "Syncing..."
+    "syncing": "Syncing...",
+    "notAvailable": "N/A"
   },
   "roles": {
     "admin": "Administrator",
@@ -5959,7 +5960,11 @@
     "rtPassword": "RT Password",
     "enterRtPassword": "Enter RT password",
     "rtPin": "RT PIN",
-    "enterRtPin": "Enter RT PIN"
+    "enterRtPin": "Enter RT PIN",
+    "submittedTransmissions": "Submitted Transmissions",
+    "submittedTransmissionsDesc": "List of receipts successfully submitted to the fiscal authority",
+    "noSubmittedTransactions": "No submitted transmissions yet",
+    "submissionId": "Submission ID"
   },
   "remoteRequests": {
     "title": "Remote Requests",
