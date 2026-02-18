@@ -58,8 +58,10 @@ export interface OpenApiConfigurationData {
   callbackUrl?: string;
 }
 
-function getBaseUrl(_sandboxMode: boolean): string {
-  return "https://invoice.openapi.com";
+function getBaseUrl(sandboxMode: boolean): string {
+  return sandboxMode
+    ? "https://test.invoice.openapi.com"
+    : "https://invoice.openapi.com";
 }
 
 async function apiCall(
