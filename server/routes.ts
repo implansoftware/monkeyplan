@@ -45552,22 +45552,24 @@ export function registerRoutes(app: Express): Server {
   // RESELLER WARRANTY PRODUCTS
   // ==========================================
 
-  app.get('/api/reseller/warranty-products', requireRole('reseller'), async (req, res) => {
+  app.get('/api/reseller/warranty-products', requireRole('reseller', 'reseller_staff', 'sub_reseller'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
-      const products = await storage.listWarrantyProductsByReseller(req.user.id, false);
+      const resellerId = getResellerId(req);
+      const products = await storage.listWarrantyProductsByReseller(resellerId, false);
       res.json(products);
     } catch (error: any) {
       res.status(500).send(error.message);
     }
   });
 
-  app.post('/api/reseller/warranty-products', requireRole('reseller'), async (req, res) => {
+  app.post('/api/reseller/warranty-products', requireRole('reseller', 'reseller_staff', 'sub_reseller'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
+      const resellerId = getResellerId(req);
       const product = await storage.createWarrantyProduct({
         ...req.body,
-        resellerId: req.user.id,
+        resellerId,
       });
       res.json(product);
     } catch (error: any) {
@@ -45575,11 +45577,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch('/api/reseller/warranty-products/:id', requireRole('reseller'), async (req, res) => {
+  app.patch('/api/reseller/warranty-products/:id', requireRole('reseller', 'reseller_staff', 'sub_reseller'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
+      const resellerId = getResellerId(req);
       const existing = await storage.getWarrantyProduct(req.params.id);
-      if (!existing || existing.resellerId !== req.user.id) {
+      if (!existing || existing.resellerId !== resellerId) {
         return res.status(404).send('Prodotto non trovato');
       }
       const updated = await storage.updateWarrantyProduct(req.params.id, req.body);
@@ -45589,11 +45592,12 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete('/api/reseller/warranty-products/:id', requireRole('reseller'), async (req, res) => {
+  app.delete('/api/reseller/warranty-products/:id', requireRole('reseller', 'reseller_staff', 'sub_reseller'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
+      const resellerId = getResellerId(req);
       const existing = await storage.getWarrantyProduct(req.params.id);
-      if (!existing || existing.resellerId !== req.user.id) {
+      if (!existing || existing.resellerId !== resellerId) {
         return res.status(404).send('Prodotto non trovato');
       }
       await storage.deleteWarrantyProduct(req.params.id);
