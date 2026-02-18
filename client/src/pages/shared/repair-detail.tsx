@@ -1874,16 +1874,22 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                       <p className="font-medium text-sm mt-0.5">{repair.returnReason}</p>
                     </div>
                   )}
-                  {repair.parentRepairOrderId && (
-                    <a
-                      href={`/repairs/${repair.parentRepairOrderId}`}
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                      data-testid="link-parent-order"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      {t("repairs.return.parentOrder", "Ordine originale")}
-                    </a>
-                  )}
+                  {repair.parentRepairOrderId && (() => {
+                    const rolePrefix = user?.role === "admin" || user?.role === "admin_staff" ? "/admin"
+                      : (user?.role === "reseller" || user?.role === "reseller_staff" || user?.role === "sub_reseller") ? "/reseller"
+                      : (user?.role === "repair_center" || user?.role === "repair_center_staff") ? "/repair-center"
+                      : "/customer";
+                    return (
+                      <a
+                        href={`${rolePrefix}/repairs/${repair.parentRepairOrderId}`}
+                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                        data-testid="link-parent-order"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        {t("repairs.return.parentOrder", "Ordine originale")}
+                      </a>
+                    );
+                  })()}
                 </div>
               )}
               {(repair.imei || repair.serial) && (

@@ -453,7 +453,11 @@ export function RepairReturnWizard({
               <Button
                 onClick={() => {
                   handleClose();
-                  setLocation(`/repairs/${createdOrder.id}`);
+                  const rolePrefix = user?.role === "admin" || user?.role === "admin_staff" ? "/admin"
+                    : (user?.role === "reseller" || user?.role === "reseller_staff" || user?.role === "sub_reseller") ? "/reseller"
+                    : (user?.role === "repair_center" || user?.role === "repair_center_staff") ? "/repair-center"
+                    : "/customer";
+                  setLocation(`${rolePrefix}/repairs/${createdOrder.id}`);
                 }}
                 data-testid="button-return-view-order"
               >
