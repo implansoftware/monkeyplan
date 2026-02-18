@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Smartphone } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Smartphone, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -19,6 +19,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
+import { RepairReturnWizard } from "@/components/RepairReturnWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -56,6 +57,7 @@ export default function AdminRepairs() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isExporting, setIsExporting] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [returnWizardOpen, setReturnWizardOpen] = useState(false);
   const [, setLocation] = useLocation();
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [page, setPage] = useState(1);
@@ -495,6 +497,14 @@ export default function AdminRepairs() {
               </PopoverContent>
             </Popover>
             <Button
+              variant="outline"
+              onClick={() => setReturnWizardOpen(true)}
+              data-testid="button-new-return"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              {t("repairs.return.title", "Nuovo Rientro")}
+            </Button>
+            <Button
               onClick={() => setWizardOpen(true)}
               data-testid="button-new-acceptance"
             >
@@ -749,6 +759,15 @@ export default function AdminRepairs() {
       <RepairIntakeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/repairs/paginated"] });
+        }}
+      />
+
+      <RepairReturnWizard
+        open={returnWizardOpen}
+        onOpenChange={setReturnWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
           queryClient.invalidateQueries({ queryKey: ["/api/admin/repairs/paginated"] });

@@ -40,7 +40,7 @@ import {
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag,
-  Upload, ChevronDown, ChevronUp, Printer, Info
+  Upload, ChevronDown, ChevronUp, Printer, Info, RotateCcw, ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -91,6 +91,9 @@ type RepairOrder = {
   warrantyProofAttachmentId: string | null;
   skipDiagnosis: boolean;
   skipDiagnosisReason: string | null;
+  isReturn: boolean;
+  parentRepairOrderId: string | null;
+  returnReason: string | null;
   createdAt: string;
   updatedAt: string;
   customer?: Customer | null;
@@ -895,6 +898,12 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3 flex-wrap">
+              {repair.isReturn && (
+                <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400" data-testid="badge-return">
+                  <RotateCcw className="h-3 w-3 mr-1" />
+                  {t("repairs.return.badge", "Rientro")}
+                </Badge>
+              )}
               {getStatusBadge(repair.status)}
               {getSLADisplay()}
             </div>
@@ -1853,6 +1862,30 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 <span className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">{t("standalone.reportedProblem")}</span>
                 <p className="font-medium mt-1 text-sm">{repair.issueDescription}</p>
               </div>
+              {repair.isReturn && (
+                <div className="bg-orange-500/5 border border-orange-500/20 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    <span className="text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wider">{t("repairs.return.badge", "Rientro")}</span>
+                  </div>
+                  {repair.returnReason && (
+                    <div>
+                      <span className="text-xs text-muted-foreground">{t("repairs.return.returnReason", "Motivo rientro")}:</span>
+                      <p className="font-medium text-sm mt-0.5">{repair.returnReason}</p>
+                    </div>
+                  )}
+                  {repair.parentRepairOrderId && (
+                    <a
+                      href={`/repairs/${repair.parentRepairOrderId}`}
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                      data-testid="link-parent-order"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {t("repairs.return.parentOrder", "Ordine originale")}
+                    </a>
+                  )}
+                </div>
+              )}
               {(repair.imei || repair.serial) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {repair.imei && (

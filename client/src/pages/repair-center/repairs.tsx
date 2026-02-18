@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2 } from "lucide-react";
+import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,6 +19,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
+import { RepairReturnWizard } from "@/components/RepairReturnWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 
@@ -65,6 +66,7 @@ export default function RepairCenterRepairs() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [returnWizardOpen, setReturnWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
@@ -235,15 +237,26 @@ export default function RepairCenterRepairs() {
                 </TabsTrigger>
               </TabsList>
             </Tabs>
-            <Button
-              onClick={() => setWizardOpen(true)}
-              variant="outline"
-              className="bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30 shadow-lg"
-              data-testid="button-new-acceptance-hero"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuovo Ingresso
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setReturnWizardOpen(true)}
+                className="bg-white/20 backdrop-blur-sm text-white border-white/30"
+                data-testid="button-new-return"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                {t("repairs.return.title", "Nuovo Rientro")}
+              </Button>
+              <Button
+                onClick={() => setWizardOpen(true)}
+                variant="outline"
+                className="bg-white/20 backdrop-blur-sm text-white border-white/30 shadow-lg"
+                data-testid="button-new-acceptance-hero"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t("repairs.newIntake", "Nuovo Ingresso")}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -609,6 +622,16 @@ export default function RepairCenterRepairs() {
       <RepairIntakeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs/paginated"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-center/stats"] });
+        }}
+      />
+
+      <RepairReturnWizard
+        open={returnWizardOpen}
+        onOpenChange={setReturnWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
           queryClient.invalidateQueries({ queryKey: ["/api/repair-center/repairs/paginated"] });

@@ -26,6 +26,7 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Warranty/Insurance Extension System**: Multi-tenant warranty catalog, offering flow during repair intake, snapshot pattern for historical accuracy, automatic invoice generation, customer warranty history, and analytics dashboards.
 *   **Device-Based Service Filtering**: Service items can be linked to specific device types, brands, and models for precise filtering during service selection.
 *   **Integrated Intake Workflow**: Ability to optionally create quotes and/or diagnosis records directly during the repair order intake process within a unified wizard step.
+*   **Device Return (Rientro) System**: Simplified return workflow for devices that come back for re-repair. Links new repair orders to parent orders, auto-inherits device/customer info, with a dedicated 3-step wizard (search→details→confirm). Available for all roles (admin, reseller, repair center).
 *   **Admin Price List Management**: Admin users can create and manage their own price lists for B2B scenarios, defining products and pricing for resellers.
 *   **Fiscal Compliance**: POS system with multi-VAT rate support, daily fiscal reporting, and integration with Registratore Telematico (RT) Cloud services (e.g., Fiskaly SIGN IT) for automated fiscal document submission and tracking.
 *   **Push Notification System**: Expo Push Notification integration for real-time alerts to users, featuring token management, queued sending with retry mechanisms, and receipt tracking.

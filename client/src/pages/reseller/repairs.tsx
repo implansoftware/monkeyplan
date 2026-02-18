@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon } from "lucide-react";
+import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
@@ -20,6 +20,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
+import { RepairReturnWizard } from "@/components/RepairReturnWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 import { ActionGuard } from "@/components/permission-guard";
@@ -54,6 +55,7 @@ export default function ResellerRepairs() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [, setLocation] = useLocation();
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [returnWizardOpen, setReturnWizardOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [isExporting, setIsExporting] = useState(false);
   const [page, setPage] = useState(1);
@@ -270,14 +272,24 @@ export default function ResellerRepairs() {
               </TabsList>
             </Tabs>
             <ActionGuard module="repairs" action="create">
-              <Button
-                onClick={() => setWizardOpen(true)}
-                className="shadow-lg shadow-primary/25"
-                data-testid="button-new-acceptance-hero"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuovo Ingresso
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setReturnWizardOpen(true)}
+                  data-testid="button-new-return"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {t("repairs.return.title", "Nuovo Rientro")}
+                </Button>
+                <Button
+                  onClick={() => setWizardOpen(true)}
+                  className="shadow-lg shadow-primary/25"
+                  data-testid="button-new-acceptance-hero"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("repairs.newIntake", "Nuovo Ingresso")}
+                </Button>
+              </div>
             </ActionGuard>
           </div>
         </div>
@@ -671,6 +683,15 @@ export default function ResellerRepairs() {
       <RepairIntakeWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs/paginated"] });
+        }}
+      />
+
+      <RepairReturnWizard
+        open={returnWizardOpen}
+        onOpenChange={setReturnWizardOpen}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
           queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs/paginated"] });

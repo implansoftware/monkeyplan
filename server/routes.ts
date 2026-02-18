@@ -5719,6 +5719,71 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Search repair orders for return wizard (find completed/existing repairs) - all roles
+  app.get("/api/repair-orders/search-for-return", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const search = (req.query.search as string || "").trim().toLowerCase();
+      if (!search || search.length < 2) return res.json([]);
+      
+      let allRepairs: any[];
+      if (req.user.role === 'admin' || req.user.role === 'admin_staff') {
+        allRepairs = await storage.listRepairOrders();
+      } else if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = getResellerId(req);
+        allRepairs = await storage.listRepairOrders({ resellerId });
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        const allOrders = await storage.listRepairOrders();
+        allRepairs = allOrders.filter(r => r.repairCenterId === req.user!.repairCenterId);
+      } else {
+        return res.status(403).send("Unauthorized role");
+      }
+      
+      // Resolve customer names
+      const customerIds = [...new Set(allRepairs.map(r => r.customerId).filter(Boolean))] as string[];
+      const customerMap = new Map<string, { fullName: string; username: string }>();
+      if (customerIds.length > 0) {
+        const customers = await Promise.all(customerIds.map(cid => storage.getUser(cid)));
+        customers.forEach(c => { if (c) customerMap.set(c.id, { fullName: c.fullName || "", username: c.username || "" }); });
+      }
+      
+      // Filter by search term (order number, customer name, device model)
+      const filtered = allRepairs.filter(r => {
+        const cust = r.customerId ? customerMap.get(r.customerId) : null;
+        const custName = cust ? (cust.fullName || cust.username || "").toLowerCase() : "";
+        return (r.orderNumber || "").toLowerCase().includes(search) ||
+          custName.includes(search) ||
+          (r.deviceModel || "").toLowerCase().includes(search) ||
+          (r.brand || "").toLowerCase().includes(search);
+      });
+      
+      // Return enriched results (max 20)
+      const results = filtered.slice(0, 20).map(r => {
+        const cust = r.customerId ? customerMap.get(r.customerId) : null;
+        return {
+          id: r.id,
+          orderNumber: r.orderNumber,
+          customerId: r.customerId,
+          customerName: cust ? (cust.fullName || cust.username) : "N/D",
+          repairCenterId: r.repairCenterId,
+          deviceType: r.deviceType,
+          deviceModel: r.deviceModel,
+          brand: r.brand,
+          deviceModelId: r.deviceModelId,
+          imei: r.imei,
+          serial: r.serial,
+          status: r.status,
+          createdAt: r.createdAt,
+        };
+      });
+      
+      res.json(results);
+    } catch (error: any) {
+      console.error("Search for return error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   app.post("/api/reseller/repairs", requireRole("reseller", "reseller_staff"), requireModulePermission("repairs", "create"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
@@ -5731,6 +5796,9 @@ export function registerRoutes(app: Express): Server {
         deviceModel: true,
         issueDescription: true,
         notes: true,
+        isReturn: true,
+        parentRepairOrderId: true,
+        returnReason: true,
       }).parse(req.body);
 
       // Verify customer exists if provided
@@ -5766,14 +5834,44 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
+      // For returns, copy device info from parent order
+      let deviceBrand = req.body.brand || undefined;
+      let deviceModelId = req.body.deviceModelId || undefined;
+      let imei = req.body.imei || undefined;
+      let serial = req.body.serial || undefined;
+      
+      if (validatedData.isReturn && validatedData.parentRepairOrderId) {
+        const parentOrder = await storage.getRepairOrder(validatedData.parentRepairOrderId);
+        if (!parentOrder) {
+          return res.status(400).send("Ordine originale non trovato");
+        }
+        // Verify parent order belongs to same reseller
+        if (parentOrder.resellerId !== getResellerId(req)) {
+          return res.status(403).send("Non hai accesso all'ordine originale");
+        }
+        // Inherit device info from parent if not provided
+        if (!deviceBrand) deviceBrand = parentOrder.brand || undefined;
+        if (!deviceModelId) deviceModelId = parentOrder.deviceModelId || undefined;
+        if (!imei) imei = parentOrder.imei || undefined;
+        if (!serial) serial = parentOrder.serial || undefined;
+      }
+      
       const repair = await storage.createRepairOrder({
         customerId: validatedData.customerId,
-        resellerId: getResellerId(req), // Force reseller ID from session
+        resellerId: getResellerId(req),
         repairCenterId: validatedData.repairCenterId,
         deviceType: validatedData.deviceType,
         deviceModel: validatedData.deviceModel,
+        brand: deviceBrand,
+        deviceModelId: deviceModelId,
+        imei,
+        serial,
         issueDescription: validatedData.issueDescription,
         notes: validatedData.notes,
+        isReturn: validatedData.isReturn || false,
+        parentRepairOrderId: validatedData.parentRepairOrderId || undefined,
+        returnReason: validatedData.returnReason || undefined,
+        status: validatedData.isReturn ? "ingressato" : "pending",
       });
       setActivityEntity(res, { type: 'repairs', id: repair.id });
       
@@ -15159,7 +15257,14 @@ export function registerRoutes(app: Express): Server {
         customerId,
         branchId: req.body.branchId || null,
         status: hasAcceptance ? 'ingressato' : 'pending',
+        isReturn: req.body.isReturn || false,
+        parentRepairOrderId: req.body.parentRepairOrderId || null,
+        returnReason: req.body.returnReason || null,
       };
+      
+      if (orderData.isReturn) {
+        orderData.status = 'ingressato';
+      }
       
       // Set resellerId based on role
       if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
