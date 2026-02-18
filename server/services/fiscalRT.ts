@@ -593,14 +593,15 @@ class OpenApiComRTProvider implements IFiscalRTProvider {
         };
       });
 
-      const totalEur = data.transaction.total / 100;
+      const itemsTotal = items.reduce((sum, item) => sum + parseFloat((item.quantity * item.unit_price).toFixed(2)), 0);
+      const paymentAmount = parseFloat(itemsTotal.toFixed(2));
       const isElectronic = this.isElectronicPayment(data.transaction.paymentMethod || "cash");
 
       const receiptPayload: any = {
         fiscal_id: config.entityId,
         items,
-        cash_payment_amount: isElectronic ? 0 : parseFloat(totalEur.toFixed(2)),
-        electronic_payment_amount: isElectronic ? parseFloat(totalEur.toFixed(2)) : 0,
+        cash_payment_amount: isElectronic ? 0 : paymentAmount,
+        electronic_payment_amount: isElectronic ? paymentAmount : 0,
       };
 
       if (data.transaction.lotteryCode) {
