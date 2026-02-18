@@ -48328,10 +48328,34 @@ export function registerRoutes(app: Express): Server {
             const repairs = await storage.listRepairOrders(Object.keys(repairFilters).length > 0 ? repairFilters : undefined);
             const activeRepairs = repairs.filter(r => r.status !== "completed" && r.status !== "cancelled");
             if (activeRepairs.length > 0) {
+              // Resolve customer names from customerId since customerName column may be empty in DB
+              const customerIds = [...new Set(activeRepairs.map(r => r.customerId).filter(Boolean))] as string[];
+              const customerMap = new Map<string, string>();
+              if (customerIds.length > 0) {
+                const customers = await Promise.all(
+                  customerIds.slice(0, 30).map(cid => storage.getUser(cid))
+                );
+                customers.forEach(c => {
+                  if (c) customerMap.set(c.id, c.fullName || c.username || "N/D");
+                });
+              }
+              // Resolve repair center names
+              const repairCenterIds = [...new Set(activeRepairs.map(r => r.repairCenterId).filter(Boolean))] as string[];
+              const rcMap = new Map<string, string>();
+              if (repairCenterIds.length > 0) {
+                const rcs = await Promise.all(
+                  repairCenterIds.slice(0, 10).map(rcid => storage.getRepairCenter(rcid))
+                );
+                rcs.forEach(rc => {
+                  if (rc) rcMap.set(rc.id, rc.name || rc.businessName || "N/D");
+                });
+              }
               dataContext += `\n\n--- RIPARAZIONI ATTIVE (${activeRepairs.length} su ${repairs.length} totali) ---\n`;
-              dataContext += activeRepairs.slice(0, 15).map(r => 
-                `- #${r.orderNumber || r.id.slice(0, 8)}: ${r.deviceType || ""} ${r.deviceBrand || ""} ${r.deviceModel || ""}, stato: ${r.status}, priorità: ${r.priority || "normale"}, cliente: ${r.customerName || "N/D"}`
-              ).join("\n");
+              dataContext += activeRepairs.slice(0, 20).map(r => {
+                const custName = r.customerId ? customerMap.get(r.customerId) || r.customerName || "N/D" : "N/D";
+                const rcName = r.repairCenterId ? rcMap.get(r.repairCenterId) || "" : "";
+                return `- #${r.orderNumber || r.id.slice(0, 8)}: ${r.deviceType || ""} ${r.deviceBrand || ""} ${r.deviceModel || ""}, stato: ${r.status}, priorità: ${r.priority || "normale"}, cliente: ${custName}${rcName ? `, centro: ${rcName}` : ""}`;
+              }).join("\n");
             }
           }
         } catch (repErr) {
