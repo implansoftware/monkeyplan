@@ -148,9 +148,9 @@ export default function AdminExternalIntegrations() {
               <Globe className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{t("common.externalIntegrations")}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{t("settings.externalIntegrations")}</h1>
               <p className="text-sm text-muted-foreground">
-                {t("common.manageExternalIntegrations")}
+                {t("settings.manageExternalIntegrations")}
               </p>
             </div>
           </div>
