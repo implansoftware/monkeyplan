@@ -80,6 +80,10 @@ type RepairOrder = {
   ingressatoAt: string | null;
   quoteBypassReason: 'garanzia' | 'omaggio' | null;
   quoteBypassedAt: string | null;
+  warrantySupplier: string | null;
+  warrantyPurchaseDate: string | null;
+  warrantyPurchasePrice: number | null;
+  warrantyProofAttachmentId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -1075,6 +1079,58 @@ export function RepairOrderDetailDrawer({
                 </div>
               </div>
             </div>
+
+            {/* Warranty Details */}
+            {repair.quoteBypassReason === 'garanzia' && (repair.warrantySupplier || repair.warrantyPurchaseDate || repair.warrantyPurchasePrice !== null || repair.warrantyProofAttachmentId) && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
+                    <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    {t("standalone.repairUnderWarranty")}
+                  </div>
+                  <div className="grid gap-3">
+                    {repair.warrantyProofAttachmentId && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t("warranties.proofPhoto")}</p>
+                        <a
+                          href={`/api/repair-orders/attachments/${repair.warrantyProofAttachmentId}/download?preview=true`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          data-testid="link-drawer-warranty-proof"
+                        >
+                          <img
+                            src={`/api/repair-orders/attachments/${repair.warrantyProofAttachmentId}/download?preview=true`}
+                            alt={t("warranties.proofPhoto")}
+                            className="h-20 rounded-md object-cover border mt-1"
+                          />
+                        </a>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {repair.warrantySupplier && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t("warranties.supplier")}</p>
+                          <p className="text-sm font-medium" data-testid="text-drawer-warranty-supplier">{repair.warrantySupplier}</p>
+                        </div>
+                      )}
+                      {repair.warrantyPurchaseDate && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">{t("warranties.purchaseDate")}</p>
+                          <p className="text-sm font-medium" data-testid="text-drawer-warranty-date">{format(new Date(repair.warrantyPurchaseDate), "dd/MM/yyyy", { locale: it })}</p>
+                        </div>
+                      )}
+                    </div>
+                    {repair.warrantyPurchasePrice !== null && repair.warrantyPurchasePrice !== undefined && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t("warranties.purchasePrice")}</p>
+                        <p className="text-sm font-medium" data-testid="text-drawer-warranty-price">{(repair.warrantyPurchasePrice / 100).toFixed(2)} &euro;</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             <Separator />
 

@@ -85,6 +85,10 @@ type RepairOrder = {
   ingressatoAt: string | null;
   quoteBypassReason: 'garanzia' | 'omaggio' | null;
   quoteBypassedAt: string | null;
+  warrantySupplier: string | null;
+  warrantyPurchaseDate: string | null;
+  warrantyPurchasePrice: number | null;
+  warrantyProofAttachmentId: string | null;
   skipDiagnosis: boolean;
   skipDiagnosisReason: string | null;
   createdAt: string;
@@ -1142,11 +1146,53 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   {(repair.status === 'preventivo_accettato' || (repair.quoteBypassReason && repair.status === 'in_diagnosi')) && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       {repair.quoteBypassReason && (
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
-                          {repair.quoteBypassReason === 'garanzia' ? (
-                            <><Shield className="h-4 w-4" /> {t("standalone.repairUnderWarranty")}</>
-                          ) : (
-                            <><Gift className="h-4 w-4" /> {t("standalone.repairComplimentary")}</>
+                        <div className="space-y-3 mb-2">
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            {repair.quoteBypassReason === 'garanzia' ? (
+                              <><Shield className="h-4 w-4" /> {t("standalone.repairUnderWarranty")}</>
+                            ) : (
+                              <><Gift className="h-4 w-4" /> {t("standalone.repairComplimentary")}</>
+                            )}
+                          </div>
+                          {repair.quoteBypassReason === 'garanzia' && (repair.warrantySupplier || repair.warrantyPurchaseDate || repair.warrantyPurchasePrice !== null || repair.warrantyProofAttachmentId) && (
+                            <div className="bg-background rounded-md p-3 space-y-2 border">
+                              {repair.warrantyProofAttachmentId && (
+                                <div className="flex items-start gap-3">
+                                  <span className="text-xs font-medium text-muted-foreground min-w-[100px]">{t("warranties.proofPhoto")}</span>
+                                  <a
+                                    href={`/api/repair-orders/attachments/${repair.warrantyProofAttachmentId}/download?preview=true`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block"
+                                    data-testid="link-warranty-proof-photo"
+                                  >
+                                    <img
+                                      src={`/api/repair-orders/attachments/${repair.warrantyProofAttachmentId}/download?preview=true`}
+                                      alt={t("warranties.proofPhoto")}
+                                      className="h-16 w-16 rounded-md object-cover border"
+                                    />
+                                  </a>
+                                </div>
+                              )}
+                              {repair.warrantySupplier && (
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-medium text-muted-foreground min-w-[100px]">{t("warranties.supplier")}</span>
+                                  <span className="text-sm" data-testid="text-warranty-supplier">{repair.warrantySupplier}</span>
+                                </div>
+                              )}
+                              {repair.warrantyPurchaseDate && (
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-medium text-muted-foreground min-w-[100px]">{t("warranties.purchaseDate")}</span>
+                                  <span className="text-sm" data-testid="text-warranty-purchase-date">{format(new Date(repair.warrantyPurchaseDate), "dd/MM/yyyy", { locale: it })}</span>
+                                </div>
+                              )}
+                              {repair.warrantyPurchasePrice !== null && repair.warrantyPurchasePrice !== undefined && (
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-medium text-muted-foreground min-w-[100px]">{t("warranties.purchasePrice")}</span>
+                                  <span className="text-sm" data-testid="text-warranty-purchase-price">{(repair.warrantyPurchasePrice / 100).toFixed(2)} &euro;</span>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
@@ -1797,6 +1843,62 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               )}
             </CardContent>
           </Card>
+
+          {/* Warranty Details Card - visible when quote was bypassed for warranty */}
+          {repair.quoteBypassReason === 'garanzia' && (repair.warrantySupplier || repair.warrantyPurchaseDate || repair.warrantyPurchasePrice !== null || repair.warrantyProofAttachmentId) && (
+            <Card data-testid="card-warranty-details" className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent pointer-events-none" />
+              <CardHeader className="pb-3 relative">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span>{t("standalone.repairUnderWarranty")}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="relative space-y-4">
+                {repair.warrantyProofAttachmentId && (
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("warranties.proofPhoto")}</span>
+                    <div className="mt-2">
+                      <a
+                        href={`/api/repair-orders/attachments/${repair.warrantyProofAttachmentId}/download?preview=true`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid="link-warranty-proof-card"
+                      >
+                        <img
+                          src={`/api/repair-orders/attachments/${repair.warrantyProofAttachmentId}/download?preview=true`}
+                          alt={t("warranties.proofPhoto")}
+                          className="h-24 rounded-md object-cover border"
+                        />
+                      </a>
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {repair.warrantySupplier && (
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("warranties.supplier")}</span>
+                      <p className="font-semibold mt-1" data-testid="text-warranty-supplier-card">{repair.warrantySupplier}</p>
+                    </div>
+                  )}
+                  {repair.warrantyPurchaseDate && (
+                    <div className="bg-muted/30 rounded-lg p-3">
+                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("warranties.purchaseDate")}</span>
+                      <p className="font-semibold mt-1" data-testid="text-warranty-date-card">{format(new Date(repair.warrantyPurchaseDate), "dd/MM/yyyy", { locale: it })}</p>
+                    </div>
+                  )}
+                </div>
+                {repair.warrantyPurchasePrice !== null && repair.warrantyPurchasePrice !== undefined && (
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("warranties.purchasePrice")}</span>
+                    <p className="font-semibold mt-1" data-testid="text-warranty-price-card">{(repair.warrantyPurchasePrice / 100).toFixed(2)} &euro;</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Repair Center Card - visible to all roles */}
           <Card data-testid="card-repair-center" className="relative overflow-hidden">
