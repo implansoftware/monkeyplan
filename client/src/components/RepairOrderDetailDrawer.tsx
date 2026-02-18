@@ -638,11 +638,11 @@ export function RepairOrderDetailDrawer({
                           {diagnosis ? (
                             <>
                               <CheckCircle className="inline h-4 w-4 text-green-500 mr-1" />
-                              <strong>{t("diagnosis.diagnosisCompleted")}</strong> {t("repair.nowCreateQuote")}
+                              <strong>{t("diagnosis.diagnosisCompleted")}</strong> <span dangerouslySetInnerHTML={{ __html: t("repair.nowCreateQuote") }} />
                             </>
                           ) : (
                             <>
-                              {t("repair.diagnosisInProgressDesc")}
+                              <span dangerouslySetInnerHTML={{ __html: t("repair.diagnosisInProgressDesc") }} />
                             </>
                           )}
                         </p>
@@ -784,7 +784,7 @@ export function RepairOrderDetailDrawer({
                     {repair.status === 'in_riparazione' && (
                       <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 space-y-3">
                         <p className="text-sm">
-                          {t("repair.repairInProgressDesc")}
+                          <span dangerouslySetInnerHTML={{ __html: t("repair.repairInProgressDesc") }} />
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <Button

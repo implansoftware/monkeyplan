@@ -996,9 +996,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   
                   {repair.status === 'ingressato' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                      <p className="text-sm">
-                        {t("repairs.deviceReceivedStartDiagnosis")}
-                      </p>
+                      <p className="text-sm" dangerouslySetInnerHTML={{ __html: t("repairs.deviceReceivedStartDiagnosis") }} />
                       <div className="flex gap-2">
                         <Button
                           onClick={() => setDiagnosisDialogOpen(true)}
@@ -1208,9 +1206,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
 
                   {repair.status === 'in_riparazione' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                      <p className="text-sm">
-                        {t("repairs.repairInProgressDesc")}
-                      </p>
+                      <p className="text-sm" dangerouslySetInnerHTML={{ __html: t("repairs.repairInProgressDesc") }} />
                       <div className="flex gap-2 flex-wrap">
                         <Button
                           variant="outline"
