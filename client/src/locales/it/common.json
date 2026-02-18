@@ -4764,6 +4764,7 @@
     "availableOnPaypal": "Disponibile su developer.paypal.com",
     "externalIntegrations": "Integrazioni Esterne",
     "externalIntegrationsDesc": "Configura le integrazioni con servizi esterni",
+    "manageExternalIntegrations": "Gestisci e configura le connessioni con servizi esterni",
     "apiKey": "Chiave API",
     "webhook": "Webhook",
     "connected": "Connesso",
