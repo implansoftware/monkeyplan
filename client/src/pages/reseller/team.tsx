@@ -448,7 +448,7 @@ export default function ResellerTeam() {
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-white">{t("team.teamManagement")}</h1>
                 <p className="text-sm text-white/80">
-                  t("team.collaboratorsAndPermissions")
+                  {t("team.collaboratorsAndPermissions")}
                 </p>
               </div>
             </div>
@@ -457,7 +457,7 @@ export default function ResellerTeam() {
             <Link href="/reseller/hr">
               <Button variant="outline" className="bg-white/10 border-white/30 text-white backdrop-blur-sm" data-testid="button-hr-module">
                 <Briefcase className="h-4 w-4 mr-2" />
-                t("team.hrManagement")
+                {t("team.hrManagement")}
               </Button>
             </Link>
             {isOwnTeam && (
@@ -714,7 +714,7 @@ export default function ResellerTeam() {
                             </p>
                             {isOwner && (
                               <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
-                                t("team.owner")
+                                {t("team.owner")}
                               </Badge>
                             )}
                           </div>
@@ -989,7 +989,7 @@ export default function ResellerTeam() {
                 <div className="space-y-3 pt-4 border-t">
                   <Label>{t("team.initialPermissions")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    t("team.selectModulesAccess")
+                    {t("team.selectModulesAccess")}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                     {MODULES.map((mod) => {
@@ -1043,7 +1043,7 @@ export default function ResellerTeam() {
                   {t("team.permissionsOf")} {selectedMember?.fullName}
                 </DialogTitle>
                 <DialogDescription className="mt-0.5">
-                  t("team.configurePermissions")
+                  {t("team.configurePermissions")}
                 </DialogDescription>
               </div>
             </div>
