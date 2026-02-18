@@ -5964,7 +5964,11 @@
     "submittedTransmissions": "Submitted Transmissions",
     "submittedTransmissionsDesc": "List of receipts successfully submitted to the fiscal authority",
     "noSubmittedTransactions": "No submitted transmissions yet",
-    "submissionId": "Submission ID"
+    "submissionId": "Submission ID",
+    "fiscalTransmission": "Fiscal Transmission",
+    "submittedAt": "Submitted at",
+    "retryCount": "Retry attempts",
+    "fiscalDocument": "Fiscal document"
   },
   "remoteRequests": {
     "title": "Remote Requests",

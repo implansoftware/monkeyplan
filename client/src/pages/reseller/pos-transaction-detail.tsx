@@ -25,7 +25,10 @@ import {
   Calendar,
   Package,
   Printer,
-  Ban
+  Ban,
+  Server,
+  AlertTriangle,
+  ExternalLink
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -50,6 +53,13 @@ interface TransactionDetail {
     createdAt: string;
     voidedAt: string | null;
     voidReason: string | null;
+    rtStatus: string | null;
+    rtSubmissionId: string | null;
+    rtSubmittedAt: string | null;
+    rtErrorMessage: string | null;
+    rtDocumentUrl: string | null;
+    rtProvider: string | null;
+    rtRetryCount: number | null;
   };
   items: Array<{
     id: string;
@@ -434,6 +444,88 @@ export default function ResellerPosTransactionDetail() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">{transaction.notes}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {transaction.rtStatus && transaction.rtStatus !== "not_required" && (
+            <Card className={transaction.rtStatus === "error" ? "border-destructive" : transaction.rtStatus === "confirmed" ? "border-primary" : ""}>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Server className="w-5 h-5" />
+                  {t("fiscal.fiscalTransmission")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm text-muted-foreground">{t("common.status")}</span>
+                  <Badge
+                    variant={
+                      transaction.rtStatus === "confirmed" ? "default" :
+                      transaction.rtStatus === "submitted" ? "outline" :
+                      transaction.rtStatus === "error" ? "destructive" :
+                      "secondary"
+                    }
+                    data-testid="badge-rt-status"
+                  >
+                    {transaction.rtStatus === "confirmed" && <CheckCircle className="w-3 h-3 mr-1" />}
+                    {transaction.rtStatus === "submitted" && <Server className="w-3 h-3 mr-1" />}
+                    {transaction.rtStatus === "error" && <AlertTriangle className="w-3 h-3 mr-1" />}
+                    {transaction.rtStatus === "confirmed" ? t("fiscal.confirmed") :
+                     transaction.rtStatus === "submitted" ? t("fiscal.submitted") :
+                     transaction.rtStatus === "error" ? t("common.error") :
+                     transaction.rtStatus === "pending" ? t("fiscal.pending") :
+                     transaction.rtStatus}
+                  </Badge>
+                </div>
+
+                {transaction.rtProvider && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">{t("fiscal.rtProvider")}</span>
+                    <span className="text-sm font-medium" data-testid="text-rt-provider">{transaction.rtProvider}</span>
+                  </div>
+                )}
+
+                {transaction.rtSubmissionId && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">{t("fiscal.submissionId")}</span>
+                    <span className="text-sm font-mono truncate max-w-[200px]" data-testid="text-rt-submission-id">{transaction.rtSubmissionId}</span>
+                  </div>
+                )}
+
+                {transaction.rtSubmittedAt && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">{t("fiscal.submittedAt")}</span>
+                    <span className="text-sm" data-testid="text-rt-submitted-at">
+                      {format(new Date(transaction.rtSubmittedAt), "dd/MM/yyyy HH:mm:ss", { locale: it })}
+                    </span>
+                  </div>
+                )}
+
+                {transaction.rtRetryCount != null && transaction.rtRetryCount > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">{t("fiscal.retryCount")}</span>
+                    <span className="text-sm" data-testid="text-rt-retry-count">{transaction.rtRetryCount}</span>
+                  </div>
+                )}
+
+                {transaction.rtDocumentUrl && (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm text-muted-foreground">{t("fiscal.fiscalDocument")}</span>
+                    <a href={transaction.rtDocumentUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary flex items-center gap-1" data-testid="link-rt-document">
+                      {t("common.view")} <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                )}
+
+                {transaction.rtStatus === "error" && transaction.rtErrorMessage && (
+                  <div className="mt-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm" data-testid="text-rt-error">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>{transaction.rtErrorMessage}</span>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
