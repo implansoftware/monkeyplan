@@ -20,12 +20,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsContext";
 import { Loader2 } from "lucide-react";
 import AiAssistantWidget from "@/components/AiAssistantWidget";
-import LandingPage, { Navbar as PublicNavbar } from "@/pages/public/landing";
-import AboutPage from "@/pages/public/about";
-import ContactPage from "@/pages/public/contact";
-import FaqPage from "@/pages/public/faq";
-import TermsPage from "@/pages/public/terms";
-import PrivacyPage from "@/pages/public/privacy";
+import { Navbar as PublicNavbar } from "@/pages/public/landing";
 
 function getRoleHomePath(role: string): string {
   switch (role) {
@@ -759,25 +754,13 @@ function AppContent() {
       );
     }
     if (!user) {
-      return <LandingPage />;
+      return <Redirect to="/auth" />;
     }
     return <Redirect to={getRoleHomePath(user.role)} />;
   }
   
   if (location === "/landing") {
-    return <LandingPage />;
-  }
-
-  const publicPages: Record<string, React.ComponentType> = {
-    "/about": AboutPage,
-    "/contact": ContactPage,
-    "/faq": FaqPage,
-    "/terms": TermsPage,
-    "/privacy": PrivacyPage,
-  };
-  const PublicPageComponent = publicPages[location];
-  if (PublicPageComponent) {
-    return <PublicPageComponent />;
+    return <Redirect to="/auth" />;
   }
   
   // Public pages render without sidebar/header
