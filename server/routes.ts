@@ -119,13 +119,24 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
     const entityIdFiskaly = activeConfig.rtEntityId || undefined;
     const systemIdFiskaly = activeConfig.rtSystemId || undefined;
 
-    if (!apiKey || !apiSecret) {
+    // Validate credentials based on provider type:
+    // - openapi_com: requires apiKey (bearer token) + entityId (fiscal ID / P.IVA)
+    // - fiskaly/others: requires apiKey + apiSecret
+    const isOpenApi = provider === 'openapi_com';
+    const credentialsMissing = isOpenApi
+      ? (!apiKey || !entityIdFiskaly)
+      : (!apiKey || !apiSecret);
+
+    if (credentialsMissing) {
+      const errorMsg = isOpenApi
+        ? 'OpenAPI.com credentials not configured. Enter your Bearer Token and Fiscal ID in RT settings.'
+        : 'RT credentials not configured. Enter your Fiskaly credentials in RT settings.';
       await storage.updatePosTransactionRtStatus(transactionId, {
         rtStatus: 'failed',
-        rtErrorMessage: 'Credenziali RT proprie non configurate. Inserisci le tue credenziali Fiskaly nelle impostazioni.',
+        rtErrorMessage: errorMsg,
         rtRetryCount: (transaction.rtRetryCount || 0) + 1,
       });
-      console.log('[RT Auto] Transazione ' + transaction.transactionNumber + ' fallita: credenziali RT proprie mancanti');
+      console.log('[RT Auto] Transaction ' + transaction.transactionNumber + ' failed: missing RT credentials (' + provider + ')');
       return;
     }
 
