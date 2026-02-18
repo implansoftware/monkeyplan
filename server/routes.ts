@@ -51,6 +51,7 @@ import { canAccessObject, ObjectPermission } from "./objectAcl";
 import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransferDDT, TransferDdtData } from "./services/shippingDocuments";
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { getAvailableProviders, testRTConnection, submitTransactionToRT, getProvider } from "./services/fiscalRT";
+import { testOpenApiConnection, getConfigurations as getOpenApiConfigurations, createConfiguration as createOpenApiConfiguration, sendInvoice as sendOpenApiInvoice, getInvoices as getOpenApiInvoices } from "./services/openApiInvoice";
 import OpenAI from "openai";
 
 // Helper: Attempt automatic RT submission for a completed POS transaction
@@ -48157,6 +48158,91 @@ Rispondi in italiano in modo professionale e conciso. Usa i dati sopra per rispo
         return res.status(401).json({ error: "Chiave API OpenAI non valida. Contatta l'amministratore.", code: "invalid_api_key" });
       }
       res.status(500).json({ error: "Errore nella comunicazione con l'assistente AI" });
+    }
+  });
+
+  app.post("/api/admin/openapi-invoice/test-connection", requireRole("admin"), async (req, res) => {
+    try {
+      const { token, sandboxMode, fiscalId } = req.body;
+      if (!token) {
+        return res.status(400).json({ error: "Token is required" });
+      }
+      const result = await testOpenApiConnection({ token, sandboxMode: sandboxMode ?? true }, fiscalId);
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/openapi-invoice/configurations", requireRole("admin"), async (req, res) => {
+    try {
+      const token = process.env.OPENAPI_INVOICE_TOKEN;
+      if (!token) {
+        return res.status(400).json({ error: "OPENAPI_INVOICE_TOKEN not configured" });
+      }
+      const sandboxMode = req.query.sandbox === "true";
+      const configs = await getOpenApiConfigurations({ token, sandboxMode });
+      res.json(configs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/openapi-invoice/configurations", requireRole("admin"), async (req, res) => {
+    try {
+      const token = process.env.OPENAPI_INVOICE_TOKEN;
+      if (!token) {
+        return res.status(400).json({ error: "OPENAPI_INVOICE_TOKEN not configured" });
+      }
+      const { fiscalId, name, email, receipts, customerInvoice, supplierInvoice, receiptsAuthentication, callbackUrl, sandboxMode } = req.body;
+      if (!fiscalId || !name || !email) {
+        return res.status(400).json({ error: "fiscalId, name, and email are required" });
+      }
+      const result = await createOpenApiConfiguration(
+        { token, sandboxMode: sandboxMode ?? true },
+        { fiscalId, name, email, receipts, customerInvoice, supplierInvoice, receiptsAuthentication, callbackUrl },
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/openapi-invoice/send-invoice", requireRole("admin"), async (req, res) => {
+    try {
+      const token = process.env.OPENAPI_INVOICE_TOKEN;
+      if (!token) {
+        return res.status(400).json({ error: "OPENAPI_INVOICE_TOKEN not configured" });
+      }
+      const { fiscalId, sandboxMode, documentType, documentNumber, issueDate, recipient, items, paymentMethod, paymentTermDays, causal } = req.body;
+      if (!fiscalId || !documentNumber || !issueDate || !recipient || !items) {
+        return res.status(400).json({ error: "Missing required invoice fields" });
+      }
+      const result = await sendOpenApiInvoice(
+        { token, sandboxMode: sandboxMode ?? true, fiscalId },
+        { documentType, documentNumber, issueDate, recipient, items, paymentMethod, paymentTermDays, causal },
+      );
+      res.json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/openapi-invoice/invoices", requireRole("admin"), async (req, res) => {
+    try {
+      const token = process.env.OPENAPI_INVOICE_TOKEN;
+      if (!token) {
+        return res.status(400).json({ error: "OPENAPI_INVOICE_TOKEN not configured" });
+      }
+      const sandboxMode = req.query.sandbox === "true";
+      const fiscalId = req.query.fiscalId as string | undefined;
+      const status = req.query.status as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const skip = parseInt(req.query.skip as string) || 0;
+      const invoices = await getOpenApiInvoices({ token, sandboxMode }, { fiscalId, status, limit, skip });
+      res.json(invoices);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 

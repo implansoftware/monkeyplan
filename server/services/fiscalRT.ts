@@ -512,9 +512,208 @@ class FiskalyRTProvider implements IFiscalRTProvider {
   }
 }
 
+class OpenApiComRTProvider implements IFiscalRTProvider {
+  name = "openapi_com";
+
+  private getBaseUrl(config: RTProviderConfig): string {
+    if (config.endpoint) return config.endpoint;
+    return config.sandboxMode
+      ? "https://test.invoice.openapi.com"
+      : "https://invoice.openapi.com";
+  }
+
+  private async apiCall(
+    method: string,
+    path: string,
+    config: RTProviderConfig,
+    body?: any,
+  ): Promise<any> {
+    const baseUrl = this.getBaseUrl(config);
+    const headers: Record<string, string> = {
+      "Authorization": `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    };
+
+    const res = await fetch(`${baseUrl}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(`OpenAPI.com response not JSON (HTTP ${res.status}): ${text.substring(0, 300)}`);
+    }
+
+    if (!res.ok) {
+      const errMsg = data?.message || data?.error || JSON.stringify(data);
+      throw new Error(`OpenAPI.com ${method} ${path} failed (HTTP ${res.status}): ${errMsg}`);
+    }
+
+    return data;
+  }
+
+  private mapPaymentType(method: string): string {
+    switch (method) {
+      case "card":
+      case "pos_terminal":
+        return "electronic";
+      case "stripe_link":
+      case "paypal":
+        return "electronic";
+      case "cash":
+      default:
+        return "cash";
+    }
+  }
+
+  async submitReceipt(data: RTReceiptData, config: RTProviderConfig): Promise<RTSubmissionResult> {
+    try {
+      if (!config.entityId) {
+        return { success: false, errorMessage: "Fiscal ID (P.IVA) not configured for OpenAPI.com. Set it in RT settings." };
+      }
+
+      const items = data.items.map((item) => {
+        const vatRate = item.vatRate ?? 22;
+        const unitPrice = item.totalPrice / item.quantity / 100;
+        return {
+          description: item.productName || "Article",
+          quantity: item.quantity,
+          unit_price: parseFloat(unitPrice.toFixed(2)),
+          tax_rate: vatRate,
+        };
+      });
+
+      const totalEur = data.transaction.total / 100;
+
+      const receiptPayload: any = {
+        fiscal_id: config.entityId,
+        items,
+        payment_methods: [
+          {
+            type: this.mapPaymentType(data.transaction.paymentMethod || "cash"),
+            amount: parseFloat(totalEur.toFixed(2)),
+          },
+        ],
+      };
+
+      if (data.transaction.lotteryCode) {
+        receiptPayload.lottery_code = data.transaction.lotteryCode;
+      }
+
+      if (data.transaction.discountAmount && data.transaction.discountAmount > 0) {
+        receiptPayload.discount = {
+          amount: parseFloat((data.transaction.discountAmount / 100).toFixed(2)),
+        };
+      }
+
+      const result = await this.apiCall("POST", "/IT-receipts", config, receiptPayload);
+
+      const receiptId = result?.data?.id || result?.id;
+      console.log(`[OpenAPI.com] Receipt submitted: ${data.transaction.transactionNumber} → ${receiptId}`);
+
+      return {
+        success: true,
+        submissionId: receiptId,
+        rawResponse: result,
+      };
+    } catch (error: any) {
+      console.error(`[OpenAPI.com] Receipt submission error: ${error.message}`);
+      return {
+        success: false,
+        errorMessage: error.message || "Unknown error during OpenAPI.com submission",
+      };
+    }
+  }
+
+  async cancelReceipt(submissionId: string, config: RTProviderConfig): Promise<RTSubmissionResult> {
+    try {
+      const result = await this.apiCall("DELETE", `/IT-receipts/${submissionId}`, config);
+      console.log(`[OpenAPI.com] Receipt cancelled: ${submissionId}`);
+      return {
+        success: true,
+        submissionId,
+        rawResponse: result,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        errorMessage: error.message || "Error during OpenAPI.com cancellation",
+      };
+    }
+  }
+
+  async testConnection(config: RTProviderConfig): Promise<{ success: boolean; message: string }> {
+    try {
+      const result = await this.apiCall("GET", "/IT-configurations", config);
+      const env = config.sandboxMode ? "SANDBOX" : "PRODUCTION";
+      const configCount = result?.data?.length || 0;
+      let message = `Connection to OpenAPI.com (${env}) successful. Found ${configCount} configuration(s).`;
+
+      if (config.entityId) {
+        const found = result?.data?.find((c: any) => c.fiscal_id === config.entityId);
+        if (found) {
+          message += ` Configuration for fiscal ID "${config.entityId}" found and active.`;
+        } else {
+          message += ` Warning: No configuration found for fiscal ID "${config.entityId}". You may need to create one.`;
+        }
+      }
+
+      return { success: true, message };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Connection to OpenAPI.com failed: ${error.message}`,
+      };
+    }
+  }
+
+  async getStatus(submissionId: string, config: RTProviderConfig): Promise<{ status: string; details?: any }> {
+    try {
+      const result = await this.apiCall("GET", `/IT-receipts?limit=1&id=${submissionId}`, config);
+      const receipt = result?.data?.[0];
+
+      if (!receipt) {
+        return { status: "unknown", details: { error: "Receipt not found" } };
+      }
+
+      let status = "unknown";
+      const openApiStatus = receipt.status?.toLowerCase();
+      if (openApiStatus === "ready" || openApiStatus === "submitted") {
+        status = "confirmed";
+      } else if (openApiStatus === "new" || openApiStatus === "retry") {
+        status = "pending";
+      } else if (openApiStatus === "failed" || openApiStatus === "voided") {
+        status = "failed";
+      } else {
+        status = openApiStatus || "unknown";
+      }
+
+      return {
+        status,
+        details: {
+          receiptId: receipt.id,
+          openApiStatus: receipt.status,
+          documentNumber: receipt.document_number,
+          createdAt: receipt.created_at,
+        },
+      };
+    } catch (error: any) {
+      return {
+        status: "error",
+        details: { error: error.message },
+      };
+    }
+  }
+}
+
 const providers: Record<string, IFiscalRTProvider> = {
   sandbox: new SandboxRTProvider(),
   fiskaly: new FiskalyRTProvider(),
+  openapi_com: new OpenApiComRTProvider(),
 };
 
 export function getProvider(providerName: string): IFiscalRTProvider | null {
@@ -526,6 +725,7 @@ export function getAvailableProviders(): Array<{ id: string; name: string; descr
     { id: "none", name: "Nessuno", description: "RT non attivo" },
     { id: "sandbox", name: "Sandbox (Test)", description: "Modalità test — documenti simulati, nessuna trasmissione reale" },
     { id: "fiskaly", name: "Fiskaly SIGN IT", description: "Provider cloud certificato per corrispettivi telematici — API v" + FISKALY_API_VERSION },
+    { id: "openapi_com", name: "OpenAPI.com Invoice", description: "Scontrini elettronici e fatture via OpenAPI.com — invio diretto all'Agenzia delle Entrate" },
   ];
 }
 

@@ -177,7 +177,9 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                   <span className="text-sm font-medium text-amber-800 dark:text-amber-200">{t("fiscal.ownCredentialsMandatory")}</span>
                 </div>
                 <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                  {t("fiscal.enterFiskalyCredentials")}
+                  {adminConfig?.provider === "openapi_com"
+                    ? t("fiscal.enterOpenApiCredentials")
+                    : t("fiscal.enterFiskalyCredentials")}
                 </p>
               </div>
 
@@ -186,60 +188,90 @@ export function EntityFiscalConfig({ entityType, basePath }: EntityFiscalConfigP
                   <Key className="h-4 w-4" />
                   <span className="text-sm font-medium">{t("fiscal.rtCredentials")}</span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="api-key">{t("fiscal.apiKey")}</Label>
-                  <Input
-                    id="api-key"
-                    type="password"
-                    value={rtApiKey}
-                    onChange={(e) => setRtApiKey(e.target.value)}
-                    placeholder={t("fiscal.enterApiKey")}
-                    data-testid="input-rt-api-key"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="api-secret">{t("fiscal.apiSecret")}</Label>
-                  <Input
-                    id="api-secret"
-                    type="password"
-                    value={rtApiSecret}
-                    onChange={(e) => setRtApiSecret(e.target.value)}
-                    placeholder={t("fiscal.enterApiSecret")}
-                    data-testid="input-rt-api-secret"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endpoint">{t("fiscal.endpoint")}</Label>
-                  <Input
-                    id="endpoint"
-                    value={rtEndpoint}
-                    onChange={(e) => setRtEndpoint(e.target.value)}
-                    placeholder="https://api.provider.com/v1"
-                    data-testid="input-rt-endpoint"
-                  />
-                </div>
-                {adminConfig?.provider === "fiskaly" && (
+
+                {adminConfig?.provider === "openapi_com" ? (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="entity-id">{t("fiscal.fiskalyEntityId")}</Label>
+                      <Label htmlFor="api-key">{t("fiscal.openApiToken")}</Label>
+                      <Input
+                        id="api-key"
+                        type="password"
+                        value={rtApiKey}
+                        onChange={(e) => setRtApiKey(e.target.value)}
+                        placeholder={t("fiscal.enterOpenApiToken")}
+                        data-testid="input-rt-api-key"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="entity-id">{t("fiscal.openApiFiscalId")}</Label>
                       <Input
                         id="entity-id"
                         value={rtEntityId}
                         onChange={(e) => setRtEntityId(e.target.value)}
-                        placeholder={t("fiscal.fiskalyDashboardUUID")}
+                        placeholder={t("fiscal.enterOpenApiFiscalId")}
                         data-testid="input-rt-entity-id"
+                      />
+                      <p className="text-xs text-muted-foreground">{t("fiscal.openApiFiscalIdDesc")}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="api-key">{t("fiscal.apiKey")}</Label>
+                      <Input
+                        id="api-key"
+                        type="password"
+                        value={rtApiKey}
+                        onChange={(e) => setRtApiKey(e.target.value)}
+                        placeholder={t("fiscal.enterApiKey")}
+                        data-testid="input-rt-api-key"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="system-id">{t("fiscal.fiskalySystemId")}</Label>
+                      <Label htmlFor="api-secret">{t("fiscal.apiSecret")}</Label>
                       <Input
-                        id="system-id"
-                        value={rtSystemId}
-                        onChange={(e) => setRtSystemId(e.target.value)}
-                        placeholder={t("fiscal.fiskalyDashboardUUID")}
-                        data-testid="input-rt-system-id"
+                        id="api-secret"
+                        type="password"
+                        value={rtApiSecret}
+                        onChange={(e) => setRtApiSecret(e.target.value)}
+                        placeholder={t("fiscal.enterApiSecret")}
+                        data-testid="input-rt-api-secret"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endpoint">{t("fiscal.endpoint")}</Label>
+                      <Input
+                        id="endpoint"
+                        value={rtEndpoint}
+                        onChange={(e) => setRtEndpoint(e.target.value)}
+                        placeholder="https://api.provider.com/v1"
+                        data-testid="input-rt-endpoint"
+                      />
+                    </div>
+                    {adminConfig?.provider === "fiskaly" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="entity-id">{t("fiscal.fiskalyEntityId")}</Label>
+                          <Input
+                            id="entity-id"
+                            value={rtEntityId}
+                            onChange={(e) => setRtEntityId(e.target.value)}
+                            placeholder={t("fiscal.fiskalyDashboardUUID")}
+                            data-testid="input-rt-entity-id"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="system-id">{t("fiscal.fiskalySystemId")}</Label>
+                          <Input
+                            id="system-id"
+                            value={rtSystemId}
+                            onChange={(e) => setRtSystemId(e.target.value)}
+                            placeholder={t("fiscal.fiskalyDashboardUUID")}
+                            data-testid="input-rt-system-id"
+                          />
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
