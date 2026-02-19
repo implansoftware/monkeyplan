@@ -6039,6 +6039,7 @@ export interface RepairOrderFilters {
   endDate?: string;
   slaSeverity?: string;
   deviceType?: string;
+  excludeReturns?: boolean;
 }
 
 export interface PaginationParams {

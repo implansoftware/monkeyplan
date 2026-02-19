@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RepairOrder, RepairCenter } from "@shared/schema";
 import { Building, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle2, PackageCheck, Play, Smartphone } from "lucide-react";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw } from "lucide-react";
+import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw, ChevronDown, ChevronUp, CornerDownRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
@@ -21,6 +21,7 @@ import { it } from "date-fns/locale";
 import type { DateRange } from "react-day-picker";
 import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { RepairReturnWizard } from "@/components/RepairReturnWizard";
+import { ReturnSubRows } from "@/components/ReturnSubRows";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
 import { ActionGuard } from "@/components/permission-guard";
@@ -34,6 +35,7 @@ interface RepairOrderWithSLA extends RepairOrder {
   customerName: string | null;
   repairCenterName: string | null;
   quoteTotalAmount: number | null;
+  returnCount?: number;
 }
 
 interface PaginatedRepairsResponse {
@@ -60,6 +62,7 @@ export default function ResellerRepairs() {
   const [isExporting, setIsExporting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
+  const [expandedReturns, setExpandedReturns] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Debounce search input
@@ -532,101 +535,136 @@ export default function ResellerRepairs() {
               </TableHeader>
               <TableBody>
                 {repairs.map((repair) => (
-                  <TableRow
-                    key={repair.id}
-                    data-testid={`row-repair-${repair.id}`}
-                    className="hover-elevate cursor-pointer"
-                    onClick={() => {
-                      setLocation(`/reseller/repairs/${repair.id}`);
-                    }}
-                  >
-                    <TableCell className="font-mono font-medium">
-                      {repair.orderNumber}
-                    </TableCell>
-                    <TableCell className="max-w-[150px]">
-                      <span className="truncate block" title={repair.customerName || "—"}>
-                        {repair.customerName || "—"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="max-w-[150px]">
-                      <span className="truncate block" title={repair.repairCenterName || "—"}>
-                        {repair.repairCenterName || "—"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium capitalize">{repair.deviceType}</div>
-                        <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(repair.status)}
-                    </TableCell>
-                    <TableCell>
-                      {repair.slaSeverity && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Badge 
-                              variant="outline" 
-                              className={
-                                repair.slaSeverity === "urgent" 
-                                  ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 gap-1 animate-pulse"
-                                  : repair.slaSeverity === "late"
-                                  ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 gap-1"
-                                  : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 gap-1"
-                              }
-                              data-testid={`badge-sla-${repair.slaSeverity}`}
-                            >
-                              {repair.slaSeverity === "urgent" ? (
-                                <AlertCircle className="h-3 w-3" />
-                              ) : repair.slaSeverity === "late" ? (
-                                <AlertTriangle className="h-3 w-3" />
-                              ) : (
-                                <Clock className="h-3 w-3" />
-                              )}
-                            </Badge>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              {repair.slaPhase}: {
-                                repair.slaMinutesInState >= 1440
-                                  ? `${Math.floor(repair.slaMinutesInState / 1440)} giorni ${Math.floor((repair.slaMinutesInState % 1440) / 60)}h`
-                                  : repair.slaMinutesInState >= 60
-                                  ? `${Math.floor(repair.slaMinutesInState / 60)}h ${repair.slaMinutesInState % 60}m`
-                                  : `${repair.slaMinutesInState} min`
-                              }
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
+                  <Fragment key={repair.id}>
+                    <TableRow
+                      data-testid={`row-repair-${repair.id}`}
+                      className="hover-elevate cursor-pointer"
+                      onClick={() => {
+                        setLocation(`/reseller/repairs/${repair.id}`);
+                      }}
+                    >
+                      <TableCell className="font-mono font-medium">
+                        <div className="flex items-center gap-1">
+                          {(repair.returnCount || 0) > 0 && (
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-6 w-6 shrink-0"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setLocation(`/reseller/repairs/${repair.id}`);
+                                setExpandedReturns(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(repair.id)) next.delete(repair.id);
+                                  else next.add(repair.id);
+                                  return next;
+                                });
                               }}
-                              data-testid={`button-view-repair-${repair.id}`}
+                              data-testid={`button-toggle-returns-${repair.id}`}
                             >
-                              <Eye className="h-4 w-4" />
+                              {expandedReturns.has(repair.id) ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                             </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t("common.details")}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          )}
+                          <span>{repair.orderNumber}</span>
+                          {(repair.returnCount || 0) > 0 && (
+                            <Badge variant="outline" className="text-xs ml-1 gap-1">
+                              <RotateCcw className="h-3 w-3" />
+                              {repair.returnCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[150px]">
+                        <span className="truncate block" title={repair.customerName || "—"}>
+                          {repair.customerName || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell className="max-w-[150px]">
+                        <span className="truncate block" title={repair.repairCenterName || "—"}>
+                          {repair.repairCenterName || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium capitalize">{repair.deviceType}</div>
+                          <div className="text-sm text-muted-foreground">{repair.deviceModel}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(repair.status)}
+                      </TableCell>
+                      <TableCell>
+                        {repair.slaSeverity && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge 
+                                variant="outline" 
+                                className={
+                                  repair.slaSeverity === "urgent" 
+                                    ? "bg-red-500/10 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700 gap-1 animate-pulse"
+                                    : repair.slaSeverity === "late"
+                                    ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700 gap-1"
+                                    : "bg-green-500/10 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 gap-1"
+                                }
+                                data-testid={`badge-sla-${repair.slaSeverity}`}
+                              >
+                                {repair.slaSeverity === "urgent" ? (
+                                  <AlertCircle className="h-3 w-3" />
+                                ) : repair.slaSeverity === "late" ? (
+                                  <AlertTriangle className="h-3 w-3" />
+                                ) : (
+                                  <Clock className="h-3 w-3" />
+                                )}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {repair.slaPhase}: {
+                                  repair.slaMinutesInState >= 1440
+                                    ? `${Math.floor(repair.slaMinutesInState / 1440)} giorni ${Math.floor((repair.slaMinutesInState % 1440) / 60)}h`
+                                    : repair.slaMinutesInState >= 60
+                                    ? `${Math.floor(repair.slaMinutesInState / 60)}h ${repair.slaMinutesInState % 60}m`
+                                    : `${repair.slaMinutesInState} min`
+                                }
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocation(`/reseller/repairs/${repair.id}`);
+                                }}
+                                data-testid={`button-view-repair-${repair.id}`}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("common.details")}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    {expandedReturns.has(repair.id) && (
+                      <ReturnSubRows
+                        parentId={repair.id}
+                        rolePrefix="/reseller"
+                        getStatusBadge={getStatusBadge}
+                      />
+                    )}
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>

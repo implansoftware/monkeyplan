@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2, RotateCcw } from "lucide-react";
+import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2, RotateCcw, ChevronDown, ChevronUp, CornerDownRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,7 @@ import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { RepairReturnWizard } from "@/components/RepairReturnWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
+import { ReturnSubRows } from "@/components/ReturnSubRows";
 
 interface RepairOrderWithSLA {
   id: string;
@@ -46,6 +47,7 @@ interface RepairOrderWithSLA {
   slaPhase?: string | null;
   slaEnteredAt?: string | null;
   quoteTotalAmount?: number | null;
+  returnCount?: number;
 }
 
 interface PaginatedRepairsResponse {
@@ -70,6 +72,7 @@ export default function RepairCenterRepairs() {
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
+  const [expandedReturns, setExpandedReturns] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -475,8 +478,8 @@ export default function RepairCenterRepairs() {
               </TableHeader>
               <TableBody>
                 {repairs.map((repair) => (
+                  <Fragment key={repair.id}>
                   <TableRow
-                    key={repair.id}
                     data-testid={`row-repair-${repair.id}`}
                     className="hover-elevate cursor-pointer"
                     onClick={() => {
@@ -484,7 +487,20 @@ export default function RepairCenterRepairs() {
                     }}
                   >
                     <TableCell className="font-mono font-medium">
-                      {repair.orderNumber}
+                      <div className="flex items-center gap-1">
+                        {(repair.returnCount || 0) > 0 && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0"
+                            onClick={(e) => { e.stopPropagation(); setExpandedReturns(prev => { const next = new Set(prev); if (next.has(repair.id)) next.delete(repair.id); else next.add(repair.id); return next; }); }}
+                            data-testid={`button-toggle-returns-${repair.id}`}
+                          >
+                            {expandedReturns.has(repair.id) ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          </Button>
+                        )}
+                        <span>{repair.orderNumber}</span>
+                        {(repair.returnCount || 0) > 0 && (
+                          <Badge variant="outline" className="text-xs ml-1 gap-1"><RotateCcw className="h-3 w-3" />{repair.returnCount}</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell max-w-[150px]">
                       <span className="truncate block" title={repair.customerName || "—"}>
@@ -565,6 +581,10 @@ export default function RepairCenterRepairs() {
                       </div>
                     </TableCell>
                   </TableRow>
+                  {expandedReturns.has(repair.id) && (
+                    <ReturnSubRows parentId={repair.id} rolePrefix="/repair-center" getStatusBadge={getStatusBadge} totalColumns={7} />
+                  )}
+                  </Fragment>
                 ))}
               </TableBody>
             </Table>

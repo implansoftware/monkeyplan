@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RepairOrder, RepairCenter, PaginatedResult } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Smartphone, RotateCcw } from "lucide-react";
+import { Search, Wrench, Download, CalendarIcon, Plus, Stethoscope, Receipt, ClipboardCheck, Package, Play, TestTube, Truck, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, Building, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Smartphone, RotateCcw, ChevronDown, ChevronUp, CornerDownRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -22,6 +22,7 @@ import { RepairIntakeWizard } from "@/components/RepairIntakeWizard";
 import { RepairReturnWizard } from "@/components/RepairReturnWizard";
 import { useLocation } from "wouter";
 import { RepairsKanbanBoard } from "@/components/RepairsKanbanBoard";
+import { ReturnSubRows } from "@/components/ReturnSubRows";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
 
@@ -34,6 +35,7 @@ interface RepairOrderWithSLA extends RepairOrder {
   repairCenterName: string | null;
   resellerName: string | null;
   quoteTotalAmount: number | null;
+  returnCount?: number;
 }
 
 interface PaginatedRepairsResponse {
@@ -62,6 +64,7 @@ export default function AdminRepairs() {
   const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
+  const [expandedReturns, setExpandedReturns] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   // Debounce search input
@@ -563,8 +566,8 @@ export default function AdminRepairs() {
                   const availableActions = actions.filter(a => a.available);
                   
                   return (
+                    <Fragment key={repair.id}>
                     <TableRow
-                      key={repair.id}
                       data-testid={`row-repair-${repair.id}`}
                       className="hover-elevate"
                     >
@@ -574,7 +577,31 @@ export default function AdminRepairs() {
                           openRepairDetail(repair.id);
                         }}
                       >
-                        {repair.orderNumber}
+                        <div className="flex items-center gap-1">
+                          {(repair.returnCount || 0) > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedReturns(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(repair.id)) next.delete(repair.id);
+                                  else next.add(repair.id);
+                                  return next;
+                                });
+                              }}
+                              data-testid={`button-toggle-returns-${repair.id}`}
+                            >
+                              {expandedReturns.has(repair.id) ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                            </Button>
+                          )}
+                          <span>{repair.orderNumber}</span>
+                          {(repair.returnCount || 0) > 0 && (
+                            <Badge variant="outline" className="text-xs ml-1 gap-1"><RotateCcw className="h-3 w-3" />{repair.returnCount}</Badge>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell
                         className="cursor-pointer max-w-[150px]"
@@ -702,6 +729,10 @@ export default function AdminRepairs() {
                         </div>
                       </TableCell>
                     </TableRow>
+                    {expandedReturns.has(repair.id) && (
+                      <ReturnSubRows parentId={repair.id} rolePrefix="/admin" getStatusBadge={getStatusBadge} totalColumns={9} />
+                    )}
+                    </Fragment>
                   );
                 })}
               </TableBody>

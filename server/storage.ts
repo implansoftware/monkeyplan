@@ -2594,6 +2594,10 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    if (filters?.excludeReturns) {
+      conditions.push(eq(repairOrders.isReturn, false));
+    }
+
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
     const [countResult] = await db

@@ -191,8 +191,8 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
 import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
-import { sql, eq, and, desc } from "drizzle-orm";
-import { salesOrderPayments, salesOrders, salesOrderShipments, users } from "@shared/schema";
+import { sql, eq, and, desc, inArray } from "drizzle-orm";
+import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders } from "@shared/schema";
 import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
 import Stripe from 'stripe';
 
@@ -4064,6 +4064,7 @@ export function registerRoutes(app: Express): Server {
       const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
       
       const filters: any = {};
+      filters.excludeReturns = true;
       if (req.query.status && req.query.status !== 'all') filters.status = req.query.status;
       if (req.query.priority && req.query.priority !== 'all') filters.priority = req.query.priority;
       if (req.query.repairCenterId && req.query.repairCenterId !== 'all') filters.repairCenterId = req.query.repairCenterId;
@@ -4093,6 +4094,14 @@ export function registerRoutes(app: Express): Server {
       const repairCentersMap = new Map<string, string>();
       allRepairCenters.forEach(rc => repairCentersMap.set(rc.id, rc.name));
       
+      // Count returns for each repair order
+      const repairIds = result.data.map(r => r.id).filter(Boolean);
+      let returnCountMap = new Map<string, number>();
+      if (repairIds.length > 0) {
+        const returnCountsResult = await db.select({ parentId: repairOrders.parentRepairOrderId, count: sql<number>`count(*)` }).from(repairOrders).where(and(eq(repairOrders.isReturn, true), inArray(repairOrders.parentRepairOrderId, repairIds))).groupBy(repairOrders.parentRepairOrderId);
+        returnCountsResult.forEach(r => { if (r.parentId) returnCountMap.set(r.parentId, Number(r.count)); });
+      }
+      
       // Compute SLA for each order
       const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
@@ -4110,6 +4119,7 @@ export function registerRoutes(app: Express): Server {
           customerName,
           repairCenterName: repair.repairCenterId ? repairCentersMap.get(repair.repairCenterId) || null : null,
           resellerName: repair.resellerId ? resellersMap.get(repair.resellerId) || null : null,
+          returnCount: returnCountMap.get(repair.id) || 0,
           slaSeverity: severity,
           slaMinutesInState: minutesInState,
           slaPhase: phase,
@@ -5649,6 +5659,7 @@ export function registerRoutes(app: Express): Server {
       const context = getEffectiveContext(req);
       
       const filters: any = { resellerId: context.resellerId };
+      filters.excludeReturns = true;
       if (context.repairCenterId) {
         filters.repairCenterId = context.repairCenterId;
         delete filters.resellerId;
@@ -5677,6 +5688,14 @@ export function registerRoutes(app: Express): Server {
       const repairCentersMap = new Map<string, string>();
       allRepairCenters.forEach(rc => repairCentersMap.set(rc.id, rc.name));
       
+      // Count returns for each repair order
+      const repairIds = result.data.map(r => r.id).filter(Boolean);
+      let returnCountMap = new Map<string, number>();
+      if (repairIds.length > 0) {
+        const returnCountsResult = await db.select({ parentId: repairOrders.parentRepairOrderId, count: sql<number>`count(*)` }).from(repairOrders).where(and(eq(repairOrders.isReturn, true), inArray(repairOrders.parentRepairOrderId, repairIds))).groupBy(repairOrders.parentRepairOrderId);
+        returnCountsResult.forEach(r => { if (r.parentId) returnCountMap.set(r.parentId, Number(r.count)); });
+      }
+      
       // Compute SLA for each order
       const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
@@ -5693,6 +5712,7 @@ export function registerRoutes(app: Express): Server {
           ...repair,
           customerName,
           repairCenterName: repair.repairCenterId ? repairCentersMap.get(repair.repairCenterId) || null : null,
+          returnCount: returnCountMap.get(repair.id) || 0,
           slaSeverity: severity,
           slaMinutesInState: minutesInState,
           slaPhase: phase,
@@ -5715,6 +5735,41 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error: any) {
       console.error("Service order creation error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/repair-orders/:id/returns", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const parentId = req.params.id;
+      
+      const parentOrder = await storage.getRepairOrder(parentId);
+      if (!parentOrder) return res.status(404).send("Order not found");
+      
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = getResellerId(req);
+        if (parentOrder.resellerId !== resellerId) return res.status(403).send("Unauthorized");
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        if (parentOrder.repairCenterId !== req.user.repairCenterId) return res.status(403).send("Unauthorized");
+      } else if (req.user.role !== 'admin' && req.user.role !== 'admin_staff') {
+        return res.status(403).send("Unauthorized role");
+      }
+      
+      const returns = await db.select().from(repairOrders).where(and(eq(repairOrders.parentRepairOrderId, parentId), eq(repairOrders.isReturn, true))).orderBy(desc(repairOrders.createdAt));
+
+      const allUsers = await storage.listUsers();
+      const customersMap = new Map();
+      allUsers.forEach(u => { if (u.role === 'customer') customersMap.set(u.id, { fullName: u.fullName, ragioneSociale: u.ragioneSociale }); });
+
+      const enriched = returns.map(r => {
+        const customer = r.customerId ? customersMap.get(r.customerId) : null;
+        return { ...r, customerName: customer?.ragioneSociale || customer?.fullName || null };
+      });
+
+      res.json(enriched);
+    } catch (error: any) {
+      console.error("Get returns error:", error);
       res.status(500).send(error.message);
     }
   });
@@ -10559,6 +10614,7 @@ export function registerRoutes(app: Express): Server {
       const pageSize = Math.min(parseInt(req.query.pageSize as string) || 25, 100);
       
       const filters: any = { repairCenterId: req.user.repairCenterId };
+      filters.excludeReturns = true;
       
       if (req.query.status && req.query.status !== 'all') filters.status = req.query.status;
       if (req.query.deviceType && req.query.deviceType !== 'all') filters.deviceType = req.query.deviceType;
@@ -10578,6 +10634,14 @@ export function registerRoutes(app: Express): Server {
         }
       });
       
+      // Count returns for each repair order
+      const repairIds = result.data.map(r => r.id).filter(Boolean);
+      let returnCountMap = new Map<string, number>();
+      if (repairIds.length > 0) {
+        const returnCountsResult = await db.select({ parentId: repairOrders.parentRepairOrderId, count: sql<number>`count(*)` }).from(repairOrders).where(and(eq(repairOrders.isReturn, true), inArray(repairOrders.parentRepairOrderId, repairIds))).groupBy(repairOrders.parentRepairOrderId);
+        returnCountsResult.forEach(r => { if (r.parentId) returnCountMap.set(r.parentId, Number(r.count)); });
+      }
+      
       // Compute SLA for each order
       const { loadSLAConfig, computeSLASeverity } = await import("./sla-utils");
       const slaConfig = await loadSLAConfig();
@@ -10593,6 +10657,7 @@ export function registerRoutes(app: Express): Server {
         return {
           ...repair,
           customerName,
+          returnCount: returnCountMap.get(repair.id) || 0,
           slaSeverity: severity,
           slaMinutesInState: minutesInState,
           slaPhase: phase,
