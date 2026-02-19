@@ -275,7 +275,7 @@ export default function ResellerRepairs() {
               </TabsList>
             </Tabs>
             <ActionGuard module="repairs" action="create">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   className="bg-[#ff1212] text-[#ffffff]"
