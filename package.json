@@ -91,6 +91,7 @@
     "react-hook-form": "^7.55.0",
     "react-i18next": "^16.5.4",
     "react-icons": "^5.4.0",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.2",
     "stripe": "^20.3.0",
