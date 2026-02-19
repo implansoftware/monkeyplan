@@ -48,6 +48,7 @@
       "dashboardHR": "HR Dashboard",
       "repairs": "Repairs",
       "jobs": "Jobs",
+      "courtesyPhones": "Courtesy Phones",
       "orders": "Customer Orders",
       "customers": "Customers",
       "tickets": "Tickets",
@@ -9681,7 +9682,16 @@
     "returnCourtesyPhone": "Return Courtesy Phone",
     "courtesyPhoneInfo": "Loaner device",
     "courtesyPhoneNotes": "Courtesy phone notes",
-    "courtesyPhoneNotesPlaceholder": "Additional notes about the courtesy phone..."
+    "courtesyPhoneNotesPlaceholder": "Additional notes about the courtesy phone...",
+    "courtesyPhonesActiveTitle": "Courtesy Phones",
+    "courtesyPhoneLoans": "Courtesy phone loans",
+    "courtesyPhoneFilterActive": "On Loan",
+    "courtesyPhoneFilterReturned": "Returned",
+    "courtesyPhoneNoLoans": "No loans found",
+    "courtesyPhoneActiveBadge": "On Loan",
+    "courtesyPhoneReturnedBadge": "Returned",
+    "courtesyPhoneReturnedDate": "Returned",
+    "courtesyPhoneAssignedDate": "Assigned Date"
   },
   "staff": {
     "permissions": "Permissions",

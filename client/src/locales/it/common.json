@@ -48,6 +48,7 @@
       "dashboardHR": "Dashboard HR",
       "repairs": "Riparazioni",
       "jobs": "Lavorazioni",
+      "courtesyPhones": "Tel. Cortesia",
       "orders": "Ordini Clienti",
       "customers": "Clienti",
       "tickets": "Ticket",
@@ -9689,7 +9690,16 @@
     "returnCourtesyPhone": "Restituisci Tel. Cortesia",
     "courtesyPhoneInfo": "Dispositivo in prestito",
     "courtesyPhoneNotes": "Note tel. cortesia",
-    "courtesyPhoneNotesPlaceholder": "Note aggiuntive sul telefono di cortesia..."
+    "courtesyPhoneNotesPlaceholder": "Note aggiuntive sul telefono di cortesia...",
+    "courtesyPhonesActiveTitle": "Telefoni di Cortesia",
+    "courtesyPhoneLoans": "Prestiti telefoni di cortesia",
+    "courtesyPhoneFilterActive": "In prestito",
+    "courtesyPhoneFilterReturned": "Restituiti",
+    "courtesyPhoneNoLoans": "Nessun prestito trovato",
+    "courtesyPhoneActiveBadge": "In prestito",
+    "courtesyPhoneReturnedBadge": "Restituito",
+    "courtesyPhoneReturnedDate": "Restituito",
+    "courtesyPhoneAssignedDate": "Data assegnazione"
   },
   "staff": {
     "permissions": "Permessi",

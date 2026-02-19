@@ -191,7 +191,7 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
 import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
-import { sql, eq, and, desc, inArray, gt } from "drizzle-orm";
+import { sql, eq, and, desc, inArray, gt, isNotNull, isNull } from "drizzle-orm";
 import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock } from "@shared/schema";
 import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
 import Stripe from 'stripe';
@@ -15546,6 +15546,83 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // GET /api/courtesy-phones/active - List all active courtesy phone loans
+  app.get("/api/courtesy-phones/active", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ['admin', 'admin_staff', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+
+      const statusFilter = req.query.status as string | undefined; // 'active' | 'returned' | 'all'
+
+      let conditions: any[] = [isNotNull(repairOrders.courtesyPhoneProductId)];
+
+      if (statusFilter === 'returned') {
+        conditions.push(isNotNull(repairOrders.courtesyPhoneReturnedAt));
+      } else if (statusFilter !== 'all') {
+        conditions.push(isNull(repairOrders.courtesyPhoneReturnedAt));
+      }
+
+      // RBAC filtering
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = getResellerId(req);
+        conditions.push(eq(repairOrders.resellerId, resellerId));
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        conditions.push(eq(repairOrders.repairCenterId, req.user.repairCenterId || req.user.id));
+      }
+
+      const results = await db
+        .select({
+          repairOrder: repairOrders,
+          product: products,
+        })
+        .from(repairOrders)
+        .leftJoin(products, eq(products.id, repairOrders.courtesyPhoneProductId))
+        .where(and(...conditions))
+        .orderBy(desc(repairOrders.courtesyPhoneAssignedAt));
+
+      // Fetch customer data for each order
+      const enrichedResults = await Promise.all(results.map(async (r) => {
+        let customer = null;
+        if (r.repairOrder.customerId) {
+          const customerData = await storage.getUser(r.repairOrder.customerId);
+          if (customerData) {
+            customer = {
+              id: customerData.id,
+              fullName: customerData.fullName,
+              phone: customerData.phone,
+            };
+          }
+        }
+        return {
+          repairOrderId: r.repairOrder.id,
+          orderNumber: r.repairOrder.orderNumber,
+          deviceModel: r.repairOrder.deviceModel,
+          brand: r.repairOrder.brand,
+          status: r.repairOrder.status,
+          courtesyPhoneAssignedAt: r.repairOrder.courtesyPhoneAssignedAt,
+          courtesyPhoneReturnedAt: r.repairOrder.courtesyPhoneReturnedAt,
+          courtesyPhoneNotes: r.repairOrder.courtesyPhoneNotes,
+          courtesyPhoneProduct: r.product ? {
+            id: r.product.id,
+            name: r.product.name,
+            brand: r.product.brand,
+            sku: r.product.sku,
+            imageUrl: r.product.imageUrl,
+          } : null,
+          customer,
+        };
+      }));
+
+      res.json(enrichedResults);
+    } catch (error: any) {
+      console.error("Error fetching active courtesy phones:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // PATCH /api/repair-orders/:id/courtesy-phone-return - Mark courtesy phone as returned
   app.patch("/api/repair-orders/:id/courtesy-phone-return", requireAuth, async (req, res) => {
     try {
