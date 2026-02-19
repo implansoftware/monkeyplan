@@ -1,0 +1,202 @@
+10 migliorie che farei prima di consegnarla (altissimo impatto)
+1) Specifica “Base URL” e ambienti (dev/stage/prod)
+
+Ora scrivi “Backend: https://metodofluent.com”
+ 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+, ma per un team esterno è oro avere:
+
+BASE_URL_PROD
+
+BASE_URL_STAGING (se esiste)
+
+BASE_URL_DEV (se esiste)
+
+come gestire .env / app.config.ts (Expo)
+
+2) Chiarisci cosa rappresenta davvero sessionToken
+
+Tu lo chiami Bearer token, ma dici anche “sessioni server-side (PostgreSQL)” e “il backend distrugge la sessione associata al bearer token”. 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+
+Serve 2 righe esplicite per evitare implementazioni sbagliate:
+
+è un opaque token che punta a una sessione server-side?
+
+oppure un JWT?
+
+scade dopo 7 giorni (lo dici) 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+ ma: si rinnova? c’è refresh? serve re-login?
+
+👉 Se non c’è refresh, scriverei il comportamento atteso:
+
+alla 401: redirect a login + wipe storage token
+
+se possibile: “me” all’avvio per validare token
+
+3) Workflow “startup app” (cold start) in 6 step
+
+Manca una mini-sezione “App lifecycle” super pratica, tipo:
+
+Leggi token da SecureStore
+
+GET /api/auth/me
+
+Se ok → carica feature flags + pacchetto
+
+Setup push listeners
+
+Registra push token se permesso concesso
+
+Setup deep linking mapping
+
+Questo taglia il 50% delle ambiguità.
+
+4) Specifica paginazione, sorting, filtri (soprattutto per messages/notifications/lessons)
+
+Hai le liste endpoint, ma non dici:
+
+paginazione (limit/offset? cursor?)
+
+ordinamento default
+
+filtri supportati (es. /api/lessons?from=&to=&status= ecc.)
+Se non esiste, ok, ma va dichiarato.
+
+5) Contratto dei modelli principali (schema minimo)
+
+Per ampcode è utilissimo avere “shape” JSON essenziali:
+
+Lesson
+
+User (coach/student)
+
+Message
+
+Notification
+
+VideoCourse / Episode / Progress
+Oggi ci sono response spot e tabelle endpoint, ma non un “data contract” compatto. 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+👉 Anche 1 esempio JSON per ciascun oggetto risolve.
+
+6) Upload: tipi file, max size, form field names
+
+Hai 3 endpoint upload, ma manca:
+
+field name (file? image? attachment?)
+
+MIME consentiti
+
+limite dimensione
+
+comportamento errori
+
+se restituisce URL o object
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+7) WebSocket auth: “cookie/bearer” è ambiguo
+
+Scrivi: “Il WebSocket usa lo stesso cookie/bearer di sessione per autenticare.” 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+
+In mobile, di solito cookie non c’è. Serve una regola precisa:
+
+token in querystring? (sconsigliato)
+
+token in header Authorization durante handshake? (dipende dalla lib)
+
+oppure primo messaggio WS contiene token?
+
+Se Ampcode implementa male, le call live falliscono.
+
+8) Deep link mapping: tabella “type → screen”
+
+Hai payload type, relatedId, relatedType 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+ ma manca la mappa:
+
+lesson_booked → LessonDetail(relatedId)
+
+message → Chat(userId?) (qui spesso relatedId non basta)
+
+task_assigned → TaskDetail
+Una tabellina evita interpretazioni.
+
+9) Gestione rate limiting (429) e retry policy
+
+Hai rate limit numerici 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+ e status 429 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+ ma manca:
+
+backoff suggerito
+
+messaggio UI
+
+se c’è header Retry-After (se sì, scriverlo)
+
+10) Versioning & compatibilità app (hard requirement per store)
+
+Hai /api/version 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+: ottimo. Completerei con:
+
+cosa ritorna (esempio JSON)
+
+se esiste “minimum app version” → blocco aggiornamento forzato
+
+Piccole cose “da senior” che alzano la qualità
+
+Errori: oltre {error: ...} 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+ aggiungerei (se possibile) code stabile (AUTH_INVALID, PACKAGE_EXPIRED, ecc.) per UI/analytics.
+
+CORS: ok per Expo dev 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+, ma per mobile nativo CORS non serve: puoi segnalarlo per non far perdere tempo.
+
+Sicurezza storage token: una riga “usare SecureStore/Keychain, no AsyncStorage”.
+
+Timezones: hai UTC ISO 
+
+MOBILE-APP-DEVELOPER-GUIDE
+
+ → aggiungi nota su conversione locale e formati UI.
+
+“Pacchetto di consegna” ideale per Ampcode (se vuoi farli correre)
+
+Oltre al markdown, allega (anche come link):
+
+Postman collection / Insomnia export con auth già pronta
+
+OpenAPI/Swagger (anche minimale)
+
+Credenziali di test per ruoli: student/coach/admin/sub_admin + dataset coerente (1 lezione, 1 quiz, 1 conversazione, 1 notifica)
+
+Checklist QA: login/logout, push, deep link, call WebRTC, pacchetto scaduto, feature flag off
