@@ -101,6 +101,9 @@ function getWizardSchema(t: (key: string) => string) {
     aestheticCondition: z.string().optional(),
     accessories: z.array(z.string()).default([]),
     notes: z.string().optional(),
+    // Courtesy phone
+    courtesyPhoneProductId: z.string().optional(),
+    courtesyPhoneNotes: z.string().optional(),
   });
 }
 
@@ -613,6 +616,11 @@ export function RepairIntakeWizard({
     enabled: open && createDiagnosisNow && diagnosisOutcome === "non_conveniente",
   });
 
+  const { data: courtesyPhones = [], isLoading: courtesyPhonesLoading, isError: courtesyPhonesError } = useQuery<any[]>({
+    queryKey: ["/api/courtesy-phones/available"],
+    enabled: open,
+  });
+
   // Group findings by category
   const findingsByCategory = diagnosticFindings.reduce((acc, finding) => {
     const category = finding.category || "altro";
@@ -713,6 +721,14 @@ export function RepairIntakeWizard({
       }
       if (data.subResellerId) {
         payload.subResellerId = data.subResellerId;
+      }
+
+      // Add courtesy phone if selected
+      if (data.courtesyPhoneProductId) {
+        payload.courtesyPhoneProductId = data.courtesyPhoneProductId;
+      }
+      if (data.courtesyPhoneNotes) {
+        payload.courtesyPhoneNotes = data.courtesyPhoneNotes;
       }
 
       // Build acceptance object with structured data and required defaults
@@ -1947,6 +1963,87 @@ export function RepairIntakeWizard({
                     </FormItem>
                   )}
                 />
+
+                {/* Courtesy Phone Section */}
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Phone className="h-5 w-5 text-primary" />
+                    <h4 className="font-medium">{t("repair.courtesyPhone")}</h4>
+                    <Badge variant="secondary">{t("common.optional")}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {t("repair.courtesyPhoneDescription")}
+                  </p>
+                  
+                  {courtesyPhonesLoading ? (
+                    <div className="text-sm text-muted-foreground">{t("common.loading")}...</div>
+                  ) : courtesyPhonesError ? (
+                    <p className="text-sm text-destructive">{t("common.loadError")}</p>
+                  ) : courtesyPhones && courtesyPhones.length > 0 ? (
+                    <div className="space-y-3">
+                      <FormField
+                        control={form.control}
+                        name="courtesyPhoneProductId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {courtesyPhones.map((phone: any) => (
+                                <Card
+                                  key={phone.id}
+                                  className={cn(
+                                    "cursor-pointer transition-colors hover-elevate",
+                                    field.value === phone.id && "ring-2 ring-primary"
+                                  )}
+                                  onClick={() => field.onChange(field.value === phone.id ? undefined : phone.id)}
+                                  data-testid={`card-courtesy-phone-${phone.id}`}
+                                >
+                                  <CardContent className="p-3 flex items-center gap-3">
+                                    <Phone className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-sm truncate">{phone.name}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        {phone.brand && `${phone.brand} • `}{t("common.available")}: {phone.availableQuantity}
+                                      </div>
+                                    </div>
+                                    {field.value === phone.id && (
+                                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {form.watch("courtesyPhoneProductId") && (
+                        <FormField
+                          control={form.control}
+                          name="courtesyPhoneNotes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t("repair.courtesyPhoneNotes")}</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  {...field}
+                                  placeholder={t("repair.courtesyPhoneNotesPlaceholder")}
+                                  className="resize-none"
+                                  rows={2}
+                                  data-testid="textarea-courtesy-phone-notes"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {t("repair.noCourtesyPhonesAvailable")}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 

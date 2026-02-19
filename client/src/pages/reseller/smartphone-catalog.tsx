@@ -405,6 +405,22 @@ export default function SmartphoneCatalog() {
     },
   });
 
+  const toggleCourtesyPhoneMutation = useMutation({
+    mutationFn: async ({ id, isCourtesyPhone }: { id: string; isCourtesyPhone: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}/courtesy-phone`, { isCourtesyPhone });
+      return res.json();
+    },
+    onSuccess: (_, { isCourtesyPhone }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+      toast({
+        title: isCourtesyPhone ? t("products.courtesyPhoneEnabled") : t("products.courtesyPhoneDisabled"),
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
   const openMarketplaceDialog = (product: SmartphoneWithSpecs) => {
     setMarketplaceProduct(product);
     setMarketplaceEnabled((product as any).isMarketplaceEnabled || false);
@@ -811,6 +827,7 @@ export default function SmartphoneCatalog() {
                     <TableHead>{t("common.supplier")}</TableHead>
                     <TableHead className="text-right">{t("common.price")}</TableHead>
                     <TableHead className="text-center">{t("marketplace.title")}</TableHead>
+                    <TableHead className="text-center">{t("products.courtesyPhone")}</TableHead>
                     <TableHead className="w-32">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -906,6 +923,18 @@ export default function SmartphoneCatalog() {
                         ) : (
                           <span className="text-muted-foreground text-xs">-</span>
                         )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Switch
+                            checked={(smartphone as any).isCourtesyPhone ?? false}
+                            onCheckedChange={(checked) =>
+                              toggleCourtesyPhoneMutation.mutate({ id: smartphone.id, isCourtesyPhone: checked })
+                            }
+                            disabled={toggleCourtesyPhoneMutation.isPending}
+                            data-testid={`switch-courtesy-phone-${smartphone.id}`}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center gap-1">

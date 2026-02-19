@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw, ChevronDown, ChevronUp, CornerDownRight } from "lucide-react";
+import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw, ChevronDown, ChevronUp, CornerDownRight, Phone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/queryClient";
@@ -566,6 +566,14 @@ export default function ResellerRepairs() {
                             </Button>
                           )}
                           <span>{repair.orderNumber}</span>
+                          {repair.courtesyPhoneProductId && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Phone className="h-3.5 w-3.5 text-blue-500 inline-block ml-1" data-testid={`icon-courtesy-phone-${repair.id}`} />
+                              </TooltipTrigger>
+                              <TooltipContent>{t("repair.courtesyPhoneAssigned")}</TooltipContent>
+                            </Tooltip>
+                          )}
                           {(repair.returnCount || 0) > 0 && (
                             <Badge variant="outline" className="text-xs ml-1 gap-1">
                               <RotateCcw className="h-3 w-3" />

@@ -191,8 +191,8 @@ async function attemptAutoRtSubmission(transactionId: string, repairCenterId: st
 import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
-import { sql, eq, and, desc, inArray } from "drizzle-orm";
-import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders } from "@shared/schema";
+import { sql, eq, and, desc, inArray, gt } from "drizzle-orm";
+import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock } from "@shared/schema";
 import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
 import Stripe from 'stripe';
 
@@ -3489,6 +3489,42 @@ export function registerRoutes(app: Express): Server {
       res.json(product);
     } catch (error: any) {
       console.error("Service order creation error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // Toggle courtesy phone flag on product (all roles with product access)
+  app.patch("/api/products/:id/courtesy-phone", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ['admin', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      const { isCourtesyPhone } = req.body;
+      if (typeof isCourtesyPhone !== 'boolean') {
+        return res.status(400).send("isCourtesyPhone deve essere un valore booleano");
+      }
+      
+      const product = await storage.getProduct(req.params.id);
+      if (!product) return res.status(404).send("Product not found");
+      
+      // RBAC: non-admin can only toggle their own products
+      if (req.user.role !== 'admin') {
+        if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+          const resellerId = getResellerId(req);
+          if (product.createdBy !== resellerId) return res.status(403).send("Forbidden");
+        } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+          const centerId = req.user.repairCenterId || req.user.id;
+          if (product.repairCenterId !== centerId) return res.status(403).send("Forbidden");
+        }
+      }
+      
+      const updated = await storage.updateProduct(req.params.id, { isCourtesyPhone });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error toggling courtesy phone:", error);
       res.status(500).send(error.message);
     }
   });
@@ -15325,6 +15361,9 @@ export function registerRoutes(app: Express): Server {
         isReturn: req.body.isReturn || false,
         parentRepairOrderId: req.body.parentRepairOrderId || null,
         returnReason: req.body.returnReason || null,
+        courtesyPhoneProductId: req.body.courtesyPhoneProductId || null,
+        courtesyPhoneAssignedAt: req.body.courtesyPhoneProductId ? new Date() : null,
+        courtesyPhoneNotes: req.body.courtesyPhoneNotes || null,
       };
       
       if (orderData.isReturn) {
@@ -15376,6 +15415,32 @@ export function registerRoutes(app: Express): Server {
         
         const { order, acceptance } = await storage.createRepairWithAcceptance(orderData, acceptanceData);
         
+        // Handle courtesy phone warehouse stock deduction
+        if (order.courtesyPhoneProductId) {
+          try {
+            let ownerType = req.user.role === 'admin' ? 'admin' : req.user.role === 'reseller' || req.user.role === 'reseller_staff' ? 'reseller' : 'repair_center';
+            let ownerId = req.user.role === 'admin' ? req.user.id : req.user.role === 'reseller' || req.user.role === 'reseller_staff' ? getResellerId(req) : (req.user.repairCenterId || req.user.id);
+            const warehouse = await storage.getWarehouseByOwner(ownerType, ownerId);
+            if (warehouse) {
+              await storage.createWarehouseMovement({
+                warehouseId: warehouse.id,
+                productId: order.courtesyPhoneProductId,
+                movementType: 'scarico',
+                quantity: 1,
+                referenceType: 'courtesy_phone',
+                referenceId: order.id,
+                notes: `Telefono di cortesia assegnato - Ordine ${order.orderNumber}`,
+                createdBy: req.user.id,
+              });
+              const stockItem = await storage.getWarehouseStockItem(warehouse.id, order.courtesyPhoneProductId);
+              if (stockItem) {
+                await storage.updateWarehouseStock(stockItem.id, { quantity: Math.max(0, stockItem.quantity - 1) });
+              }
+            }
+          } catch (e) {
+            console.error("Failed to deduct courtesy phone stock:", e);
+          }
+        }
         
         // Auto-associate customer with repair center
         if (orderData.customerId && orderData.repairCenterId) {
@@ -15386,6 +15451,32 @@ export function registerRoutes(app: Express): Server {
       } else {
         const order = await storage.createRepairOrder(orderData);
         
+        // Handle courtesy phone warehouse stock deduction
+        if (order.courtesyPhoneProductId) {
+          try {
+            let ownerType = req.user.role === 'admin' ? 'admin' : req.user.role === 'reseller' || req.user.role === 'reseller_staff' ? 'reseller' : 'repair_center';
+            let ownerId = req.user.role === 'admin' ? req.user.id : req.user.role === 'reseller' || req.user.role === 'reseller_staff' ? getResellerId(req) : (req.user.repairCenterId || req.user.id);
+            const warehouse = await storage.getWarehouseByOwner(ownerType, ownerId);
+            if (warehouse) {
+              await storage.createWarehouseMovement({
+                warehouseId: warehouse.id,
+                productId: order.courtesyPhoneProductId,
+                movementType: 'scarico',
+                quantity: 1,
+                referenceType: 'courtesy_phone',
+                referenceId: order.id,
+                notes: `Telefono di cortesia assegnato - Ordine ${order.orderNumber}`,
+                createdBy: req.user.id,
+              });
+              const stockItem = await storage.getWarehouseStockItem(warehouse.id, order.courtesyPhoneProductId);
+              if (stockItem) {
+                await storage.updateWarehouseStock(stockItem.id, { quantity: Math.max(0, stockItem.quantity - 1) });
+              }
+            }
+          } catch (e) {
+            console.error("Failed to deduct courtesy phone stock:", e);
+          }
+        }
         
         // Auto-associate customer with repair center
         if (orderData.customerId && orderData.repairCenterId) {
@@ -15397,6 +15488,119 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(400).send(error.message);
+    }
+  });
+  
+  // GET /api/courtesy-phones/available - List available courtesy phones from user's warehouse
+  app.get("/api/courtesy-phones/available", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ['admin', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      let ownerType = 'admin';
+      let ownerId = req.user.id;
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        ownerType = 'reseller';
+        ownerId = getResellerId(req);
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        ownerType = 'repair_center';
+        ownerId = req.user.repairCenterId || req.user.id;
+      }
+      
+      const warehouse = await storage.getWarehouseByOwner(ownerType, ownerId);
+      if (!warehouse) {
+        return res.json([]);
+      }
+      
+      const courtesyPhones = await db
+        .select({
+          product: products,
+          stock: warehouseStock,
+        })
+        .from(products)
+        .innerJoin(warehouseStock, and(
+          eq(warehouseStock.productId, products.id),
+          eq(warehouseStock.warehouseId, warehouse.id),
+        ))
+        .where(and(
+          eq(products.isCourtesyPhone, true),
+          eq(products.isActive, true),
+          gt(warehouseStock.quantity, 0),
+        ));
+      
+      res.json(courtesyPhones.map(cp => ({
+        id: cp.product.id,
+        name: cp.product.name,
+        sku: cp.product.sku,
+        brand: cp.product.brand,
+        condition: cp.product.condition,
+        imageUrl: cp.product.imageUrl,
+        availableQuantity: cp.stock.quantity,
+      })));
+    } catch (error: any) {
+      console.error("Error fetching courtesy phones:", error);
+      res.status(500).send(error.message);
+    }
+  });
+  
+  // PATCH /api/repair-orders/:id/courtesy-phone-return - Mark courtesy phone as returned
+  app.patch("/api/repair-orders/:id/courtesy-phone-return", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ['admin', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+      
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) return res.status(404).send("Repair order not found");
+      if (!order.courtesyPhoneProductId) return res.status(400).send("No courtesy phone assigned to this order");
+      if (order.courtesyPhoneReturnedAt) return res.status(400).send("Courtesy phone already returned");
+      
+      // RBAC check
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = getResellerId(req);
+        if (order.resellerId !== resellerId) return res.status(403).send("Forbidden");
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        if (order.repairCenterId !== (req.user.repairCenterId || req.user.id)) return res.status(403).send("Forbidden");
+      }
+      
+      const updated = await storage.updateRepairOrder(order.id, {
+        courtesyPhoneReturnedAt: new Date(),
+      });
+      
+      // Re-stock the courtesy phone in warehouse
+      try {
+        let ownerType = req.user.role === 'admin' ? 'admin' : req.user.role === 'reseller' || req.user.role === 'reseller_staff' ? 'reseller' : 'repair_center';
+        let ownerId = req.user.role === 'admin' ? req.user.id : req.user.role === 'reseller' || req.user.role === 'reseller_staff' ? getResellerId(req) : (req.user.repairCenterId || req.user.id);
+        const warehouse = await storage.getWarehouseByOwner(ownerType, ownerId);
+        if (warehouse && order.courtesyPhoneProductId) {
+          await storage.createWarehouseMovement({
+            warehouseId: warehouse.id,
+            productId: order.courtesyPhoneProductId,
+            movementType: 'carico',
+            quantity: 1,
+            referenceType: 'courtesy_phone_return',
+            referenceId: order.id,
+            notes: `Telefono di cortesia restituito - Ordine ${order.orderNumber}`,
+            createdBy: req.user.id,
+          });
+          const stockItem = await storage.getWarehouseStockItem(warehouse.id, order.courtesyPhoneProductId);
+          if (stockItem) {
+            await storage.updateWarehouseStock(stockItem.id, { quantity: stockItem.quantity + 1 });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to re-stock courtesy phone:", e);
+      }
+      
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error returning courtesy phone:", error);
+      res.status(500).send(error.message);
     }
   });
   

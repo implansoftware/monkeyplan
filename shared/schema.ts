@@ -798,6 +798,9 @@ export const products = pgTable("products", {
   isActive: boolean("is_active").notNull().default(true),
   isVisibleInShop: boolean("is_visible_in_shop").notNull().default(true), // Visibilità globale nello shop (controllata da admin)
   
+  // Courtesy phone flag
+  isCourtesyPhone: boolean("is_courtesy_phone").notNull().default(false), // Disponibile come telefono di cortesia
+  
   // Marketplace settings (Reseller-to-Reseller B2B)
   isMarketplaceEnabled: boolean("is_marketplace_enabled").notNull().default(false), // Disponibile per vendita ad altri rivenditori
   marketplacePriceCents: integer("marketplace_price_cents"), // Prezzo B2B per marketplace (null = usa unitPrice)
@@ -1412,6 +1415,11 @@ export const repairOrders = pgTable("repair_orders", {
   isReturn: boolean("is_return").notNull().default(false), // Flag: rientro dispositivo da lavorazione precedente
   parentRepairOrderId: varchar("parent_repair_order_id"), // FK ordine originale per rientri
   returnReason: text("return_reason"), // Motivo del rientro
+  // Courtesy phone (telefono di cortesia)
+  courtesyPhoneProductId: varchar("courtesy_phone_product_id"), // FK al prodotto prestato
+  courtesyPhoneAssignedAt: timestamp("courtesy_phone_assigned_at"), // Data assegnazione
+  courtesyPhoneReturnedAt: timestamp("courtesy_phone_returned_at"), // Data restituzione
+  courtesyPhoneNotes: text("courtesy_phone_notes"), // Note sul prestito
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

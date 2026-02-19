@@ -414,6 +414,35 @@ export default function AdminSmartphoneCatalog() {
     },
   });
 
+  const toggleCourtesyPhoneMutation = useMutation({
+    mutationFn: async ({ id, isCourtesyPhone }: { id: string; isCourtesyPhone: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/products/${id}/courtesy-phone`, { isCourtesyPhone });
+      return res.json();
+    },
+    onMutate: async ({ id, isCourtesyPhone }) => {
+      await queryClient.cancelQueries({ queryKey: ["/api/smartphones"] });
+      const previousData = queryClient.getQueryData<SmartphoneWithSpecs[]>(["/api/smartphones"]);
+      queryClient.setQueryData<SmartphoneWithSpecs[]>(["/api/smartphones"], (old) =>
+        old?.map((s) => (s.id === id ? { ...s, isCourtesyPhone } : s))
+      );
+      return { previousData };
+    },
+    onError: (error: Error, _, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["/api/smartphones"], context.previousData);
+      }
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+    onSuccess: (_, { isCourtesyPhone }) => {
+      toast({
+        title: isCourtesyPhone ? t("products.courtesyPhoneEnabled") : t("products.courtesyPhoneDisabled"),
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/smartphones"] });
+    },
+  });
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -896,6 +925,7 @@ export default function AdminSmartphoneCatalog() {
                     <TableHead>{t("roles.reseller")}</TableHead>
                     <TableHead className="text-right">{t("common.price")}</TableHead>
                     <TableHead className="text-center">{t("products.shop")}</TableHead>
+                    <TableHead className="text-center">{t("products.courtesyPhone")}</TableHead>
                     <TableHead className="w-24">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -979,6 +1009,18 @@ export default function AdminSmartphoneCatalog() {
                             }
                             disabled={toggleVisibilityMutation.isPending}
                             data-testid={`switch-visibility-smartphone-${smartphone.id}`}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <Switch
+                            checked={smartphone.isCourtesyPhone ?? false}
+                            onCheckedChange={(checked) =>
+                              toggleCourtesyPhoneMutation.mutate({ id: smartphone.id, isCourtesyPhone: checked })
+                            }
+                            disabled={toggleCourtesyPhoneMutation.isPending}
+                            data-testid={`switch-courtesy-phone-${smartphone.id}`}
                           />
                         </div>
                       </TableCell>

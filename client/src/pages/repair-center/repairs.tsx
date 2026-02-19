@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2, RotateCcw, ChevronDown, ChevronUp, CornerDownRight } from "lucide-react";
+import { Search, Wrench, Plus, LayoutGrid, TableIcon, Smartphone, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CalendarIcon, Clock, AlertTriangle, AlertCircle, Eye, Play, PackageCheck, CheckCircle2, RotateCcw, ChevronDown, ChevronUp, CornerDownRight, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +48,7 @@ interface RepairOrderWithSLA {
   slaEnteredAt?: string | null;
   quoteTotalAmount?: number | null;
   returnCount?: number;
+  courtesyPhoneProductId?: string | null;
 }
 
 interface PaginatedRepairsResponse {
@@ -497,6 +498,14 @@ export default function RepairCenterRepairs() {
                           </Button>
                         )}
                         <span>{repair.orderNumber}</span>
+                        {repair.courtesyPhoneProductId && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Phone className="h-3.5 w-3.5 text-blue-500 inline-block ml-1" data-testid={`icon-courtesy-phone-${repair.id}`} />
+                            </TooltipTrigger>
+                            <TooltipContent>{t("repair.courtesyPhoneAssigned")}</TooltipContent>
+                          </Tooltip>
+                        )}
                         {(repair.returnCount || 0) > 0 && (
                           <Badge variant="outline" className="text-xs ml-1 gap-1"><RotateCcw className="h-3 w-3" />{repair.returnCount}</Badge>
                         )}
