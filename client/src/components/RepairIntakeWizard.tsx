@@ -11,6 +11,8 @@ import { useLocation } from "wouter";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -55,7 +57,7 @@ import { SearchableProductCombobox } from "@/components/SearchableProductCombobo
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import { DiagnosisFormDialog, type DiagnosisCollectedData } from "@/components/DiagnosisFormDialog";
 import { QuoteFormDialog, type QuoteCollectedData } from "@/components/QuoteFormDialog";
-import { Stethoscope } from "lucide-react";
+import { CheckCircle2, Phone, Stethoscope } from "lucide-react";
 import type { 
   Warehouse as WarehouseType, 
   DiagnosticFinding, 
@@ -234,6 +236,7 @@ export function RepairIntakeWizard({
   // Modal dialog states for standalone mode
   const [diagnosisDialogOpen, setDiagnosisDialogOpen] = useState(false);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [courtesyPhoneDialogOpen, setCourtesyPhoneDialogOpen] = useState(false);
   const [collectedDiagnosisData, setCollectedDiagnosisData] = useState<DiagnosisCollectedData | null>(null);
   const [collectedQuoteData, setCollectedQuoteData] = useState<QuoteCollectedData | null>(null);
   
@@ -1964,86 +1967,6 @@ export function RepairIntakeWizard({
                   )}
                 />
 
-                {/* Courtesy Phone Section */}
-                <Separator />
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Phone className="h-5 w-5 text-primary" />
-                    <h4 className="font-medium">{t("repair.courtesyPhone")}</h4>
-                    <Badge variant="secondary">{t("common.optional")}</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("repair.courtesyPhoneDescription")}
-                  </p>
-                  
-                  {courtesyPhonesLoading ? (
-                    <div className="text-sm text-muted-foreground">{t("common.loading")}...</div>
-                  ) : courtesyPhonesError ? (
-                    <p className="text-sm text-destructive">{t("common.loadError")}</p>
-                  ) : courtesyPhones && courtesyPhones.length > 0 ? (
-                    <div className="space-y-3">
-                      <FormField
-                        control={form.control}
-                        name="courtesyPhoneProductId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {courtesyPhones.map((phone: any) => (
-                                <Card
-                                  key={phone.id}
-                                  className={cn(
-                                    "cursor-pointer transition-colors hover-elevate",
-                                    field.value === phone.id && "ring-2 ring-primary"
-                                  )}
-                                  onClick={() => field.onChange(field.value === phone.id ? undefined : phone.id)}
-                                  data-testid={`card-courtesy-phone-${phone.id}`}
-                                >
-                                  <CardContent className="p-3 flex items-center gap-3">
-                                    <Phone className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                    <div className="min-w-0 flex-1">
-                                      <div className="font-medium text-sm truncate">{phone.name}</div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {phone.brand && `${phone.brand} • `}{t("common.available")}: {phone.availableQuantity}
-                                      </div>
-                                    </div>
-                                    {field.value === phone.id && (
-                                      <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      {form.watch("courtesyPhoneProductId") && (
-                        <FormField
-                          control={form.control}
-                          name="courtesyPhoneNotes"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("repair.courtesyPhoneNotes")}</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  {...field}
-                                  placeholder={t("repair.courtesyPhoneNotesPlaceholder")}
-                                  className="resize-none"
-                                  rows={2}
-                                  data-testid="textarea-courtesy-phone-notes"
-                                />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      {t("repair.noCourtesyPhonesAvailable")}
-                    </p>
-                  )}
-                </div>
               </div>
             )}
 
@@ -2159,8 +2082,69 @@ export function RepairIntakeWizard({
                       </div>
                     </div>
 
+                    <Separator />
+
+                    {/* Courtesy Phone Section */}
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <div className="relative h-10 w-10 flex-shrink-0 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                            <Phone className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                            {form.watch("courtesyPhoneProductId") && (
+                              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-green-500 flex items-center justify-center">
+                                <Check className="h-3 w-3 text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium">{t("repair.courtesyPhone")}</p>
+                            <p className="text-sm text-muted-foreground truncate">
+                              {form.watch("courtesyPhoneProductId")
+                                ? courtesyPhones.find((p: any) => p.id === form.watch("courtesyPhoneProductId"))?.name || t("repair.courtesyPhoneSelected")
+                                : t("common.optional")}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                          {form.watch("courtesyPhoneProductId") && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => {
+                                form.setValue("courtesyPhoneProductId", undefined);
+                                form.setValue("courtesyPhoneNotes", "");
+                              }}
+                              data-testid="button-remove-courtesy-phone"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant={form.watch("courtesyPhoneProductId") ? "outline" : "default"}
+                            size="sm"
+                            onClick={() => setCourtesyPhoneDialogOpen(true)}
+                            disabled={courtesyPhonesLoading || courtesyPhonesError || courtesyPhones.length === 0}
+                            data-testid="button-configure-courtesy-phone"
+                          >
+                            {courtesyPhonesLoading
+                              ? t("common.loading")
+                              : courtesyPhonesError
+                              ? t("common.loadError")
+                              : courtesyPhones.length === 0
+                              ? t("repair.noCourtesyPhonesAvailable")
+                              : form.watch("courtesyPhoneProductId")
+                              ? t("common.edit")
+                              : t("common.configure")}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Info message */}
-                    {!collectedDiagnosisData && !collectedQuoteData && (
+                    {!collectedDiagnosisData && !collectedQuoteData && !form.watch("courtesyPhoneProductId") && (
                       <div className="text-center py-4 text-sm text-muted-foreground">
                         <p>{t("repair.canSkipDiagnosisQuote")}</p>
                       </div>
@@ -2420,6 +2404,88 @@ export function RepairIntakeWizard({
           setCreateQuoteNow(true);
         }}
       />
+
+      {/* Courtesy Phone Selection Dialog */}
+      <Dialog open={courtesyPhoneDialogOpen} onOpenChange={setCourtesyPhoneDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Phone className="h-5 w-5" />
+              {t("repair.courtesyPhoneSection")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("repair.courtesyPhoneDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {courtesyPhonesLoading ? (
+              <div className="text-sm text-muted-foreground text-center py-4">{t("common.loading")}...</div>
+            ) : courtesyPhonesError ? (
+              <p className="text-sm text-destructive text-center py-4">{t("common.loadError")}</p>
+            ) : courtesyPhones.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
+                  {courtesyPhones.map((phone: any) => (
+                    <Card
+                      key={phone.id}
+                      className={cn(
+                        "cursor-pointer transition-colors hover-elevate",
+                        form.watch("courtesyPhoneProductId") === phone.id && "ring-2 ring-primary"
+                      )}
+                      onClick={() => {
+                        form.setValue("courtesyPhoneProductId",
+                          form.getValues("courtesyPhoneProductId") === phone.id ? undefined : phone.id
+                        );
+                      }}
+                      data-testid={`card-courtesy-phone-${phone.id}`}
+                    >
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <Phone className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm truncate">{phone.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {phone.brand && `${phone.brand} · `}{phone.sku && `${phone.sku} · `}{t("common.available")}: {phone.availableQuantity}
+                          </div>
+                        </div>
+                        {form.watch("courtesyPhoneProductId") === phone.id && (
+                          <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0" />
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {form.watch("courtesyPhoneProductId") && (
+                  <div className="space-y-2">
+                    <Label>{t("repair.courtesyPhoneNotes")}</Label>
+                    <Textarea
+                      value={form.watch("courtesyPhoneNotes") || ""}
+                      onChange={(e) => form.setValue("courtesyPhoneNotes", e.target.value)}
+                      placeholder={t("repair.courtesyPhoneNotesPlaceholder")}
+                      className="resize-none"
+                      rows={2}
+                      data-testid="textarea-courtesy-phone-notes"
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                {t("repair.noCourtesyPhonesAvailable")}
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="default"
+              onClick={() => setCourtesyPhoneDialogOpen(false)}
+              data-testid="button-confirm-courtesy-phone"
+            >
+              {t("common.confirm")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
