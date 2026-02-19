@@ -219,6 +219,7 @@ export function RepairIntakeWizard({
   const [diagnosisSelectedComponentIds, setDiagnosisSelectedComponentIds] = useState<string[]>([]);
   const [marketCodeInput, setMarketCodeInput] = useState("");
   const [marketCodeLoading, setMarketCodeLoading] = useState(false);
+  const [pendingModelId, setPendingModelId] = useState<string | null>(null);
   const [diagnosisEstimatedTimeId, setDiagnosisEstimatedTimeId] = useState<string>("");
   const [diagnosisSkipPhotos, setDiagnosisSkipPhotos] = useState(true);
   const [diagnosisPhotoIds, setDiagnosisPhotoIds] = useState<string[]>([]);
@@ -485,6 +486,17 @@ export function RepairIntakeWizard({
     },
     enabled: !!selectedTypeId,
   });
+
+  useEffect(() => {
+    if (pendingModelId && deviceModels.length > 0) {
+      const found = deviceModels.find(m => m.id === pendingModelId);
+      if (found) {
+        form.setValue("deviceModelId", found.id);
+        form.setValue("deviceModel", "");
+        setPendingModelId(null);
+      }
+    }
+  }, [pendingModelId, deviceModels]);
 
   const { data: repairCenters = [] } = useQuery<Array<{ 
     id: string; 
@@ -856,8 +868,14 @@ export function RepairIntakeWizard({
         setSelectedBrandId(data.brandId);
       }
       if (data.modelId) {
-        form.setValue("deviceModelId", data.modelId);
-        form.setValue("deviceModel", data.modelName || "");
+        const existingModel = deviceModels.find(m => m.id === data.modelId);
+        if (existingModel) {
+          form.setValue("deviceModelId", data.modelId);
+          form.setValue("deviceModel", "");
+        } else {
+          setPendingModelId(data.modelId);
+          form.setValue("deviceModel", "");
+        }
       }
       toast({ title: t("repair.deviceFound"), description: t("repair.deviceFoundDesc", { type: data.typeName || "", brand: data.brandName || "", model: data.modelName || "" }) });
     } catch (error) {
