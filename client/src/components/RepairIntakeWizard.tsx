@@ -44,7 +44,8 @@ import {
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
   AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
-  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal, HelpCircle, MapPin, Building2, FileCheck, ChevronDown, ChevronUp
+  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal, HelpCircle, MapPin, Building2, FileCheck, ChevronDown, ChevronUp,
+  Stethoscope
 } from "lucide-react";
 import { 
   SiApple, SiSamsung, SiHuawei, SiXiaomi, SiSony, SiLg, SiLenovo, SiDell, SiHp, SiAsus,
@@ -57,7 +58,6 @@ import { SearchableProductCombobox } from "@/components/SearchableProductCombobo
 import { DiagnosisPhotoUploader } from "@/components/DiagnosisPhotoUploader";
 import { DiagnosisFormDialog, type DiagnosisCollectedData } from "@/components/DiagnosisFormDialog";
 import { QuoteFormDialog, type QuoteCollectedData } from "@/components/QuoteFormDialog";
-import { CheckCircle2, Phone, Stethoscope } from "lucide-react";
 import type { 
   Warehouse as WarehouseType, 
   DiagnosticFinding, 
