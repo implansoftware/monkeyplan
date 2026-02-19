@@ -5421,7 +5421,8 @@
     "thinking": "Thinking...",
     "error": "Error communicating with the AI assistant",
     "quotaExceeded": "API quota exceeded",
-    "rateLimit": "Too many requests, please try again shortly"
+    "rateLimit": "Too many requests, please try again shortly",
+    "assistantLabel": "AI Assistant"
   },
   "shop": {
     "title": "Shop",

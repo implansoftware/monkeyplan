@@ -3,10 +3,11 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Bot, Send, X } from "lucide-react";
+import { Loader2, Send, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import monkeyIcon from "../assets/images/monkey-ai-icon.png";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -89,11 +90,12 @@ export default function AiAssistantWidget() {
     return (
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          size="icon"
           onClick={() => setIsOpen(true)}
           data-testid="button-open-ai-chat"
+          className="gap-2 shadow-lg"
         >
-          <Bot />
+          <img src={monkeyIcon} alt="AI" className="h-5 w-5" />
+          <span>{t("ai.assistantLabel", "AI Assistant")}</span>
         </Button>
       </div>
     );
@@ -104,7 +106,7 @@ export default function AiAssistantWidget() {
       <Card className="flex flex-col" style={{ maxHeight: "500px" }}>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 p-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <Bot className="h-5 w-5" />
+            <img src={monkeyIcon} alt="AI" className="h-5 w-5" />
             <CardTitle className="text-base">{t("ai.title")}</CardTitle>
             <Badge variant="secondary" className="text-xs">AI</Badge>
           </div>

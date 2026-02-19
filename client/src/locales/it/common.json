@@ -5419,7 +5419,8 @@
     "thinking": "Sto pensando...",
     "error": "Errore nella comunicazione con l'assistente AI",
     "quotaExceeded": "Credito API esaurito",
-    "rateLimit": "Troppe richieste, riprova tra qualche secondo"
+    "rateLimit": "Troppe richieste, riprova tra qualche secondo",
+    "assistantLabel": "Assistente AI"
   },
   "shop": {
     "title": "Negozio",
