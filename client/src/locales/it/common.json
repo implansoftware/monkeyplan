@@ -5420,7 +5420,7 @@
     "error": "Errore nella comunicazione con l'assistente AI",
     "quotaExceeded": "Credito API esaurito",
     "rateLimit": "Troppe richieste, riprova tra qualche secondo",
-    "assistantLabel": "Assistente AI"
+    "assistantLabel": "Assistente MonkeyAI"
   },
   "shop": {
     "title": "Negozio",
