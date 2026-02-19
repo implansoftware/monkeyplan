@@ -5425,8 +5425,8 @@
     "error": "Error communicating with the AI assistant",
     "quotaExceeded": "API quota exceeded",
     "rateLimit": "Too many requests, please try again shortly",
-    "assistantLabel": "MonkeyAI Assistant",
-    "welcomeMessage": "Hi! I'm MonkeyAI, your virtual assistant. I can help you manage repairs, check order status, find information about customers and products, and answer questions about the platform. Just ask me anything!"
+    "assistantLabel": "MonkAi Assistant",
+    "welcomeMessage": "Hi! I'm MonkAi, your virtual assistant. I can help you manage repairs, check order status, find information about customers and products, and answer questions about the platform. Just ask me anything!"
   },
   "shop": {
     "title": "Shop",

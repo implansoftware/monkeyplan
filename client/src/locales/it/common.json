@@ -5423,8 +5423,8 @@
     "error": "Errore nella comunicazione con l'assistente AI",
     "quotaExceeded": "Credito API esaurito",
     "rateLimit": "Troppe richieste, riprova tra qualche secondo",
-    "assistantLabel": "Assistente MonkeyAI",
-    "welcomeMessage": "Ciao! Sono MonkeyAI, il tuo assistente virtuale. Posso aiutarti a gestire le riparazioni, controllare lo stato degli ordini, trovare informazioni su clienti e prodotti, e rispondere a domande sulla piattaforma. Chiedimi pure quello che ti serve!"
+    "assistantLabel": "Assistente MonkAi",
+    "welcomeMessage": "Ciao! Sono MonkAi, il tuo assistente virtuale. Posso aiutarti a gestire le riparazioni, controllare lo stato degli ordini, trovare informazioni su clienti e prodotti, e rispondere a domande sulla piattaforma. Chiedimi pure quello che ti serve!"
   },
   "shop": {
     "title": "Negozio",
