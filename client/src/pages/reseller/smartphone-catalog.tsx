@@ -853,7 +853,11 @@ export default function SmartphoneCatalog() {
                           <div className="text-sm text-muted-foreground">
                             {smartphone.brand} {smartphone.color && `• ${smartphone.color}`}
                           </div>
-                          <div className="text-xs text-muted-foreground">SKU: {smartphone.sku}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {smartphone.imei || (smartphone as any).specs?.imei
+                              ? `IMEI: ${smartphone.imei || (smartphone as any).specs?.imei}`
+                              : `SKU: ${smartphone.sku}`}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
