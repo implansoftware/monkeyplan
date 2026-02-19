@@ -86,6 +86,7 @@ function getWizardSchema(t: (key: string) => string) {
     imei: z.string().optional(),
     serial: z.string().optional(),
     // IMEI flags
+    imeiNotAvailable: z.boolean().default(false),
     imeiNotReadable: z.boolean().default(false),
     imeiNotPresent: z.boolean().default(false),
     issueDescription: z.string().optional().default(""),
@@ -253,6 +254,7 @@ export function RepairIntakeWizard({
       brand: "",
       imei: "",
       serial: "",
+      imeiNotAvailable: false,
       imeiNotReadable: false,
       imeiNotPresent: false,
       issueDescription: "",
@@ -682,8 +684,8 @@ export function RepairIntakeWizard({
         deviceModel: selectedModel?.modelName || data.deviceModel || t("common.notSpecified"),
         issueDescription: data.issueDescription,
         // IMEI flags - always include for acceptance flow
-        imeiNotReadable: data.imeiNotReadable || false,
-        imeiNotPresent: data.imeiNotPresent || false,
+        imeiNotReadable: data.imeiNotAvailable || false,
+        imeiNotPresent: data.imeiNotAvailable || false,
       };
 
       // Add optional order fields
@@ -1811,7 +1813,7 @@ export function RepairIntakeWizard({
                           <Input
                             {...field}
                             placeholder={t("common.optional")}
-                            disabled={form.watch("imeiNotPresent") || form.watch("imeiNotReadable")}
+                            disabled={form.watch("imeiNotAvailable")}
                             data-testid="input-imei"
                           />
                         </FormControl>
@@ -1836,57 +1838,30 @@ export function RepairIntakeWizard({
                   />
                 </div>
 
-                {/* IMEI Flags */}
-                <div className="flex flex-wrap gap-4">
-                  <FormField
-                    control={form.control}
-                    name="imeiNotReadable"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={(checked) => {
-                              field.onChange(checked);
-                              if (checked) {
-                                form.setValue("imei", "");
-                                form.setValue("imeiNotPresent", false);
-                              }
-                            }}
-                            data-testid="checkbox-imei-not-readable"
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal cursor-pointer">
-                          {t("repair.imeiNotReadable")}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="imeiNotPresent"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={(checked) => {
-                              field.onChange(checked);
-                              if (checked) {
-                                form.setValue("imei", "");
-                                form.setValue("imeiNotReadable", false);
-                              }
-                            }}
-                            data-testid="checkbox-imei-not-present"
-                          />
-                        </FormControl>
-                        <FormLabel className="text-sm font-normal cursor-pointer">
-                          {t("repair.imeiNotPresent")}
-                        </FormLabel>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* IMEI Flag */}
+                <FormField
+                  control={form.control}
+                  name="imeiNotAvailable"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked);
+                            if (checked) {
+                              form.setValue("imei", "");
+                            }
+                          }}
+                          data-testid="checkbox-imei-not-available"
+                        />
+                      </FormControl>
+                      <FormLabel className="text-sm font-normal cursor-pointer">
+                        {t("repair.imeiNotAvailable")}
+                      </FormLabel>
+                    </FormItem>
+                  )}
+                />
 
                 </div>
             )}

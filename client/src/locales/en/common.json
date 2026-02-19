@@ -9362,6 +9362,7 @@
     "downloadDocuments": "Download documents",
     "enterMarketCodeToAutofill": "Enter market code to auto-fill type, brand and model",
     "good": "Good",
+    "imeiNotAvailable": "IMEI not readable / not present",
     "imeiNotPresent": "IMEI not present",
     "imeiNotReadable": "IMEI not readable",
     "laptop": "Laptop",

@@ -9370,6 +9370,7 @@
     "downloadDocuments": "Scarica i documenti",
     "enterMarketCodeToAutofill": "Inserisci il codice mercato per auto-compilare tipo, marca e modello",
     "good": "Buono",
+    "imeiNotAvailable": "IMEI non leggibile / non presente",
     "imeiNotPresent": "IMEI non presente",
     "imeiNotReadable": "IMEI non leggibile",
     "laptop": "PC Portatile",
