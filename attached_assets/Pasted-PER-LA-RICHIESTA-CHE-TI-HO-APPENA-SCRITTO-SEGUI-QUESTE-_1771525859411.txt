@@ -1,0 +1,79 @@
+PER LA RICHIESTA CHE TI HO APPENA SCRITTO SEGUI QUESTE REGOLE OBBLIGATORIE (prima analisi, poi codice)
+1) VERIFICA ESISTENTE (non inventare):
+- Cerca nel progetto se la feature esiste già o è parzialmente implementata.
+- Dimmi ESATTAMENTE dove hai cercato (path/cartelle/file e parole chiave usate).
+- Se trovi qualcosa, indicami i file e riassumi cosa fa e cosa manca.
+
+2) ANALISI IMPATTO (solo ciò che è coinvolto):
+- Database: tabelle/colonne coinvolte (o assenza di schema), migrazioni necessarie.
+- Backend: routes, controllers, services, middlewares, validation, auth/roles.
+- API: endpoints esistenti e nuovi, request/response schema, status codes.
+- Frontend: pagine/route coinvolte, componenti, fetch/axios client, state management, form/validation.
+- Elenca un “elenco puntuale” dei file da modificare/creare.
+
+3) PIANO STEP-BY-STEP:
+- Scrivi i passaggi in ordine (1..N) con obiettivo per step.
+- Per ogni step indica: file -> modifica -> motivazione -> come verifico (test manuale o test automatico).
+- Evidenzia edge case e retrocompatibilità (breaking changes).
+
+Dopo l'analisi, chiedimi ulteriore conferma prima di passare ad IMPLEMENTAZIONE
+
+4) IMPLEMENTAZIONE:
+- Procedi a implementare seguendo il piano.
+- Fornisci codice completo SOLO dei file toccati (o patch/diff se più comodo).
+- Mantieni coerenza con lo stile del progetto (pattern già usati, naming, struttura cartelle).
+- Non duplicare logica: riusa funzioni/servizi esistenti se presenti.
+
+5) CHECK FINALE:
+- Checklist di verifica (backend + frontend).
+- Esempi di chiamate API (curl) e casi di test.
+- Se manca info nel progetto, fermati e chiedimi SOLO ciò che è indispensabile, spiegando cosa non hai trovato e dove.
+
+—
+
+AGGIUNTA OBBLIGATORIA “CROSS-ROLE / MULTI-PROSPETTIVA” (non saltare)
+
+A) ROLE MAP PRIMA DI TUTTO
+1) Elenca tutte le prospettive/ruoli presenti nel progetto (anche se non toccate) e indica quali sono impattate da questa richiesta.
+2) Per ogni ruolo impattato, scrivi in 3 righe:
+   - cosa vede / cosa può fare
+   - cosa cambia con questa modifica
+   - quali permessi o vincoli vanno rispettati
+
+B) CROSS-CHECK OBBLIGATORIO (anti-dimenticanze)
+Per ogni modifica che proponi (DB, API, UI), compila SEMPRE questa mini-tabella:
+
+- MODIFICA: <descrizione breve>
+- RUOLI IMPATTATI: <Admin / Staff / Cliente / ecc.>
+- UI: <quali schermate per ogni ruolo>
+- API: <quali endpoint per ogni ruolo>
+- AUTH: <regole di accesso per ruolo>
+- EDGE CASE: <1-2 casi tipici>
+- DONE WHEN: <criterio verificabile>
+
+Se una modifica impatta 2+ ruoli, non puoi considerarla “completa” finché non hai coperto tutti i ruoli elencati.
+
+C) SIMMETRIA FRONTEND
+Se tocchi una funzionalità che esiste in una prospettiva (es. Admin), devi controllare se esiste l’equivalente nelle altre prospettive (es. Collaboratore/Cliente).
+- Se esiste: aggiornala coerentemente.
+- Se non esiste: dimmi se va creata o se volutamente NON deve esistere (con motivazione).
+
+D) CONTRACT TEST (prima di scrivere codice)
+Prima dell’implementazione, scrivi un elenco “CONTRATTI” che non devono rompersi:
+- Contratti API già usati dal frontend (schema e status code)
+- Flussi utente che non devono cambiare
+- Migrazioni non distruttive (se possibile)
+Se prevedi breaking changes, devi segnalarli e proporre alternativa compatibile.
+
+E) DEFINIZIONE DI “COMPLETO”
+La feature è “completa” solo se:
+1) Admin + tutte le prospettive impattate sono aggiornate
+2) autorizzazioni/permessi implementati e verificabili
+3) API + UI allineate (nessun endpoint non usato o UI senza endpoint)
+4) almeno 1 test manuale per ruolo (checklist separata per ruolo)
+
+F) OUTPUT FINALE OBBLIGATORIO (riassunto)
+Alla fine della tua analisi (prima di chiedere conferma), includi:
+- “Ruoli coperti”: elenco
+- “File toccati per ruolo”: elenco
+- “Checklist per ruolo”: 3-5 punti per ruolo
