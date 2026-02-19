@@ -747,7 +747,7 @@ export default function SmartphoneCatalog() {
           </div>
           <Button onClick={() => setWizardOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-add-device">
             <Plus className="mr-2 h-4 w-4" />
-            t("products.addDevice")
+            {t("products.addDevice")}
           </Button>
         </div>
       </div>
@@ -871,11 +871,11 @@ export default function SmartphoneCatalog() {
                       <TableCell>
                         {(smartphone as any).isOwn ? (
                           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                            t("products.own")
+                            {t("products.own")}
                           </Badge>
                         ) : assignmentMap.has(smartphone.id) ? (
                           <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                            t("products.assigned")
+                            {t("products.assigned")}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">
@@ -1283,7 +1283,7 @@ export default function SmartphoneCatalog() {
                         data-testid="checkbox-smartphone-box"
                       />
                       <Label htmlFor="originalBox" className="text-sm cursor-pointer">
-                        t("products.includesOriginalBox")
+                        {t("products.includesOriginalBox")}
                       </Label>
                     </div>
                   )}
@@ -1406,7 +1406,7 @@ export default function SmartphoneCatalog() {
                       data-testid="button-select-image"
                     >
                       <ImagePlus className="mr-2 h-4 w-4" />
-                      t("products.selectImage")
+                      {t("products.selectImage")}
                     </Button>
                     {editingSmartphone && imageFile && (
                       <Button
@@ -1417,7 +1417,7 @@ export default function SmartphoneCatalog() {
                         data-testid="button-upload-image"
                       >
                         {uploadingImage && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        t("products.uploadImage")
+                        {t("products.uploadImage")}
                       </Button>
                     )}
                     <p className="text-xs text-muted-foreground">JPEG, PNG, WebP o GIF. Max 10MB.</p>
@@ -1431,7 +1431,7 @@ export default function SmartphoneCatalog() {
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-medium flex items-center gap-2">
                     <Package className="h-4 w-4" />
-                    t("warehouse.warehouseStock")
+                    {t("warehouse.warehouseStock")}
                   </Label>
                   <Select
                     value=""
@@ -1712,7 +1712,7 @@ export default function SmartphoneCatalog() {
               data-testid="button-add-to-cart"
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
-              t("products.addToCart")
+              {t("products.addToCart")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1724,10 +1724,10 @@ export default function SmartphoneCatalog() {
           <DialogHeader>
             <DialogTitle className="flex flex-wrap items-center gap-2">
               <Store className="h-5 w-5" />
-              t("products.marketplaceP2PSettings")
+              {t("products.marketplaceP2PSettings")}
             </DialogTitle>
             <DialogDescription>
-              t("products.configureMarketplaceDesc")
+              {t("products.configureMarketplaceDesc")}
             </DialogDescription>
           </DialogHeader>
           {marketplaceProduct && (
@@ -1745,7 +1745,7 @@ export default function SmartphoneCatalog() {
                 <div>
                   <Label className="text-base">{t("products.activeOnMarketplace")}</Label>
                   <p className="text-sm text-muted-foreground">
-                    t("products.makeVisibleToResellers")
+                    {t("products.makeVisibleToResellers")}
                   </p>
                 </div>
                 <Switch
@@ -1773,7 +1773,7 @@ export default function SmartphoneCatalog() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      t("products.emptyUsesStandardPrice")
+                      {t("products.emptyUsesStandardPrice")}
                     </p>
                   </div>
                   
