@@ -127,9 +127,11 @@ export default function AiAssistantWidget() {
             data-testid="ai-chat-messages"
           >
             {messages.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                {t("ai.placeholder")}
-              </p>
+              <div className="flex justify-start">
+                <div className="rounded-md px-3 py-2 text-sm max-w-[80%] bg-secondary text-secondary-foreground">
+                  {t("ai.welcomeMessage")}
+                </div>
+              </div>
             )}
 
             {messages.map((msg, index) => (
