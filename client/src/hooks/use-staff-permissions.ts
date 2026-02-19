@@ -70,6 +70,13 @@ export function useStaffPermissions() {
 export const moduleToMenuMapping: Record<StaffModule, string[]> = {
   repairs: [
     "/reseller/repairs",
+    "/reseller/new-repair",
+    "/reseller/courtesy-phones",
+    "/reseller/remote-requests",
+    "/reseller/standalone-quotes",
+    "/reseller/diagnostics",
+    "/reseller/quotes",
+    "/reseller/repair-center-schedules",
   ],
   customers: [
     "/reseller/customers",
@@ -80,6 +87,7 @@ export const moduleToMenuMapping: Record<StaffModule, string[]> = {
     "/reseller/accessory-catalog",
     "/reseller/device-catalog",
     "/reseller/shop-catalog",
+    "/reseller/price-lists",
   ],
   inventory: [
     "/reseller/warehouses",
@@ -93,12 +101,16 @@ export const moduleToMenuMapping: Record<StaffModule, string[]> = {
   ],
   services: [
     "/reseller/service-catalog",
+    "/reseller/service-orders",
     "/reseller/utility",
     "/reseller/utility/suppliers",
     "/reseller/utility/services",
     "/reseller/utility/practices",
     "/reseller/utility/commissions",
     "/reseller/utility/reports",
+    "/reseller/warranties",
+    "/reseller/warranty-products",
+    "/reseller/warranty-analytics",
   ],
   suppliers: [
     "/reseller/suppliers",
@@ -127,10 +139,13 @@ export const moduleToMenuMapping: Record<StaffModule, string[]> = {
     "/reseller/shipments",
     "/reseller/payments",
     "/reseller/sales-returns",
+    "/reseller/pos",
+    "/reseller/sales",
   ],
   tickets: [
     "/reseller/tickets",
     "/reseller/guide",
+    "/reseller/notifications",
   ],
 };
 

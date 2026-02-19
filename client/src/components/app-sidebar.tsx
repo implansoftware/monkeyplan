@@ -536,7 +536,23 @@ export function AppSidebar() {
     }
     
     if (isResellerStaff && !hasFullAccess && !actingAs) {
+      const staffExcludedUrls = [
+        "/reseller/team",
+        "/reseller/sub-resellers",
+        "/reseller/hr",
+        "/reseller/hr/attendance",
+        "/reseller/hr/leave-requests",
+        "/reseller/hr/work-profiles",
+        "/reseller/hr/expenses",
+        "/reseller/hr/sick-leave",
+        "/reseller/hr/calendar",
+        "/reseller/settings",
+        "/reseller/my-license",
+        "/reseller/integrations",
+      ];
+      
       baseItems = baseItems.filter(item => {
+        if (staffExcludedUrls.includes(item.url)) return false;
         if (item.url === "/reseller") return true;
         if (item.url === "/reseller/guide") return true;
         
@@ -547,11 +563,6 @@ export function AppSidebar() {
         
         return true;
       });
-      
-      baseItems = baseItems.filter(item => 
-        item.url !== "/reseller/team" && 
-        item.url !== "/reseller/sub-resellers"
-      );
     }
     
     if ((isReseller || isResellerStaff) && isLicenseReseller && !hasAllFeatures && !actingAs) {
