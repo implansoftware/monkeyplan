@@ -20007,8 +20007,14 @@ export function registerRoutes(app: Express): Server {
       doc.pipe(res);
       
       // Header
-      doc.fontSize(20).font('Helvetica-Bold').text('DOCUMENTO DI ACCETTAZIONE', { align: 'center' });
-      doc.fontSize(12).font('Helvetica').text('Modulo di Ingresso Riparazione', { align: 'center' });
+      doc.fontSize(20).font('Helvetica-Bold').text(
+        repairOrder.isReturn ? 'DOCUMENTO DI ACCETTAZIONE - RIENTRO' : 'DOCUMENTO DI ACCETTAZIONE', 
+        { align: 'center' }
+      );
+      doc.fontSize(12).font('Helvetica').text(
+        repairOrder.isReturn ? 'Modulo di Rientro Dispositivo' : 'Modulo di Ingresso Riparazione', 
+        { align: 'center' }
+      );
       doc.moveDown();
       
       // Repair center info (if available)
@@ -20028,9 +20034,28 @@ export function registerRoutes(app: Express): Server {
       doc.font('Helvetica').text(`Numero: ${repairOrder.orderNumber}`, 60, boxY + 15);
       doc.text(`Data Ingresso: ${ingressDate.toLocaleDateString('it-IT')}`, 60, boxY + 30);
       doc.text(`Ora: ${ingressDate.toLocaleTimeString('it-IT')}`, 300, boxY + 30);
+      if (repairOrder.isReturn) {
+        doc.font('Helvetica-Bold').fillColor('red').text('RIENTRO', 350, boxY, { align: 'left' });
+        doc.fillColor('black');
+      }
       doc.y = boxY + 50;
-      doc.x = 50; // Reset x position after box
+      doc.x = 50;
       doc.moveDown();
+      
+      // If return, show parent order reference
+      if (repairOrder.isReturn && repairOrder.parentRepairOrderId) {
+        const parentOrder = await storage.getRepairOrder(repairOrder.parentRepairOrderId);
+        if (parentOrder) {
+          doc.fontSize(10).font('Helvetica-Bold').text('RIENTRO - RIFERIMENTO ORDINE ORIGINALE');
+          doc.font('Helvetica').text(`Ordine Originale: ${parentOrder.orderNumber}`);
+          const parentDate = parentOrder.ingressatoAt ? new Date(parentOrder.ingressatoAt) : new Date(parentOrder.createdAt);
+          doc.text(`Data Ordine Originale: ${parentDate.toLocaleDateString('it-IT')}`);
+          if (repairOrder.returnReason) {
+            doc.text(`Motivo Rientro: ${repairOrder.returnReason}`);
+          }
+          doc.moveDown();
+        }
+      }
       
       // Customer info
       doc.fontSize(12).font('Helvetica-Bold').text('DATI CLIENTE', { align: 'left' });
