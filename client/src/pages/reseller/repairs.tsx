@@ -278,6 +278,7 @@ export default function ResellerRepairs() {
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
+                  className="bg-[#ff1212] text-[#ffffff]"
                   onClick={() => setReturnWizardOpen(true)}
                   data-testid="button-new-return"
                 >
