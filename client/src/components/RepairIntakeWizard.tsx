@@ -237,6 +237,7 @@ export function RepairIntakeWizard({
   const [diagnosisDialogOpen, setDiagnosisDialogOpen] = useState(false);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [courtesyPhoneDialogOpen, setCourtesyPhoneDialogOpen] = useState(false);
+  const [courtesyPhoneSearch, setCourtesyPhoneSearch] = useState("");
   const [collectedDiagnosisData, setCollectedDiagnosisData] = useState<DiagnosisCollectedData | null>(null);
   const [collectedQuoteData, setCollectedQuoteData] = useState<QuoteCollectedData | null>(null);
   
@@ -2406,7 +2407,7 @@ export function RepairIntakeWizard({
       />
 
       {/* Courtesy Phone Selection Dialog */}
-      <Dialog open={courtesyPhoneDialogOpen} onOpenChange={setCourtesyPhoneDialogOpen}>
+      <Dialog open={courtesyPhoneDialogOpen} onOpenChange={(open) => { setCourtesyPhoneDialogOpen(open); if (!open) setCourtesyPhoneSearch(""); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -2424,8 +2425,26 @@ export function RepairIntakeWizard({
               <p className="text-sm text-destructive text-center py-4">{t("common.loadError")}</p>
             ) : courtesyPhones.length > 0 ? (
               <>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("common.search")}
+                    value={courtesyPhoneSearch}
+                    onChange={(e) => setCourtesyPhoneSearch(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-courtesy-phone-search"
+                  />
+                </div>
                 <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
-                  {courtesyPhones.map((phone: any) => (
+                  {courtesyPhones.filter((phone: any) => {
+                    if (!courtesyPhoneSearch.trim()) return true;
+                    const q = courtesyPhoneSearch.toLowerCase();
+                    return (
+                      phone.name?.toLowerCase().includes(q) ||
+                      phone.brand?.toLowerCase().includes(q) ||
+                      phone.sku?.toLowerCase().includes(q)
+                    );
+                  }).map((phone: any) => (
                     <Card
                       key={phone.id}
                       className={cn(
