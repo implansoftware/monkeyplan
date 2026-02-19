@@ -4,14 +4,62 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Loader2, Send, X } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
+import Markdown from "react-markdown";
 import monkeyIcon from "../assets/images/monkey-ai-icon.png";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+}
+
+function AiMarkdownMessage({ content }: { content: string }) {
+  const [, navigate] = useLocation();
+
+  const handleLinkClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("/")) {
+      e.preventDefault();
+      navigate(href);
+    }
+  }, [navigate]);
+
+  return (
+    <Markdown
+      components={{
+        a: ({ href, children, ...props }) => {
+          const url = href || "";
+          const isInternal = url.startsWith("/");
+          return (
+            <a
+              href={url}
+              onClick={isInternal ? (e) => handleLinkClick(e, url) : undefined}
+              target={isInternal ? undefined : "_blank"}
+              rel={isInternal ? undefined : "noopener noreferrer"}
+              className="underline underline-offset-2 font-medium opacity-90 hover:opacity-100"
+              {...props}
+            >
+              {children}
+            </a>
+          );
+        },
+        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+        ul: ({ children }) => <ul className="list-disc pl-4 mb-1.5 space-y-0.5">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal pl-4 mb-1.5 space-y-0.5">{children}</ol>,
+        li: ({ children }) => <li className="leading-snug">{children}</li>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        h3: ({ children }) => <p className="font-semibold mb-1">{children}</p>,
+        h4: ({ children }) => <p className="font-semibold mb-1">{children}</p>,
+        code: ({ children }) => (
+          <code className="bg-background/50 rounded px-1 py-0.5 text-xs font-mono">{children}</code>
+        ),
+      }}
+    >
+      {content}
+    </Markdown>
+  );
 }
 
 export default function AiAssistantWidget() {
@@ -141,13 +189,17 @@ export default function AiAssistantWidget() {
                 data-testid={`chat-message-${msg.role}-${index}`}
               >
                 <div
-                  className={`rounded-md px-3 py-2 text-sm max-w-[80%] ${
+                  className={`rounded-md px-3 py-2 text-sm max-w-[85%] ${
                     msg.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-secondary-foreground"
                   }`}
                 >
-                  {msg.content}
+                  {msg.role === "assistant" ? (
+                    <AiMarkdownMessage content={msg.content} />
+                  ) : (
+                    msg.content
+                  )}
                 </div>
               </div>
             ))}
