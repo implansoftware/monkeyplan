@@ -790,7 +790,10 @@ export function AppSidebar() {
                   <SidebarGroupContent>
                     <SidebarMenu className="ml-7 mt-1.5 border-l border-sidebar-border/40 pl-0.5">
                       {groupItems.map((item, idx) => {
-                        const isActive = location === item.url || location.startsWith(item.url + "/");
+                        const isActive = location === item.url || (
+                          location.startsWith(item.url + "/") &&
+                          !groupItems.some(other => other !== item && other.url.length > item.url.length && (location === other.url || location.startsWith(other.url + "/")))
+                        );
                         const currentSection = (item as any).section;
                         const prevSection = idx > 0 ? (groupItems[idx - 1] as any).section : undefined;
                         const showSectionLabel = currentSection && currentSection !== prevSection;
