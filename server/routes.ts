@@ -23895,7 +23895,7 @@ export function registerRoutes(app: Express): Server {
 
   // ============ ADMIN DIAGNOSTIC FINDINGS CRUD ============
 
-  app.get("/api/admin/diagnostic-findings", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.get("/api/admin/diagnostic-findings", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const findings = await storage.listDiagnosticFindings(undefined, false);
       res.json(findings);
@@ -23904,7 +23904,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/admin/diagnostic-findings", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.post("/api/admin/diagnostic-findings", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const finding = await storage.createDiagnosticFinding(req.body);
       res.status(201).json(finding);
@@ -23913,7 +23913,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/admin/diagnostic-findings/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.patch("/api/admin/diagnostic-findings/:id", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const finding = await storage.updateDiagnosticFinding(req.params.id, req.body);
       res.json(finding);
@@ -23922,7 +23922,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/admin/diagnostic-findings/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.delete("/api/admin/diagnostic-findings/:id", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteDiagnosticFinding(req.params.id);
       res.sendStatus(204);
@@ -23933,7 +23933,7 @@ export function registerRoutes(app: Express): Server {
 
   // ============ ADMIN DAMAGED COMPONENT TYPES CRUD ============
 
-  app.get("/api/admin/damaged-component-types", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.get("/api/admin/damaged-component-types", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const components = await storage.listDamagedComponentTypes(undefined, false);
       res.json(components);
@@ -23942,7 +23942,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/admin/damaged-component-types", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.post("/api/admin/damaged-component-types", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const component = await storage.createDamagedComponentType(req.body);
       res.status(201).json(component);
@@ -23951,7 +23951,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.patch("/api/admin/damaged-component-types/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.patch("/api/admin/damaged-component-types/:id", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       const component = await storage.updateDamagedComponentType(req.params.id, req.body);
       res.json(component);
@@ -23960,7 +23960,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.delete("/api/admin/damaged-component-types/:id", requireAuth, requireRole(["admin"]), async (req, res) => {
+  app.delete("/api/admin/damaged-component-types/:id", requireAuth, requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteDamagedComponentType(req.params.id);
       res.sendStatus(204);
