@@ -11,6 +11,7 @@ import type { Notification } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
 function NotificationCard({ notification, onMarkAsRead }: { notification: Notification; onMarkAsRead: (id: string) => void }) {
+  const { t } = useTranslation();
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'repair_update':
