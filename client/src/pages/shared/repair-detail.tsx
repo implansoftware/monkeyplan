@@ -318,6 +318,21 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     retry: false,
   });
 
+  const { data: selfDiagnosisSessions } = useQuery<any[]>({
+    queryKey: ["/api/self-diagnosis/repair", repairOrderId],
+    queryFn: async () => {
+      const response = await fetch(`/api/self-diagnosis/repair/${repairOrderId}`, {
+        credentials: "include",
+      });
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!repairOrderId,
+    retry: false,
+  });
+
+  const completedSelfDiagnosis = selfDiagnosisSessions?.find((s: any) => s.status === 'completed');
+
   const { data: diagnosis } = useQuery<any>({
     queryKey: ["/api/repair-orders", repairOrderId, "diagnostics"],
     queryFn: async () => {
@@ -1067,27 +1082,89 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   
                   {repair.status === 'ingressato' && (
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                      <p className="text-sm" dangerouslySetInnerHTML={{ __html: t("repairs.deviceReceivedStartDiagnosis") }} />
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => setDiagnosisDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-start-diagnosis"
-                        >
-                          <Stethoscope className="mr-2 h-4 w-4" />
-                          {t("standalone.startDiagnosisBtn")}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setSkipDiagnosisDialogOpen(true)}
-                          className="flex-1"
-                          data-testid="button-skip-diagnosis"
-                        >
-                          <SkipForward className="mr-2 h-4 w-4" />
-                          {t("standalone.skipDiagnosisBtn")}
-                        </Button>
-                      </div>
-                      <SelfDiagnosisButton repairOrderId={repair.id} variant="outline" size="default" />
+                      {completedSelfDiagnosis ? (
+                        <>
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            <strong>{t("diagnosis.remoteDiagnosisCompleted", "Diagnostica remota completata")}</strong>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                            {[
+                              { key: "displayTest", label: "Display" },
+                              { key: "touchTest", label: "Touch" },
+                              { key: "speakerTest", label: "Speaker" },
+                              { key: "microphoneTest", label: t("diagnosis.microphone", "Microfono") },
+                              { key: "cameraFrontTest", label: t("diagnosis.frontCamera", "Cam frontale") },
+                              { key: "cameraRearTest", label: t("diagnosis.rearCamera", "Cam posteriore") },
+                              { key: "vibrationTest", label: t("diagnosis.vibration", "Vibrazione") },
+                              { key: "batteryTest", label: t("diagnosis.battery", "Batteria") },
+                              { key: "connectivityTest", label: t("diagnosis.connectivity", "Connettività") },
+                              { key: "sensorsTest", label: t("diagnosis.sensors", "Sensori") },
+                              { key: "buttonsTest", label: t("diagnosis.buttons", "Pulsanti") },
+                            ].map(({ key, label }) => {
+                              const val = completedSelfDiagnosis[key];
+                              return (
+                                <div key={key} className="flex items-center justify-between gap-1 text-xs p-1.5 rounded bg-background">
+                                  <span className="text-muted-foreground">{label}</span>
+                                  {val === true && <Badge variant="default" className="text-[10px] px-1.5 py-0">OK</Badge>}
+                                  {val === false && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">KO</Badge>}
+                                  {val === null && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">-</Badge>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {completedSelfDiagnosis.notes && (
+                            <p className="text-xs text-muted-foreground">{t("common.notes", "Note")}: {completedSelfDiagnosis.notes}</p>
+                          )}
+                          <p className="text-sm text-muted-foreground">
+                            {t("diagnosis.proceedWithTechnicalDiagnosis", "Puoi procedere con la diagnosi tecnica o creare direttamente il preventivo.")}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDiagnosisDialogOpen(true)}
+                              className="flex-1"
+                              variant="outline"
+                              data-testid="button-start-diagnosis"
+                            >
+                              <Stethoscope className="mr-2 h-4 w-4" />
+                              {t("diagnosis.technicalDiagnosis", "Diagnosi tecnica")}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setSkipDiagnosisDialogOpen(true)}
+                              className="flex-1"
+                              data-testid="button-skip-diagnosis"
+                            >
+                              <SkipForward className="mr-2 h-4 w-4" />
+                              {t("standalone.skipDiagnosisBtn")}
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm" dangerouslySetInnerHTML={{ __html: t("repairs.deviceReceivedStartDiagnosis") }} />
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => setDiagnosisDialogOpen(true)}
+                              className="flex-1"
+                              data-testid="button-start-diagnosis"
+                            >
+                              <Stethoscope className="mr-2 h-4 w-4" />
+                              {t("standalone.startDiagnosisBtn")}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setSkipDiagnosisDialogOpen(true)}
+                              className="flex-1"
+                              data-testid="button-skip-diagnosis"
+                            >
+                              <SkipForward className="mr-2 h-4 w-4" />
+                              {t("standalone.skipDiagnosisBtn")}
+                            </Button>
+                          </div>
+                          <SelfDiagnosisButton repairOrderId={repair.id} variant="outline" size="default" />
+                        </>
+                      )}
                     </div>
                   )}
 
