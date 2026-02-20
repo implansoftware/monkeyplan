@@ -59,6 +59,7 @@ export const b2bPaymentMethodEnum = pgEnum("b2b_payment_method", [
 ]);
 export const notificationTypeEnum = pgEnum("notification_type", ["repair_update", "sla_warning", "review_request", "message", "system", "b2b_order_received"]);
 export const pushNotificationStatusEnum = pgEnum("push_notification_status", ["pending", "sent", "delivered", "failed", "device_not_registered"]);
+export const selfDiagnosisStatusEnum = pgEnum("self_diagnosis_status", ["pending", "in_progress", "completed", "expired"]);
 // RIMOSSO: diagnosisSeverityEnum - non più necessario
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 export const repairPriorityEnum = pgEnum("repair_priority", ["low", "medium", "high", "urgent"]);
@@ -1801,6 +1802,34 @@ export const repairTestChecklist = pgTable("repair_test_checklist", {
   notes: text("notes"), // Note sul collaudo
   testedBy: varchar("tested_by").notNull(), // ID tecnico
   testedAt: timestamp("tested_at").notNull().defaultNow(),
+});
+
+// Self-Diagnosis Sessions (Diagnostica remota via QR code)
+export const selfDiagnosisSessions = pgTable("self_diagnosis_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  repairOrderId: varchar("repair_order_id").references(() => repairOrders.id),
+  createdBy: varchar("created_by").notNull(),
+  status: selfDiagnosisStatusEnum("status").notNull().default("pending"),
+  displayTest: boolean("display_test"),
+  touchTest: boolean("touch_test"),
+  batteryTest: boolean("battery_test"),
+  audioTest: boolean("audio_test"),
+  cameraFrontTest: boolean("camera_front_test"),
+  cameraRearTest: boolean("camera_rear_test"),
+  microphoneTest: boolean("microphone_test"),
+  speakerTest: boolean("speaker_test"),
+  vibrationTest: boolean("vibration_test"),
+  connectivityTest: boolean("connectivity_test"),
+  sensorsTest: boolean("sensors_test"),
+  buttonsTest: boolean("buttons_test"),
+  deviceInfo: jsonb("device_info"),
+  batteryLevel: integer("battery_level"),
+  notes: text("notes"),
+  expiresAt: timestamp("expires_at").notNull(),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Delivery Records (Conferma consegna - FASE 7)
@@ -4961,6 +4990,11 @@ export const insertRepairTestChecklistSchema = createInsertSchema(repairTestChec
   testedAt: true,
 });
 
+export const insertSelfDiagnosisSessionSchema = createInsertSchema(selfDiagnosisSessions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRepairDeliverySchema = createInsertSchema(repairDelivery).omit({
   id: true,
   deliveredAt: true,
@@ -5661,6 +5695,9 @@ export type InsertRepairLog = z.infer<typeof insertRepairLogSchema>;
 
 export type RepairTestChecklist = typeof repairTestChecklist.$inferSelect;
 export type InsertRepairTestChecklist = z.infer<typeof insertRepairTestChecklistSchema>;
+
+export type SelfDiagnosisSession = typeof selfDiagnosisSessions.$inferSelect;
+export type InsertSelfDiagnosisSession = z.infer<typeof insertSelfDiagnosisSessionSchema>;
 
 export type RepairDelivery = typeof repairDelivery.$inferSelect;
 export type InsertRepairDelivery = z.infer<typeof insertRepairDeliverySchema>;

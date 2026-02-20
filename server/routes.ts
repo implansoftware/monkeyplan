@@ -48538,6 +48538,125 @@ export function registerRoutes(app: Express): Server {
 
   // ============ AI ASSISTANT ============
 
+
+  // ============ SELF-DIAGNOSIS (Diagnostica remota via QR) ============
+
+  // Create a new self-diagnosis session (authenticated - operator creates for customer)
+  app.post('/api/self-diagnosis/create', requireRole('admin', 'admin_staff', 'reseller', 'reseller_staff', 'sub_reseller', 'repair_center', 'repair_center_staff'), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send('Unauthorized');
+      const { repairOrderId } = req.body;
+      
+      const crypto = await import('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+      
+      const session = await storage.createSelfDiagnosisSession({
+        token,
+        repairOrderId: repairOrderId || null,
+        createdBy: req.user.id,
+        status: 'pending',
+        expiresAt,
+      });
+      
+      res.json(session);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get self-diagnosis session by token (PUBLIC - no auth, used by customer's device)
+  app.get('/api/self-diagnosis/session/:token', async (req, res) => {
+    try {
+      const session = await storage.getSelfDiagnosisByToken(req.params.token);
+      if (!session) return res.status(404).json({ error: 'Sessione non trovata' });
+      if (session.expiresAt < new Date() && session.status !== 'completed') {
+        await storage.updateSelfDiagnosisResults(req.params.token, { status: 'expired' });
+        return res.status(410).json({ error: 'Sessione scaduta' });
+      }
+      if (session.status === 'completed') {
+        return res.status(409).json({ error: 'Diagnosi già completata', results: session });
+      }
+      res.json({ id: session.id, token: session.token, status: session.status, expiresAt: session.expiresAt });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Submit self-diagnosis results (PUBLIC - no auth, submitted from customer's device)
+  app.put('/api/self-diagnosis/session/:token/results', async (req, res) => {
+    try {
+      const session = await storage.getSelfDiagnosisByToken(req.params.token);
+      if (!session) return res.status(404).json({ error: 'Sessione non trovata' });
+      if (session.expiresAt < new Date() && session.status !== 'completed') {
+        return res.status(410).json({ error: 'Sessione scaduta' });
+      }
+      if (session.status === 'completed') {
+        return res.status(409).json({ error: 'Diagnosi già completata' });
+      }
+
+      const { displayTest, touchTest, batteryTest, audioTest, cameraFrontTest, cameraRearTest,
+              microphoneTest, speakerTest, vibrationTest, connectivityTest, sensorsTest, buttonsTest,
+              deviceInfo, batteryLevel, notes } = req.body;
+
+      const updated = await storage.updateSelfDiagnosisResults(req.params.token, {
+        status: 'completed',
+        displayTest: displayTest ?? null,
+        touchTest: touchTest ?? null,
+        batteryTest: batteryTest ?? null,
+        audioTest: audioTest ?? null,
+        cameraFrontTest: cameraFrontTest ?? null,
+        cameraRearTest: cameraRearTest ?? null,
+        microphoneTest: microphoneTest ?? null,
+        speakerTest: speakerTest ?? null,
+        vibrationTest: vibrationTest ?? null,
+        connectivityTest: connectivityTest ?? null,
+        sensorsTest: sensorsTest ?? null,
+        buttonsTest: buttonsTest ?? null,
+        deviceInfo: deviceInfo ?? null,
+        batteryLevel: batteryLevel ?? null,
+        notes: notes ?? null,
+        completedAt: new Date(),
+      });
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Mark session as in_progress (PUBLIC)
+  app.put('/api/self-diagnosis/session/:token/start', async (req, res) => {
+    try {
+      const session = await storage.getSelfDiagnosisByToken(req.params.token);
+      if (!session) return res.status(404).json({ error: 'Sessione non trovata' });
+      if (session.status === 'completed') {
+        return res.status(409).json({ error: 'Diagnosi già completata' });
+      }
+      if (session.expiresAt < new Date()) {
+        return res.status(410).json({ error: 'Sessione scaduta' });
+      }
+      const updated = await storage.updateSelfDiagnosisResults(req.params.token, {
+        status: 'in_progress',
+        startedAt: new Date(),
+        deviceInfo: req.body.deviceInfo ?? null,
+      });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get self-diagnosis results for a repair order (authenticated)
+  app.get('/api/self-diagnosis/repair/:repairOrderId', requireRole('admin', 'admin_staff', 'reseller', 'reseller_staff', 'sub_reseller', 'repair_center', 'repair_center_staff'), async (req, res) => {
+    try {
+      const sessions = await storage.getSelfDiagnosisByRepairOrder(req.params.repairOrderId);
+      res.json(sessions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============ AI SELF-SERVICE CONFIG (BYOK) ============
 
   // Reseller: Get own AI config (has key? enabled?)

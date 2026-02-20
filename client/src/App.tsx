@@ -21,6 +21,7 @@ import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsConte
 import { Loader2 } from "lucide-react";
 import AiAssistantWidget from "@/components/AiAssistantWidget";
 import { Navbar as PublicNavbar } from "@/pages/public/landing";
+import SelfDiagnosis from "@/pages/public/self-diagnosis";
 
 function getRoleHomePath(role: string): string {
   switch (role) {
@@ -604,6 +605,7 @@ function Router() {
       <ProtectedRoute path="/shop/:resellerId/checkout" component={ShopCheckout} />
       
       {/* Public pages */}
+      <Route path="/self-diagnosis/:token" component={SelfDiagnosis} />
       <Route path="/track/:orderNumber" component={PublicTrack} />
       <Route path="/repair-link/:id" component={RepairLink} />
       
@@ -770,6 +772,11 @@ function AppContent() {
   }
   
   // Public pages render without sidebar/header
+  if (location.startsWith("/self-diagnosis/")) {
+    const diagToken = location.replace("/self-diagnosis/", "");
+    return <SelfDiagnosis params={{ token: diagToken }} />;
+  }
+  
   if (location.startsWith("/track/")) {
     return <PublicTrack />;
   }

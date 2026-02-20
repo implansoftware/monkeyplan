@@ -147,7 +147,8 @@ import {
   licensePlans, LicensePlan, InsertLicensePlan,
   licenses, License, InsertLicense,
   standaloneQuotes, StandaloneQuote, InsertStandaloneQuote,
-  standaloneQuoteItems, StandaloneQuoteItem, InsertStandaloneQuoteItem
+  standaloneQuoteItems, StandaloneQuoteItem, InsertStandaloneQuoteItem,
+  selfDiagnosisSessions, SelfDiagnosisSession, InsertSelfDiagnosisSession
 } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, or, desc, lt, gt, gte, lte, sql, not, inArray, isNull, ilike, SQL } from "drizzle-orm";
@@ -1265,6 +1266,13 @@ export interface IStorage {
   createStandaloneQuote(quote: InsertStandaloneQuote, items: Omit<InsertStandaloneQuoteItem, 'quoteId'>[]): Promise<StandaloneQuote & { items: StandaloneQuoteItem[] }>;
   updateStandaloneQuoteStatus(id: string, status: string): Promise<StandaloneQuote>;
   getNextStandaloneQuoteNumber(): Promise<string>;
+
+  // Self-Diagnosis Sessions
+  createSelfDiagnosisSession(data: InsertSelfDiagnosisSession): Promise<SelfDiagnosisSession>;
+  getSelfDiagnosisByToken(token: string): Promise<SelfDiagnosisSession | undefined>;
+  updateSelfDiagnosisResults(token: string, results: Partial<SelfDiagnosisSession>): Promise<SelfDiagnosisSession>;
+  getSelfDiagnosisByRepairOrder(repairOrderId: string): Promise<SelfDiagnosisSession[]>;
+  listSelfDiagnosisSessions(createdBy: string): Promise<SelfDiagnosisSession[]>;
 }
 
 
@@ -13659,6 +13667,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(standaloneQuotes.id, id))
       .returning();
     return quote;
+  }
+
+  // Self-Diagnosis Sessions
+  async createSelfDiagnosisSession(data: InsertSelfDiagnosisSession): Promise<SelfDiagnosisSession> {
+    const [session] = await db.insert(selfDiagnosisSessions).values(data).returning();
+    return session;
+  }
+
+  async getSelfDiagnosisByToken(token: string): Promise<SelfDiagnosisSession | undefined> {
+    const [session] = await db.select().from(selfDiagnosisSessions).where(eq(selfDiagnosisSessions.token, token));
+    return session;
+  }
+
+  async updateSelfDiagnosisResults(token: string, results: Partial<SelfDiagnosisSession>): Promise<SelfDiagnosisSession> {
+    const [session] = await db.update(selfDiagnosisSessions)
+      .set(results)
+      .where(eq(selfDiagnosisSessions.token, token))
+      .returning();
+    return session;
+  }
+
+  async getSelfDiagnosisByRepairOrder(repairOrderId: string): Promise<SelfDiagnosisSession[]> {
+    return db.select().from(selfDiagnosisSessions)
+      .where(eq(selfDiagnosisSessions.repairOrderId, repairOrderId))
+      .orderBy(desc(selfDiagnosisSessions.createdAt));
+  }
+
+  async listSelfDiagnosisSessions(createdBy: string): Promise<SelfDiagnosisSession[]> {
+    return db.select().from(selfDiagnosisSessions)
+      .where(eq(selfDiagnosisSessions.createdBy, createdBy))
+      .orderBy(desc(selfDiagnosisSessions.createdAt));
   }
 
 }

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
+import { SelfDiagnosisButton } from "@/components/SelfDiagnosisButton";
 import { DiagnosisFormDialog } from "@/components/DiagnosisFormDialog";
 import { QuoteFormDialog } from "@/components/QuoteFormDialog";
 import { PartsOrderDialog } from "@/components/PartsOrderDialog";
@@ -1594,6 +1595,11 @@ export function RepairOrderDetailDrawer({
                 <Separator />
               </>
             )}
+
+            {/* Self-Diagnosis QR */}
+            <div className="flex flex-wrap items-center gap-2">
+              <SelfDiagnosisButton repairOrderId={repair.id} />
+            </div>
 
             {/* Attachments */}
             <div className="space-y-3">
