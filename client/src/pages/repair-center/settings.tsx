@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink, Truck, Euro, Target, Info } from "lucide-react";
+import { Building2, Phone, Mail, Globe, Clock, Camera, Save, Loader2, MapPin, FileText, CreditCard, Instagram, Linkedin, Twitter, Facebook, Settings, Trash2, Upload, Landmark, CircleDollarSign, Wallet, CheckCircle, AlertCircle, ExternalLink, Truck, Euro, Target, Info, Bot } from "lucide-react";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,6 +23,7 @@ import { z } from "zod";
 import type { RepairCenter, PaymentConfiguration } from "@shared/schema";
 import { SiStripe, SiPaypal } from "react-icons/si";
 import { EntityFiscalConfig } from "@/components/entity-fiscal-config";
+import { AiConfigSection } from "@/components/ai-config-section";
 
 const settingsFormSchema = z.object({
   name: z.string().min(1),
@@ -624,6 +625,10 @@ export default function RepairCenterSettings() {
               <TabsTrigger value="sla" data-testid="tab-sla">
                 <Target className="h-4 w-4 mr-2" />
                 SLA
+              </TabsTrigger>
+              <TabsTrigger value="ai" data-testid="tab-ai">
+                <Bot className="h-4 w-4 mr-2" />
+                {t("ai.title", "Assistente AI")}
               </TabsTrigger>
             </TabsList>
 
@@ -2099,6 +2104,10 @@ export default function RepairCenterSettings() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="ai" className="space-y-4">
+              <AiConfigSection role="repair_center" apiBase="/api/repair-center/ai-config" />
             </TabsContent>
           </Tabs>
 

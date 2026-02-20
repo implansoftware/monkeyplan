@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { CreditCard, Loader2, CheckCircle, AlertCircle, ExternalLink, Landmark, Wallet, Truck, Clock, Euro, Timer, Save, Download, Search, FileText, Package, Wrench, Settings, Shield } from "lucide-react";
+import { CreditCard, Loader2, CheckCircle, AlertCircle, ExternalLink, Landmark, Wallet, Truck, Clock, Euro, Timer, Save, Download, Search, FileText, Package, Wrench, Settings, Shield, Bot, Eye, EyeOff, Key, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { z } from "zod";
@@ -20,6 +20,7 @@ import type { PaymentConfiguration } from "@shared/schema";
 import { SiStripe, SiPaypal } from "react-icons/si";
 import { EntityFiscalConfig } from "@/components/entity-fiscal-config";
 import { ShippingMethodsTab } from "@/components/shipping-methods-tab";
+import { AiConfigSection } from "@/components/ai-config-section";
 import { useTranslation } from "react-i18next";
 
 interface HourlyRateResponse {
@@ -386,6 +387,8 @@ export default function ResellerSettings() {
             <Shield className="h-4 w-4" />
             {t("settings.tabs.fiscal")}
           </TabsTrigger>
+          <TabsTrigger value="ai" className="gap-2" data-testid="tab-ai">
+            <Bot className="h-4 w-4" />{t("ai.title", "Assistente AI")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tariffe" className="space-y-6">
@@ -1155,6 +1158,10 @@ export default function ResellerSettings() {
 
         <TabsContent value="fiscal" className="space-y-4">
           <EntityFiscalConfig entityType="reseller" basePath="/api/reseller/fiscal" />
+        </TabsContent>
+
+        <TabsContent value="ai" className="space-y-4">
+          <AiConfigSection role="reseller" apiBase="/api/reseller/ai-config" />
         </TabsContent>
       </Tabs>
     </div>

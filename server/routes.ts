@@ -48538,6 +48538,120 @@ export function registerRoutes(app: Express): Server {
 
   // ============ AI ASSISTANT ============
 
+  // ============ AI SELF-SERVICE CONFIG (BYOK) ============
+
+  // Reseller: Get own AI config (has key? enabled?)
+  app.get("/api/reseller/ai-config", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = req.user.id;
+      const keySetting = await storage.getResellerSetting(resellerId, "openai_api_key");
+      const enabledSetting = await storage.getResellerSetting(resellerId, "ai_enabled");
+      const subResellersSetting = await storage.getResellerSetting(resellerId, "ai_sub_resellers_enabled");
+      const adminOverride = await storage.getResellerSetting(resellerId, "ai_admin_disabled");
+      const keyVal = keySetting?.settingValue || "";
+      res.json({
+        hasKey: !!keyVal,
+        maskedKey: keyVal ? `sk-...${keyVal.slice(-4)}` : null,
+        aiEnabled: enabledSetting?.settingValue === "true",
+        allowSubResellers: subResellersSetting?.settingValue === "true",
+        adminDisabled: adminOverride?.settingValue === "true",
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Reseller: Save own AI config (API key + enable/disable)
+  app.put("/api/reseller/ai-config", requireRole("reseller", "sub_reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = req.user.id;
+      const { apiKey, enabled, allowSubResellers } = req.body;
+
+      if (apiKey !== undefined) {
+        if (apiKey === null || apiKey === "") {
+          await storage.setResellerSetting(resellerId, "openai_api_key", "", "Chiave API OpenAI rimossa");
+          await storage.setResellerSetting(resellerId, "ai_enabled", "false", "AI disabilitato (chiave rimossa)");
+        } else {
+          if (typeof apiKey !== "string" || !apiKey.startsWith("sk-")) {
+            return res.status(400).json({ error: "La chiave API OpenAI deve iniziare con 'sk-'" });
+          }
+          await storage.setResellerSetting(resellerId, "openai_api_key", apiKey, "Chiave API OpenAI configurata");
+        }
+      }
+
+      if (typeof enabled === "boolean") {
+        const keySetting = await storage.getResellerSetting(resellerId, "openai_api_key");
+        if (enabled && (!keySetting?.settingValue)) {
+          return res.status(400).json({ error: "Inserisci prima una chiave API OpenAI" });
+        }
+        await storage.setResellerSetting(resellerId, "ai_enabled", enabled.toString(), "Accesso assistente AI");
+      }
+
+      if (typeof allowSubResellers === "boolean") {
+        await storage.setResellerSetting(resellerId, "ai_sub_resellers_enabled", allowSubResellers.toString(), "AI per sub-resellers");
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Get own AI config
+  app.get("/api/repair-center/ai-config", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const rcId = req.user.repairCenterId || req.user.id;
+      const keySetting = await storage.getRepairCenterSetting(rcId, "openai_api_key");
+      const enabledSetting = await storage.getRepairCenterSetting(rcId, "ai_enabled");
+      const adminOverride = await storage.getRepairCenterSetting(rcId, "ai_admin_disabled");
+      const rcKeyVal = keySetting?.settingValue || "";
+      res.json({
+        hasKey: !!rcKeyVal,
+        maskedKey: rcKeyVal ? `sk-...${rcKeyVal.slice(-4)}` : null,
+        aiEnabled: enabledSetting?.settingValue === "true",
+        adminDisabled: adminOverride?.settingValue === "true",
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Repair Center: Save own AI config
+  app.put("/api/repair-center/ai-config", requireRole("repair_center"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const rcId = req.user.repairCenterId || req.user.id;
+      const { apiKey, enabled } = req.body;
+
+      if (apiKey !== undefined) {
+        if (apiKey === null || apiKey === "") {
+          await storage.setRepairCenterSetting(rcId, "openai_api_key", "", "Chiave API OpenAI rimossa");
+          await storage.setRepairCenterSetting(rcId, "ai_enabled", "false", "AI disabilitato (chiave rimossa)");
+        } else {
+          if (typeof apiKey !== "string" || !apiKey.startsWith("sk-")) {
+            return res.status(400).json({ error: "La chiave API OpenAI deve iniziare con 'sk-'" });
+          }
+          await storage.setRepairCenterSetting(rcId, "openai_api_key", apiKey, "Chiave API OpenAI configurata");
+        }
+      }
+
+      if (typeof enabled === "boolean") {
+        const keySetting = await storage.getRepairCenterSetting(rcId, "openai_api_key");
+        if (enabled && (!keySetting?.settingValue)) {
+          return res.status(400).json({ error: "Inserisci prima una chiave API OpenAI" });
+        }
+        await storage.setRepairCenterSetting(rcId, "ai_enabled", enabled.toString(), "Accesso assistente AI");
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Admin: toggle AI for a reseller
   app.put("/api/admin/ai-access/:entityType/:entityId", requireRole("admin"), async (req, res) => {
     try {
@@ -48680,7 +48794,57 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).send("messages è obbligatorio");
       }
       
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      // Resolve API key: admin uses global key, entities use their own BYOK key
+      let resolvedApiKey = process.env.OPENAI_API_KEY; // fallback for admin
+      if (req.user.role !== "admin") {
+        // Check if admin has disabled AI for this entity
+        let adminDisabledKey: string | null = null;
+        let entityKey: string | null = null;
+        if (req.user.role === "reseller" || req.user.role === "reseller_collaborator" || req.user.role === "reseller_staff") {
+          const rid = req.user.role === "reseller" ? req.user.id : req.user.resellerId;
+          if (rid) {
+            const adSetting = await storage.getResellerSetting(rid, "ai_admin_disabled");
+            if (adSetting?.settingValue === "true") {
+              return res.status(403).json({ error: "L'assistente AI è stato disabilitato dall'amministratore." });
+            }
+            const ks = await storage.getResellerSetting(rid, "openai_api_key");
+            entityKey = ks?.settingValue || null;
+          }
+        } else if (req.user.role === "sub_reseller") {
+          // Check admin disable on sub-reseller
+          const adSetting = await storage.getResellerSetting(req.user.id, "ai_admin_disabled");
+          if (adSetting?.settingValue === "true") {
+            return res.status(403).json({ error: "L'assistente AI è stato disabilitato dall'amministratore." });
+          }
+          const ownKey = await storage.getResellerSetting(req.user.id, "openai_api_key");
+          if (ownKey?.settingValue) {
+            entityKey = ownKey.settingValue;
+          } else if (req.user.parentResellerId) {
+            // Check if parent allows sub-resellers
+            const parentAllows = await storage.getResellerSetting(req.user.parentResellerId, "ai_sub_resellers_enabled");
+            if (parentAllows?.settingValue !== "true") {
+              return res.status(403).json({ error: "Il reseller principale non ha abilitato l'AI per i sub-reseller." });
+            }
+            const parentKey = await storage.getResellerSetting(req.user.parentResellerId, "openai_api_key");
+            entityKey = parentKey?.settingValue || null;
+          }
+        } else if (req.user.role === "repair_center" || req.user.role === "repair_center_staff") {
+          const rid = req.user.role === "repair_center" ? (req.user.repairCenterId || req.user.id) : req.user.repairCenterId;
+          if (rid) {
+            const adSetting = await storage.getRepairCenterSetting(rid, "ai_admin_disabled");
+            if (adSetting?.settingValue === "true") {
+              return res.status(403).json({ error: "L'assistente AI è stato disabilitato dall'amministratore." });
+            }
+            const ks = await storage.getRepairCenterSetting(rid, "openai_api_key");
+            entityKey = ks?.settingValue || null;
+          }
+        }
+        if (!entityKey) {
+          return res.status(403).json({ error: "Configura la tua chiave API OpenAI nelle impostazioni per utilizzare l'assistente AI." });
+        }
+        resolvedApiKey = entityKey;
+      }
+      const openai = new OpenAI({ apiKey: resolvedApiKey });
       
       // Build context from user's actual data (tenant-scoped)
       let dataContext = "";
