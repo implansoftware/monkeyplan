@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AttachmentUploader } from "@/components/AttachmentUploader";
+import { SelfDiagnosisButton } from "@/components/SelfDiagnosisButton";
 import { DiagnosisFormDialog } from "@/components/DiagnosisFormDialog";
 import { QuoteFormDialog } from "@/components/QuoteFormDialog";
 import { PartsOrderDialog } from "@/components/PartsOrderDialog";
@@ -1086,6 +1087,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                           {t("standalone.skipDiagnosisBtn")}
                         </Button>
                       </div>
+                      <SelfDiagnosisButton repairOrderId={repair.id} variant="outline" size="default" />
                     </div>
                   )}
 
