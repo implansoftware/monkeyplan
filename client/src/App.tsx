@@ -781,7 +781,9 @@ function AppContent() {
   
   // Shop/marketplace pages render without sidebar (public storefront)
   // Exclude /shop/admin/* which requires authenticated layout
-  if (location === "/marketplace" || location.startsWith("/marketplace/") || (location.startsWith("/shop/") && !location.startsWith("/shop/admin"))) {
+  // Exclude authenticated customers who access shop from their sidebar (keep sidebar visible)
+  const isAuthenticatedCustomer = user?.role === 'customer';
+  if (!isAuthenticatedCustomer && (location === "/marketplace" || location.startsWith("/marketplace/") || (location.startsWith("/shop/") && !location.startsWith("/shop/admin")))) {
     return <ShopRouter />;
   }
   
