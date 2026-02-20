@@ -624,15 +624,18 @@ export function RepairOrderDetailDrawer({
                         <p className="text-sm">
                           {t("repair.deviceReceivedDoDiagnosis")}
                         </p>
-                        <Button
-                          onClick={() => setDiagnosisDialogOpen(true)}
-                          className="w-full gap-2"
-                          size="lg"
-                          data-testid="button-diagnosis"
-                        >
-                          <Stethoscope className="h-5 w-5" />
-                          {t("repair.startDiagnosis")}
-                        </Button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Button
+                            onClick={() => setDiagnosisDialogOpen(true)}
+                            className="gap-2"
+                            size="lg"
+                            data-testid="button-diagnosis"
+                          >
+                            <Stethoscope className="h-5 w-5" />
+                            {t("repair.startDiagnosis")}
+                          </Button>
+                          <SelfDiagnosisButton repairOrderId={repair.id} variant="outline" size="lg" />
+                        </div>
                       </div>
                     )}
 
@@ -1595,11 +1598,6 @@ export function RepairOrderDetailDrawer({
                 <Separator />
               </>
             )}
-
-            {/* Self-Diagnosis QR */}
-            <div className="flex flex-wrap items-center gap-2">
-              <SelfDiagnosisButton repairOrderId={repair.id} />
-            </div>
 
             {/* Attachments */}
             <div className="space-y-3">
