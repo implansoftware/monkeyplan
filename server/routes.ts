@@ -45985,10 +45985,11 @@ export function registerRoutes(app: Express): Server {
   // RESELLER WARRANTY STATS
   // ==========================================
 
-  app.get('/api/reseller/warranty-stats', requireRole('reseller'), async (req, res) => {
+  app.get('/api/reseller/warranty-stats', requireRole('reseller', 'reseller_staff'), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send('Unauthorized');
-      const resellerId = req.user.id;
+      const role = req.user.role;
+      const resellerId = role === "reseller_staff" ? (req.user as any).resellerId : req.user.id;
 
       const allWarranties = await storage.listRepairWarranties({ sellerId: resellerId });
 
