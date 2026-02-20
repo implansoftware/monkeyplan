@@ -148,6 +148,7 @@ interface AiAccessData {
 }
 
 function AiAccessManagement() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [aiSearch, setAiSearch] = useState("");
   const { data, isLoading } = useQuery<AiAccessData>({
