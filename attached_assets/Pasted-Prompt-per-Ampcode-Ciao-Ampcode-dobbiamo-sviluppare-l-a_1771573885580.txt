@@ -1,0 +1,132 @@
+Prompt per Ampcode
+
+Ciao Ampcode,
+dobbiamo sviluppare l’app mobile MetodoFluent (iOS + Android) con Expo / React Native + TypeScript. In allegato trovate la documentazione ufficiale “MetodoFluent — Mobile App Developer Guide”, che è il contratto backend e va seguita alla lettera (no assunzioni non documentate). 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Obiettivo
+
+Consegna di un’app production-ready e store-ready (Apple + Google), con codice pulito, scalabile e manutenibile.
+
+Requisiti tecnici non negoziabili
+
+Expo latest stable + TypeScript.
+
+API layer centralizzato (axios/fetch wrapper) con:
+
+Bearer token su tutte le call dopo login
+
+gestione automatica 401 → wipe SecureStore → redirect Login
+
+gestione 429 con exponential backoff (2s/5s/15s) + toast al primo 429
+
+Token sessione:
+
+sessionToken è opaque (NON JWT), dura 7 giorni, no refresh
+
+salvare SOLO in expo-secure-store (mai AsyncStorage) 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Login mobile: inviare header X-Client-Platform: mobile per ricevere sessionToken. 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Normalizzazione URL risorse: tutti i campi *Url e objectPath possono essere relativi e vanno risolti con resolveUrl() come in guida. 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+App lifecycle (cold start)
+
+Implementare esattamente il flusso in 6 step:
+SecureStore token → /api/auth/me → /api/students/:userId (feature flags + pacchetto) → listeners push → register push token → deep link mapping. 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Push notifications
+
+Registrare token DOPO login se permesso concesso: POST /api/push-token
+
+Rimuovere token PRIMA del logout: DELETE /api/push-token → POST /api/auth/logout → wipe SecureStore
+
+Implementare deep linking secondo tabella type → screen e strategia specifica per message (ricavo senderId via /api/messages/user cercando messageId). 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+WebRTC (lezioni live)
+
+WebSocket mobile: usare query string token
+wss://metodofluent.com/ws/call/<lessonId>?token=<sessionToken> 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Gestire codici close, evitare reconnect infinito:
+
+non reconnect su 4008
+
+max 3 tentativi su errori di rete/server con backoff
+
+Ottenere TURN via GET /api/lessons/:id/call-info 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Upload
+
+Multipart: non impostare manualmente Content-Type: multipart/form-data (boundary automatico) 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Video grandi: implementare upload chunked come da guida (init → chunk → complete). 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+UI: progress bar upload video
+
+Store compliance (obbligatoria)
+
+iOS Info.plist: Microfono, Camera (video), Foto (upload) con descrizioni come in guida 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Android permissions: solo CAMERA + RECORD_AUDIO (no storage) e usare Photo Picker/SAF per upload 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Account deletion: schermata e bottone visibile in:
+Profilo → Impostazioni → Account → Elimina account con chiamata DELETE /api/auth/delete-account (richiede password) 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+Privacy label coerente: niente tracking, niente advertising SDK/fingerprinting. 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+UX / regole prodotto
+
+Feature flags off → schermata “Funzionalità non disponibile”
+
+Pacchetto scaduto → blocco UI + gestire code PACKAGE_EXPIRED
+
+Maintenance mode: poll /api/maintenance-status e mostra overlay fullscreen (non bloccare login) 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+QA e consegna
+
+Prima della consegna completare la checklist QA della guida (login token, deep link, push, WS, upload, logout, maintenance, 429). 
+
+MOBILE-APP-DEVELOPER-GUIDE (5)
+
+
+Consegnare:
+
+repo + README setup
+
+istruzioni EAS build production
+
+elenco permessi effettivi usati
+
+checklist QA compilata
+
+Regola: se una parte della guida è ambigua, fermarsi e chiedere prima di implementare.
