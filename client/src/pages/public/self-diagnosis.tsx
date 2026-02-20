@@ -264,38 +264,61 @@ function CameraTestInteractive({ facing, onResult }: { facing: "user" | "environ
   const videoRef = useRef<HTMLVideoElement>(null);
   const [active, setActive] = useState(false);
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const stopCurrentStream = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(t => t.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
 
   const startCamera = async () => {
+    setLoading(true);
+    stopCurrentStream();
+    await new Promise(r => setTimeout(r, 500));
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing }
-      });
+      const constraints: MediaStreamConstraints = {
+        video: facing === "environment"
+          ? { facingMode: { exact: "environment" } }
+          : { facingMode: "user" }
+      };
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } });
+      }
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
         setActive(true);
       }
     } catch {
       setError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    return () => {
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach(t => t.stop());
-      }
-    };
+    return () => { stopCurrentStream(); };
   }, []);
 
   if (error) {
     return (
       <div className="space-y-4 text-center">
         <p className="text-sm text-destructive">Impossibile accedere alla fotocamera</p>
+        <p className="text-xs text-muted-foreground">
+          {facing === "environment" ? "Prova a chiudere altre app che usano la fotocamera" : "Verifica i permessi del browser"}
+        </p>
         <div className="flex gap-2 justify-center">
           <Button variant="destructive" onClick={() => onResult(false)} data-testid="button-camera-fail">
             <XCircle className="mr-2 h-4 w-4" /> Non funziona
+          </Button>
+          <Button variant="outline" onClick={() => { setError(false); startCamera(); }} data-testid="button-camera-retry">
+            Riprova
           </Button>
         </div>
       </div>
@@ -304,10 +327,16 @@ function CameraTestInteractive({ facing, onResult }: { facing: "user" | "environ
 
   return (
     <div className="space-y-4 text-center">
-      {!active && (
+      {!active && !loading && (
         <Button onClick={startCamera} size="lg" data-testid="button-start-camera">
           <Camera className="mr-2 h-5 w-5" /> Attiva fotocamera
         </Button>
+      )}
+      {loading && (
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Attivazione fotocamera...</p>
+        </div>
       )}
       <video
         ref={videoRef}
@@ -318,20 +347,10 @@ function CameraTestInteractive({ facing, onResult }: { facing: "user" | "environ
       />
       {active && (
         <div className="flex gap-2 justify-center">
-          <Button onClick={() => {
-            if (videoRef.current?.srcObject) {
-              (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-            }
-            onResult(true);
-          }} data-testid="button-camera-pass">
+          <Button onClick={() => { stopCurrentStream(); onResult(true); }} data-testid="button-camera-pass">
             <CheckCircle className="mr-2 h-4 w-4" /> Immagine chiara
           </Button>
-          <Button variant="destructive" onClick={() => {
-            if (videoRef.current?.srcObject) {
-              (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-            }
-            onResult(false);
-          }} data-testid="button-camera-fail-active">
+          <Button variant="destructive" onClick={() => { stopCurrentStream(); onResult(false); }} data-testid="button-camera-fail-active">
             <XCircle className="mr-2 h-4 w-4" /> Problemi
           </Button>
         </div>
@@ -342,9 +361,10 @@ function CameraTestInteractive({ facing, onResult }: { facing: "user" | "environ
 
 function VibrationTestInteractive({ onResult }: { onResult: (pass: boolean) => void }) {
   const [vibrated, setVibrated] = useState(false);
+  const vibrationSupported = typeof navigator.vibrate === "function";
 
   const triggerVibration = () => {
-    if (navigator.vibrate) {
+    if (vibrationSupported) {
       navigator.vibrate([200, 100, 200, 100, 200]);
     }
     setVibrated(true);
@@ -352,21 +372,31 @@ function VibrationTestInteractive({ onResult }: { onResult: (pass: boolean) => v
 
   return (
     <div className="space-y-4 text-center">
-      <Button onClick={triggerVibration} disabled={vibrated} size="lg" data-testid="button-vibrate">
-        <Vibrate className="mr-2 h-5 w-5" /> Attiva vibrazione
-      </Button>
-      {vibrated && (
-        <>
-          <p className="text-sm text-muted-foreground">Hai sentito la vibrazione?</p>
-          <div className="flex gap-2 justify-center">
-            <Button onClick={() => onResult(true)} data-testid="button-vibration-pass">
-              <CheckCircle className="mr-2 h-4 w-4" /> Si, vibra
-            </Button>
-            <Button variant="destructive" onClick={() => onResult(false)} data-testid="button-vibration-fail">
-              <XCircle className="mr-2 h-4 w-4" /> Non vibra
-            </Button>
-          </div>
-        </>
+      {!vibrationSupported && !vibrated && (
+        <div className="rounded-md border border-yellow-500/30 bg-yellow-500/5 p-3 space-y-2">
+          <p className="text-sm text-muted-foreground">
+            La vibrazione via browser non è supportata su questo dispositivo (es. iPhone).
+          </p>
+          <p className="text-sm">Testa manualmente: apri Impostazioni &gt; Suoni e prova la vibrazione del dispositivo.</p>
+        </div>
+      )}
+      {vibrationSupported && !vibrated && (
+        <Button onClick={triggerVibration} size="lg" data-testid="button-vibrate">
+          <Vibrate className="mr-2 h-5 w-5" /> Attiva vibrazione
+        </Button>
+      )}
+      {vibrated && vibrationSupported && (
+        <p className="text-sm text-muted-foreground">Hai sentito la vibrazione?</p>
+      )}
+      {(vibrated || !vibrationSupported) && (
+        <div className="flex gap-2 justify-center">
+          <Button onClick={() => onResult(true)} data-testid="button-vibration-pass">
+            <CheckCircle className="mr-2 h-4 w-4" /> {vibrationSupported ? "Si, vibra" : "Vibrazione OK"}
+          </Button>
+          <Button variant="destructive" onClick={() => onResult(false)} data-testid="button-vibration-fail">
+            <XCircle className="mr-2 h-4 w-4" /> Non vibra
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -450,8 +480,10 @@ function ConnectivityTestInteractive({ onResult }: { onResult: (pass: boolean) =
 function SensorsTestInteractive({ onResult }: { onResult: (pass: boolean) => void }) {
   const [accel, setAccel] = useState({ x: 0, y: 0, z: 0 });
   const [detected, setDetected] = useState(false);
+  const [permissionState, setPermissionState] = useState<"idle" | "requesting" | "granted" | "denied">("idle");
+  const handlerRef = useRef<((e: DeviceMotionEvent) => void) | null>(null);
 
-  useEffect(() => {
+  const startListening = useCallback(() => {
     const handler = (e: DeviceMotionEvent) => {
       if (e.accelerationIncludingGravity) {
         setAccel({
@@ -462,13 +494,61 @@ function SensorsTestInteractive({ onResult }: { onResult: (pass: boolean) => voi
         setDetected(true);
       }
     };
+    handlerRef.current = handler;
     window.addEventListener("devicemotion", handler);
-    return () => window.removeEventListener("devicemotion", handler);
   }, []);
+
+  const requestPermission = async () => {
+    setPermissionState("requesting");
+    const DME = DeviceMotionEvent as any;
+    if (typeof DME.requestPermission === "function") {
+      try {
+        const result = await DME.requestPermission();
+        if (result === "granted") {
+          setPermissionState("granted");
+          startListening();
+        } else {
+          setPermissionState("denied");
+        }
+      } catch {
+        setPermissionState("denied");
+      }
+    } else {
+      setPermissionState("granted");
+      startListening();
+    }
+  };
+
+  useEffect(() => {
+    const DME = DeviceMotionEvent as any;
+    if (typeof DME.requestPermission !== "function") {
+      setPermissionState("granted");
+      startListening();
+    }
+    return () => {
+      if (handlerRef.current) {
+        window.removeEventListener("devicemotion", handlerRef.current);
+      }
+    };
+  }, [startListening]);
 
   return (
     <div className="space-y-4 text-center">
-      {detected ? (
+      {permissionState === "idle" && (
+        <Button onClick={requestPermission} size="lg" data-testid="button-request-sensors">
+          <Gauge className="mr-2 h-5 w-5" /> Attiva sensori
+        </Button>
+      )}
+      {permissionState === "requesting" && (
+        <p className="text-sm text-muted-foreground">Richiesta permesso sensori...</p>
+      )}
+      {permissionState === "denied" && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+          <p className="text-sm text-destructive">Permesso sensori negato dal browser.</p>
+          <p className="text-xs text-muted-foreground">Su iPhone: Impostazioni &gt; Safari &gt; Accesso a sensori di movimento</p>
+        </div>
+      )}
+      {permissionState === "granted" && detected ? (
         <div className="space-y-2">
           <p className="text-sm font-medium">Accelerometro rilevato</p>
           <div className="grid grid-cols-3 gap-2 text-center">
@@ -487,9 +567,9 @@ function SensorsTestInteractive({ onResult }: { onResult: (pass: boolean) => voi
           </div>
           <p className="text-sm text-muted-foreground">Muovi il dispositivo per vedere i valori cambiare</p>
         </div>
-      ) : (
+      ) : permissionState === "granted" ? (
         <p className="text-sm text-muted-foreground">Muovi il dispositivo per attivare i sensori...</p>
-      )}
+      ) : null}
       <div className="flex gap-2 justify-center">
         <Button onClick={() => onResult(true)} data-testid="button-sensors-pass">
           <CheckCircle className="mr-2 h-4 w-4" /> Sensori OK
