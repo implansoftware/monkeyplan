@@ -4,6 +4,8 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 import commonIT from "./locales/it/common.json";
 import commonEN from "./locales/en/common.json";
+import commonFR from "./locales/fr/common.json";
+import commonES from "./locales/es/common.json";
 
 i18n
   .use(LanguageDetector)
@@ -12,6 +14,8 @@ i18n
     resources: {
       it: { common: commonIT },
       en: { common: commonEN },
+      fr: { common: commonFR },
+      es: { common: commonES },
     },
     fallbackLng: "it",
     defaultNS: "common",
