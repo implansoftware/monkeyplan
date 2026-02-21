@@ -10205,7 +10205,19 @@
     "pending": "pending",
     "revenue": "Revenue",
     "noOrders": "No orders",
-    "noEcommerceActivity": "No e-commerce activity"
+    "noEcommerceActivity": "No e-commerce activity",
+    "infoTitle": "What is a Sub-Reseller?",
+    "infoDescription": "Understand the difference between Sub-Resellers and Repair Centers",
+    "infoSubResellerRole": "Sub-Reseller Role",
+    "infoSubResellerExplanation": "A Sub-Reseller is an independent business partner who operates under your brand. They can manage their own customers, sell your products and services, and even have their own repair centers. Think of them as an extension of your business: they have their own account, their own pricing, and can generate their own invoices.",
+    "infoRepairCenterRole": "Repair Center Role",
+    "infoRepairCenterExplanation": "A Repair Center is a technical workshop that performs the actual device repairs. It receives repair orders from you or your sub-resellers, carries out diagnostics, quotes, and repairs. Repair centers focus exclusively on the technical side and do not manage customers or sell products.",
+    "infoKeyDifferences": "Key Differences",
+    "infoDiffCommercial": "Sub-Resellers handle the commercial side (sales, customers, invoicing), while Repair Centers handle the technical side (repairs, diagnostics, parts).",
+    "infoDiffHierarchy": "Sub-Resellers can have their own Repair Centers underneath them, creating a multi-level network.",
+    "infoDiffAccess": "Sub-Resellers see products, prices and customers; Repair Centers see repair orders, parts inventory and diagnostics.",
+    "infoHideGuide": "Hide guide",
+    "infoShowGuide": "Show guide"
   },
   "months": {
     "january": "January",

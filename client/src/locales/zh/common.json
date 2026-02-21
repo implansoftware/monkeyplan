@@ -6686,7 +6686,19 @@
     "pending": "pending",
     "revenue": "Revenue",
     "noOrders": "No orders",
-    "noEcommerceActivity": "No e-commerce activity"
+    "noEcommerceActivity": "No e-commerce activity",
+    "infoTitle": "什么是子经销商？",
+    "infoDescription": "了解子经销商与维修中心的区别",
+    "infoSubResellerRole": "子经销商角色",
+    "infoSubResellerExplanation": "子经销商是一个在您的品牌下运营的独立商业伙伴。他们可以管理自己的客户，销售您的产品和服务，甚至拥有自己的维修中心。把它想象成您业务的延伸：他们有自己的账户、自己的定价，并可以开具自己的发票。",
+    "infoRepairCenterRole": "维修中心角色",
+    "infoRepairCenterExplanation": "维修中心是执行实际设备维修的技术车间。它从您或您的子经销商处接收维修订单，进行诊断、报价和维修。维修中心专注于技术方面，不管理客户也不销售产品。",
+    "infoKeyDifferences": "主要区别",
+    "infoDiffCommercial": "子经销商处理商业方面（销售、客户、开票），而维修中心处理技术方面（维修、诊断、零件）。",
+    "infoDiffHierarchy": "子经销商可以拥有自己的维修中心，从而创建多级网络。",
+    "infoDiffAccess": "子经销商可以查看产品、价格和客户；维修中心可以查看维修订单、零件库存和诊断。",
+    "infoHideGuide": "隐藏指南",
+    "infoShowGuide": "显示指南"
   },
   "accessories": {
     "accessoriDisponibiliDalTuoRivenditore": "Accessories available from your reseller",

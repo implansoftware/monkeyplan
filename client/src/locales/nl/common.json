@@ -6311,7 +6311,19 @@
     "pending": "pending",
     "revenue": "Revenue",
     "noOrders": "Nee orders",
-    "noEcommerceActivity": "Nee e-commerce activity"
+    "noEcommerceActivity": "Nee e-commerce activity",
+    "infoTitle": "Wat is een Sub-Reseller?",
+    "infoDescription": "Begrijp het verschil tussen Sub-Resellers en Reparatiecentra",
+    "infoSubResellerRole": "Rol van de Sub-Reseller",
+    "infoSubResellerExplanation": "Een Sub-Reseller is een onafhankelijke zakenpartner die onder jouw merk opereert. Ze kunnen hun eigen klanten beheren, jouw producten en diensten verkopen en zelfs hun eigen reparatiecentra hebben. Zie het als een uitbreiding van jouw bedrijf: ze hebben hun eigen account, eigen prijzen en kunnen hun eigen facturen genereren.",
+    "infoRepairCenterRole": "Rol van het Reparatiecentrum",
+    "infoRepairCenterExplanation": "Een Reparatiecentrum is een technische werkplaats die de daadwerkelijke apparaatreparaties uitvoert. Het ontvangt reparatieopdrachten van jou of jouw sub-resellers, voert diagnoses, offertes en reparaties uit. Reparatiecentra richten zich uitsluitend op de technische kant en beheren geen klanten en verkopen geen producten.",
+    "infoKeyDifferences": "Belangrijkste Verschillen",
+    "infoDiffCommercial": "Sub-Resellers beheren de commerciële kant (verkoop, klanten, facturering), terwijl Reparatiecentra de technische kant beheren (reparaties, diagnoses, onderdelen).",
+    "infoDiffHierarchy": "Sub-Resellers kunnen hun eigen Reparatiecentra onder zich hebben, waardoor een meerlaags netwerk ontstaat.",
+    "infoDiffAccess": "Sub-Resellers zien producten, prijzen en klanten; Reparatiecentra zien reparatieopdrachten, onderdelenvoorraad en diagnoses.",
+    "infoHideGuide": "Gids verbergen",
+    "infoShowGuide": "Gids tonen"
   },
   "accessories": {
     "accessoriDisponibiliDalTuoRivenditore": "Accessories available from your reseller",

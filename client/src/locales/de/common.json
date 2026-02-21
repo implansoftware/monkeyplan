@@ -10682,7 +10682,19 @@
     "pending": "ausstehend",
     "revenue": "Umsatz",
     "noOrders": "Keine Bestellungen",
-    "noEcommerceActivity": "Keine E-Commerce-Aktivität"
+    "noEcommerceActivity": "Keine E-Commerce-Aktivität",
+    "infoTitle": "Was ist ein Sub-Reseller?",
+    "infoDescription": "Den Unterschied zwischen Sub-Resellern und Reparaturzentren verstehen",
+    "infoSubResellerRole": "Rolle des Sub-Resellers",
+    "infoSubResellerExplanation": "Ein Sub-Reseller ist ein unabhängiger Geschäftspartner, der unter Ihrer Marke agiert. Er kann seine eigenen Kunden verwalten, Ihre Produkte und Dienstleistungen verkaufen und sogar eigene Reparaturzentren betreiben. Betrachten Sie ihn als Erweiterung Ihres Geschäfts: Er hat sein eigenes Konto, eigene Preise und kann eigene Rechnungen erstellen.",
+    "infoRepairCenterRole": "Rolle des Reparaturzentrums",
+    "infoRepairCenterExplanation": "Ein Reparaturzentrum ist eine technische Werkstatt, die die eigentlichen Gerätereparaturen durchführt. Es erhält Reparaturaufträge von Ihnen oder Ihren Sub-Resellern, führt Diagnosen, Kostenvoranschläge und Reparaturen durch. Reparaturzentren konzentrieren sich ausschließlich auf die technische Seite und verwalten keine Kunden und verkaufen keine Produkte.",
+    "infoKeyDifferences": "Wesentliche Unterschiede",
+    "infoDiffCommercial": "Sub-Reseller kümmern sich um die kommerzielle Seite (Verkauf, Kunden, Rechnungsstellung), während Reparaturzentren die technische Seite übernehmen (Reparaturen, Diagnosen, Ersatzteile).",
+    "infoDiffHierarchy": "Sub-Reseller können eigene Reparaturzentren unter sich haben und so ein mehrstufiges Netzwerk aufbauen.",
+    "infoDiffAccess": "Sub-Reseller sehen Produkte, Preise und Kunden; Reparaturzentren sehen Reparaturaufträge, Ersatzteilbestand und Diagnosen.",
+    "infoHideGuide": "Anleitung ausblenden",
+    "infoShowGuide": "Anleitung anzeigen"
   },
   "repairCenter": {
     "active": "Aktiv",

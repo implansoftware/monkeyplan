@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy, KeyRound, User as UserIcon, FileText, Check, ChevronLeft, ChevronRight, Camera, Upload } from "lucide-react";
+import { Network, Search, Users, Building, Store, ShoppingCart, Package, TrendingUp, DollarSign, Eye, Plus, Pencil, Trash2, Loader2, Copy, KeyRound, User as UserIcon, FileText, Check, ChevronLeft, ChevronRight, Camera, Upload, Info, ChevronDown, ChevronUp, Wrench, ShoppingBag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -134,6 +134,7 @@ export default function SubResellers() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
 
@@ -570,6 +571,79 @@ export default function SubResellers() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-2xl border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20" data-testid="card-info-guide">
+        <CardContent className="p-0">
+          <button
+            onClick={() => setGuideOpen(!guideOpen)}
+            className="w-full flex items-center justify-between gap-3 p-4 text-left"
+            data-testid="button-toggle-guide"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{t("subResellers.infoTitle")}</p>
+                <p className="text-xs text-muted-foreground">{t("subResellers.infoDescription")}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {guideOpen ? t("subResellers.infoHideGuide") : t("subResellers.infoShowGuide")}
+              </span>
+              {guideOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </button>
+          {guideOpen && (
+            <div className="px-4 pb-4 space-y-4">
+              <Separator />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+                      <ShoppingBag className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <h4 className="text-sm font-semibold">{t("subResellers.infoSubResellerRole")}</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed pl-10">
+                    {t("subResellers.infoSubResellerExplanation")}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                      <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <h4 className="text-sm font-semibold">{t("subResellers.infoRepairCenterRole")}</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed pl-10">
+                    {t("subResellers.infoRepairCenterExplanation")}
+                  </p>
+                </div>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold">{t("subResellers.infoKeyDifferences")}</h4>
+                <ul className="space-y-1.5 text-xs text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                    {t("subResellers.infoDiffCommercial")}
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                    {t("subResellers.infoDiffHierarchy")}
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                    {t("subResellers.infoDiffAccess")}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="mt-4">
           <Card className="shadow-sm rounded-2xl">

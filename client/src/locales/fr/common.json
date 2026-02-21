@@ -10206,7 +10206,19 @@
     "revenue": "Chiffre d'affaires",
     "noOrders": "Aucun commandes",
     "noEcommerceActivity": "Aucun e-commerce activité",
-    "confirmDeleteSubReseller": "Êtes-vous sûr de vouloir supprimer ce sous-revendeur ?"
+    "confirmDeleteSubReseller": "Êtes-vous sûr de vouloir supprimer ce sous-revendeur ?",
+    "infoTitle": "Qu'est-ce qu'un Sous-Revendeur ?",
+    "infoDescription": "Comprendre la différence entre Sous-Revendeurs et Centres de Réparation",
+    "infoSubResellerRole": "Rôle du Sous-Revendeur",
+    "infoSubResellerExplanation": "Un Sous-Revendeur est un partenaire commercial indépendant qui opère sous votre marque. Il peut gérer ses propres clients, vendre vos produits et services, et même avoir ses propres centres de réparation. Considérez-le comme une extension de votre activité : il a son propre compte, ses propres prix et peut générer ses propres factures.",
+    "infoRepairCenterRole": "Rôle du Centre de Réparation",
+    "infoRepairCenterExplanation": "Un Centre de Réparation est un atelier technique qui effectue les réparations réelles des appareils. Il reçoit les ordres de réparation de vous ou de vos sous-revendeurs, effectue des diagnostics, des devis et des réparations. Les centres de réparation se concentrent exclusivement sur le côté technique et ne gèrent pas les clients ni ne vendent de produits.",
+    "infoKeyDifferences": "Différences Clés",
+    "infoDiffCommercial": "Les Sous-Revendeurs gèrent le côté commercial (ventes, clients, facturation), tandis que les Centres de Réparation gèrent le côté technique (réparations, diagnostics, pièces).",
+    "infoDiffHierarchy": "Les Sous-Revendeurs peuvent avoir leurs propres Centres de Réparation, créant un réseau multi-niveaux.",
+    "infoDiffAccess": "Les Sous-Revendeurs voient les produits, les prix et les clients ; les Centres de Réparation voient les ordres de réparation, l'inventaire des pièces et les diagnostics.",
+    "infoHideGuide": "Masquer le guide",
+    "infoShowGuide": "Afficher le guide"
   },
   "months": {
     "january": "Janvier",
