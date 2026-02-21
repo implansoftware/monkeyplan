@@ -6,6 +6,10 @@ import commonIT from "./locales/it/common.json";
 import commonEN from "./locales/en/common.json";
 import commonFR from "./locales/fr/common.json";
 import commonES from "./locales/es/common.json";
+import commonDE from "./locales/de/common.json";
+import commonZH from "./locales/zh/common.json";
+import commonNL from "./locales/nl/common.json";
+import commonAR from "./locales/ar/common.json";
 
 i18n
   .use(LanguageDetector)
@@ -16,6 +20,10 @@ i18n
       en: { common: commonEN },
       fr: { common: commonFR },
       es: { common: commonES },
+      de: { common: commonDE },
+      zh: { common: commonZH },
+      nl: { common: commonNL },
+      ar: { common: commonAR },
     },
     fallbackLng: "it",
     defaultNS: "common",

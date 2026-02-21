@@ -13,6 +13,10 @@ const languages = [
   { code: "en", label: "English", flag: "EN" },
   { code: "fr", label: "Français", flag: "FR" },
   { code: "es", label: "Español", flag: "ES" },
+  { code: "de", label: "Deutsch", flag: "DE" },
+  { code: "zh", label: "中文", flag: "ZH" },
+  { code: "nl", label: "Nederlands", flag: "NL" },
+  { code: "ar", label: "العربية", flag: "AR" },
 ];
 
 export function LanguageSwitcher() {
