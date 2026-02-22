@@ -10301,7 +10301,13 @@
     "supplierPlaceholder": "e.g. Amazon, MediaWorld, Original Manufacturer...",
     "purchaseDate": "Purchase Date",
     "purchasePrice": "Purchase Price",
-    "upload": "上传"
+    "upload": "上传",
+    "customerWarranties": "客户保修",
+    "globalOverview": "所有保修的全球概览",
+    "adminCreateDesc": "为任何经销商或维修中心的任何客户创建保修",
+    "selectSeller": "选择经销商/中心",
+    "selectSellerFirst": "请先选择卖家",
+    "noWarrantyFound": "未找到保修"
   },
   "fiscal": {
     "title": "Fiscal",

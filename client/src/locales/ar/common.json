@@ -8866,7 +8866,13 @@
     "supplierPlaceholder": "مثل: Amazon أو MediaWorld أو المصنع الأصلي...",
     "purchaseDate": "تاريخ الشراء",
     "purchasePrice": "سعر الشراء",
-    "upload": "تحميل"
+    "upload": "تحميل",
+    "customerWarranties": "ضمانات العملاء",
+    "globalOverview": "نظرة شاملة على جميع الضمانات",
+    "adminCreateDesc": "إنشاء ضمان لأي عميل من أي موزع أو مركز إصلاح",
+    "selectSeller": "اختر الموزع/المركز",
+    "selectSellerFirst": "اختر البائع أولاً",
+    "noWarrantyFound": "لم يتم العثور على ضمان"
   },
   "fiscal": {
     "title": "الفحص",

@@ -9536,7 +9536,13 @@
     "supplierPlaceholder": "z.B. Amazon, MediaWorld, Originalhersteller...",
     "purchaseDate": "Kaufdatum",
     "purchasePrice": "Kaufpreis",
-    "upload": "Hochladen"
+    "upload": "Hochladen",
+    "customerWarranties": "Kundengarantien",
+    "globalOverview": "Globale Übersicht aller Garantien",
+    "adminCreateDesc": "Erstellen Sie eine Garantie für jeden Kunden eines Händlers oder Reparaturzentrums",
+    "selectSeller": "Händler/Zentrum auswählen",
+    "selectSellerFirst": "Zuerst einen Verkäufer auswählen",
+    "noWarrantyFound": "Keine Garantie gefunden"
   },
   "fiscal": {
     "title": "Fiskus",

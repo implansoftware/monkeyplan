@@ -8562,7 +8562,13 @@
     "supplierPlaceholder": "bijv. Amazon, MediaWorld, Originele Fabrikant...",
     "purchaseDate": "Aankoopdatum",
     "purchasePrice": "Aankoopprijs",
-    "upload": "Uploaden"
+    "upload": "Uploaden",
+    "customerWarranties": "Klantgaranties",
+    "globalOverview": "Globaal overzicht van alle garanties",
+    "adminCreateDesc": "Maak een garantie aan voor elke klant van elke dealer of reparatiecentrum",
+    "selectSeller": "Selecteer dealer/centrum",
+    "selectSellerFirst": "Selecteer eerst een verkoper",
+    "noWarrantyFound": "Geen garantie gevonden"
   },
   "fiscal": {
     "title": "Fiscaal",

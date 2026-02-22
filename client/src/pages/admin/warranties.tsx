@@ -1,12 +1,19 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { WarrantyProduct, User } from "@shared/schema";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User, Smartphone, Store } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Shield, Search, Calendar, AlertTriangle, CheckCircle2, XCircle, Clock, User as UserIcon, Smartphone, Store, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 
 type AdminWarrantyItem = {
@@ -32,43 +39,125 @@ type AdminWarrantyItem = {
   daysRemaining: number | null;
 };
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  offered: { label: "offered", variant: "secondary" },
-  accepted: { label: "accepted", variant: "default" },
-  declined: { label: "declined", variant: "destructive" },
-  expired: { label: "expired", variant: "outline" },
-};
+function getStatusConfig(t: (key: string) => string): Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> {
+  return {
+    offered: { label: t("common.pending"), variant: "secondary" },
+    accepted: { label: t("common.active"), variant: "default" },
+    declined: { label: t("common.rejected"), variant: "destructive" },
+    expired: { label: t("license.expired"), variant: "outline" },
+  };
+}
 
-const coverageLabels: Record<string, string> = {
-  basic: "basic",
-  extended: "extended",
-  full: "full",
-};
+function getCoverageLabels(t: (key: string) => string): Record<string, string> {
+  return {
+    basic: t("warranties.coverageBasic"),
+    extended: t("warranties.coverageExtended"),
+    full: t("warranties.coverageFull"),
+  };
+}
 
 const sellerTypeLabels: Record<string, string> = {
-  reseller: "reseller",
-  repair_center: "repair_center",
+  reseller: "Rivenditore",
+  repair_center: "Centro Riparazione",
 };
 
-function getDaysRemainingBadge(daysRemaining: number | null, status: string) {
+function getDaysRemainingBadge(daysRemaining: number | null, status: string, t: (key: string) => string) {
   if (status !== "accepted" || daysRemaining === null) return null;
   if (daysRemaining <= 0) {
-    return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />Scaduta</Badge>;
+    return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />{t("license.expired")}</Badge>;
   }
   if (daysRemaining <= 30) {
-    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
+    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{daysRemaining}g</Badge>;
   }
-  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{daysRemaining}g rimasti</Badge>;
+  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{daysRemaining}g</Badge>;
 }
 
 export default function AdminWarranties() {
   const { t } = useTranslation();
+  const statusConfig = getStatusConfig(t);
+  const coverageLabels = getCoverageLabels(t);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedSellerId, setSelectedSellerId] = useState("");
+  const [selectedSellerType, setSelectedSellerType] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [notes, setNotes] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: warranties = [], isLoading } = useQuery<AdminWarrantyItem[]>({
     queryKey: ["/api/admin/warranties"],
   });
+
+  const { data: allUsers = [] } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
+  });
+
+  const { data: products = [] } = useQuery<WarrantyProduct[]>({
+    queryKey: ["/api/warranty-products"],
+  });
+
+  const sellers = useMemo(() => {
+    return allUsers.filter((u: any) => u.role === 'reseller' || u.role === 'repair_center');
+  }, [allUsers]);
+
+  const customers = useMemo(() => {
+    return allUsers.filter((u: any) => u.role === 'customer');
+  }, [allUsers]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!selectedSellerId) return customers;
+    const matched = customers.filter((c: any) => 
+      String(c.resellerId) === String(selectedSellerId) || 
+      String(c.parentResellerId) === String(selectedSellerId)
+    );
+    return matched.length > 0 ? matched : customers;
+  }, [customers, selectedSellerId]);
+
+  const activeProducts = useMemo(() => products.filter((p: any) => p.isActive), [products]);
+
+  const createMutation = useMutation({
+    mutationFn: (data: { customerId: string; warrantyProductId: string; sellerId: string; sellerType: string; notes?: string }) =>
+      apiRequest("POST", "/api/admin/warranties", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/warranties"] });
+      toast({ title: t("reseller.warrantyCreated"), description: t("reseller.warrantyAssignedToCustomer") });
+      setIsCreateOpen(false);
+      setSelectedSellerId("");
+      setSelectedSellerType("");
+      setSelectedCustomerId("");
+      setSelectedProductId("");
+      setNotes("");
+    },
+    onError: (error: any) => {
+      toast({ title: t("common.error"), description: error.message || t("reseller.cannotCreateWarranty"), variant: "destructive" });
+    },
+  });
+
+  const handleSellerChange = (sellerId: string) => {
+    setSelectedSellerId(sellerId);
+    const seller = sellers.find((s: any) => s.id === sellerId);
+    if (seller) {
+      setSelectedSellerType(seller.role === 'repair_center' ? 'repair_center' : 'reseller');
+    }
+    setSelectedCustomerId("");
+  };
+
+  const handleCreate = () => {
+    if (!selectedCustomerId || !selectedProductId || !selectedSellerId || !selectedSellerType) {
+      toast({ title: t("common.error"), description: t("reseller.selectCustomerAndProduct"), variant: "destructive" });
+      return;
+    }
+    createMutation.mutate({
+      customerId: selectedCustomerId,
+      warrantyProductId: selectedProductId,
+      sellerId: selectedSellerId,
+      sellerType: selectedSellerType,
+      notes: notes || undefined,
+    });
+  };
 
   const filtered = warranties.filter(w => {
     if (statusFilter !== "all" && w.status !== statusFilter) return false;
@@ -105,14 +194,20 @@ export default function AdminWarranties() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6">
         <div className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-orange-400/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full bg-yellow-400/20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="relative flex items-center gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
-            <Shield className="h-6 w-6 text-white" />
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-white">{t("warranties.customerWarranties")}</h1>
+              <p className="text-sm text-white/80">{t("warranties.globalOverview")}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">Garanzie Clienti</h1>
-            <p className="text-sm text-white/80">Panoramica globale di tutte le garanzie vendute dai rivenditori</p>
-          </div>
+          <Button onClick={() => setIsCreateOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white" data-testid="button-new-warranty">
+            <Plus className="h-4 w-4 mr-2" />
+            {t("reseller.newWarranty")}
+          </Button>
         </div>
       </div>
 
@@ -124,7 +219,7 @@ export default function AdminWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{activeCount}</p>
-              <p className="text-xs text-muted-foreground">Attive</p>
+              <p className="text-xs text-muted-foreground">{t("common.active")}</p>
             </div>
           </CardContent>
         </Card>
@@ -135,7 +230,7 @@ export default function AdminWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{expiringCount}</p>
-              <p className="text-xs text-muted-foreground">In Scadenza</p>
+              <p className="text-xs text-muted-foreground">{t("warranties.expiring")}</p>
             </div>
           </CardContent>
         </Card>
@@ -146,7 +241,7 @@ export default function AdminWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{expiredCount}</p>
-              <p className="text-xs text-muted-foreground">Scadute</p>
+              <p className="text-xs text-muted-foreground">{t("license.expired")}</p>
             </div>
           </CardContent>
         </Card>
@@ -157,7 +252,7 @@ export default function AdminWarranties() {
             </div>
             <div>
               <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-xs text-muted-foreground">In Attesa</p>
+              <p className="text-xs text-muted-foreground">{t("common.pending")}</p>
             </div>
           </CardContent>
         </Card>
@@ -192,7 +287,7 @@ export default function AdminWarranties() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <Shield className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium">Nessuna garanzia trovata</p>
+            <p className="text-lg font-medium">{t("warranties.noWarrantyFound")}</p>
             <p className="text-sm text-muted-foreground">
               {search || statusFilter !== "all"
                 ? t("warranties.modifyFilters")
@@ -224,15 +319,15 @@ export default function AdminWarranties() {
                           </p>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                          {isStandalone && <Badge variant="outline" className="text-xs">Diretta</Badge>}
-                          {getDaysRemainingBadge(w.daysRemaining, w.status)}
+                          {isStandalone && <Badge variant="outline" className="text-xs">{t("warranties.directWarranty")}</Badge>}
+                          {getDaysRemainingBadge(w.daysRemaining, w.status, t)}
                           <Badge variant={status.variant}>{status.label}</Badge>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
                         <div className="flex items-center gap-2">
-                          <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <UserIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
                             <p className="text-muted-foreground">{t("common.customer")}</p>
                             <p className="font-medium truncate">{w.customerName}</p>
@@ -241,7 +336,7 @@ export default function AdminWarranties() {
                         <div className="flex items-center gap-2">
                           <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-muted-foreground">{t("roles.reseller")}</p>
+                            <p className="text-muted-foreground">{t("common.seller")}</p>
                             <p className="font-medium truncate">{w.sellerName}</p>
                             <p className="text-muted-foreground truncate">{sellerTypeLabels[w.sellerType] || w.sellerType}</p>
                           </div>
@@ -256,8 +351,8 @@ export default function AdminWarranties() {
                         <div className="flex items-center gap-2">
                           <Shield className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-muted-foreground">Copertura</p>
-                            <p className="font-medium">{coverageLabels[w.coverageType] || w.coverageType} - {w.durationMonths} mesi</p>
+                            <p className="text-muted-foreground">{t("warranties.coverage")}</p>
+                            <p className="font-medium">{coverageLabels[w.coverageType] || w.coverageType} - {w.durationMonths} {t("reseller.months")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -279,7 +374,7 @@ export default function AdminWarranties() {
                         }`}>
                           <Calendar className="h-3.5 w-3.5 shrink-0" />
                           <span>
-                            Dal {format(new Date(w.startsAt), "dd/MM/yyyy", { locale: it })} al {format(new Date(w.endsAt), "dd/MM/yyyy", { locale: it })}
+                            {format(new Date(w.startsAt), "dd/MM/yyyy", { locale: it })} - {format(new Date(w.endsAt), "dd/MM/yyyy", { locale: it })}
                           </span>
                         </div>
                       )}
@@ -287,7 +382,7 @@ export default function AdminWarranties() {
                       {w.status === "offered" && (
                         <div className="flex items-center gap-2 p-2 rounded-md text-xs bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                           <Clock className="h-3.5 w-3.5 shrink-0" />
-                          <span>Offerta inviata il {format(new Date(w.offeredAt), "dd/MM/yyyy", { locale: it })}</span>
+                          <span>{format(new Date(w.offeredAt), "dd/MM/yyyy", { locale: it })}</span>
                         </div>
                       )}
                     </div>
@@ -298,6 +393,86 @@ export default function AdminWarranties() {
           })}
         </div>
       )}
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("reseller.newDirectWarranty")}</DialogTitle>
+            <DialogDescription>
+              {t("warranties.adminCreateDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{t("common.seller")}</Label>
+              <Select value={selectedSellerId} onValueChange={handleSellerChange}>
+                <SelectTrigger data-testid="select-warranty-seller">
+                  <SelectValue placeholder={t("warranties.selectSeller")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sellers.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.firstName && s.lastName ? `${s.firstName} ${s.lastName}` : s.username}
+                      {s.companyName ? ` - ${s.companyName}` : ''}
+                      {' '}({sellerTypeLabels[s.role] || s.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("common.customer")}</Label>
+              <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId} disabled={!selectedSellerId}>
+                <SelectTrigger data-testid="select-warranty-customer">
+                  <SelectValue placeholder={selectedSellerId ? t("reseller.selectCustomer") : t("warranties.selectSellerFirst")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredCustomers.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.firstName && c.lastName ? `${c.firstName} ${c.lastName}` : c.username} {c.email ? `(${c.email})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("warranties.warrantyProduct")}</Label>
+              <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                <SelectTrigger data-testid="select-warranty-product">
+                  <SelectValue placeholder={t("reseller.selectProduct")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeProducts.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} - {coverageLabels[p.coverageType] || p.coverageType} - {p.durationMonths} {t("reseller.months")} - {(p.priceInCents / 100).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("common.reasonOptional")}</Label>
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t("reseller.warrantyNotesPlaceholder")}
+                data-testid="textarea-warranty-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)} data-testid="button-cancel-warranty">{t("common.cancel")}</Button>
+            <Button
+              onClick={handleCreate}
+              disabled={createMutation.isPending || !selectedCustomerId || !selectedProductId || !selectedSellerId}
+              data-testid="button-confirm-warranty"
+            >
+              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Shield className="h-4 w-4 mr-2" />}
+              {t("reseller.createWarranty")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

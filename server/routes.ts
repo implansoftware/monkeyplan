@@ -46157,6 +46157,57 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ADMIN CREATE WARRANTY
+  // ==========================================
+
+  app.post('/api/admin/warranties', requireAuth, requireRole('admin'), async (req, res) => {
+    try {
+      const { customerId, warrantyProductId, sellerId, sellerType, notes } = req.body;
+      if (!customerId || !warrantyProductId || !sellerId || !sellerType) {
+        return res.status(400).json({ message: 'customerId, warrantyProductId, sellerId e sellerType sono obbligatori' });
+      }
+
+      if (!['reseller', 'repair_center'].includes(sellerType)) {
+        return res.status(400).json({ message: 'sellerType deve essere "reseller" o "repair_center"' });
+      }
+
+      const customer = await storage.getUser(customerId);
+      if (!customer) return res.status(404).json({ message: 'Cliente non trovato' });
+
+      const seller = await storage.getUser(sellerId);
+      if (!seller) return res.status(404).json({ message: 'Venditore non trovato' });
+
+      const product = await storage.getWarrantyProduct(warrantyProductId);
+      if (!product) return res.status(404).json({ message: 'Prodotto garanzia non trovato' });
+
+      const now = new Date();
+      const endsAt = new Date(now);
+      endsAt.setMonth(endsAt.getMonth() + product.durationMonths);
+
+      const warranty = await storage.createRepairWarranty({
+        repairOrderId: null,
+        customerId,
+        warrantyProductId: product.id,
+        sellerType,
+        sellerId,
+        status: 'accepted',
+        priceSnapshot: product.priceInCents,
+        durationMonthsSnapshot: product.durationMonths,
+        coverageTypeSnapshot: product.coverageType,
+        productNameSnapshot: product.name,
+        startsAt: now,
+        endsAt,
+        acceptedAt: now,
+        notes: notes || null,
+      });
+
+      res.status(201).json(warranty);
+    } catch (error: any) {
+      console.error('Error creating admin warranty:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // WARRANTY PRODUCTS FOR REPAIR DETAIL
   // ==========================================
 

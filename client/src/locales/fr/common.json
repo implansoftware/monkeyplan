@@ -3716,7 +3716,13 @@
     "supplierPlaceholder": "ex. Amazon, Fnac, Fabricant d'origine...",
     "purchaseDate": "Achat Date",
     "purchasePrice": "Prix d'achat",
-    "upload": "Téléverser"
+    "upload": "Téléverser",
+    "customerWarranties": "Garanties Clients",
+    "globalOverview": "Aperçu global de toutes les garanties",
+    "adminCreateDesc": "Créer une garantie pour tout client de tout revendeur ou centre de réparation",
+    "selectSeller": "Sélectionner revendeur/centre",
+    "selectSellerFirst": "Sélectionnez d'abord un vendeur",
+    "noWarrantyFound": "Aucune garantie trouvée"
   },
   "utility": {
     "activateContract": "Activer le contrat",

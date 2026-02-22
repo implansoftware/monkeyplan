@@ -3716,7 +3716,13 @@
     "supplierPlaceholder": "p. ej. Amazon, MediaWorld, Original Manufacturer...",
     "purchaseDate": "Purchase Fecha",
     "purchasePrice": "Precio de compra",
-    "upload": "Subir"
+    "upload": "Subir",
+    "customerWarranties": "Garantías de Clientes",
+    "globalOverview": "Vista global de todas las garantías",
+    "adminCreateDesc": "Crear una garantía para cualquier cliente de cualquier revendedor o centro de reparación",
+    "selectSeller": "Seleccionar revendedor/centro",
+    "selectSellerFirst": "Seleccione primero un vendedor",
+    "noWarrantyFound": "No se encontró ninguna garantía"
   },
   "utility": {
     "activateContract": "Activar contrato",
