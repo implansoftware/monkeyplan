@@ -14,6 +14,7 @@ import {
   ArrowRight, Phone, Lightbulb, Flame, Radio, MoreHorizontal, FileCheck
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from "wouter";
 import { UtilityPracticeWizard } from "@/components/UtilityPracticeWizard";
 import { UtilityServiceDetailSheet } from "@/components/UtilityServiceDetailSheet";
@@ -161,7 +162,7 @@ export default function ResellerUtilityServices() {
 
     return (
       <Card 
-        className={`rounded-2xl hover-elevate transition-all cursor-pointer ${featured ? 'border-primary/50 bg-primary/5' : ''}`}
+        className={`rounded-2xl hover-elevate transition-all cursor-pointer flex flex-col ${featured ? 'border-primary/50 bg-primary/5' : ''}`}
         onClick={() => onViewDetail?.(service.id)}
         data-testid={`card-service-${service.id}`}
       >
@@ -195,10 +196,17 @@ export default function ResellerUtilityServices() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="pb-3">
-          <div className="space-y-3">
+        <CardContent className="pb-3 flex-1 flex flex-col">
+          <div className="space-y-3 flex-1 flex flex-col">
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <Building2 className="h-3.5 w-3.5" />
+              {supplier?.logoUrl ? (
+                <Avatar className="h-5 w-5" data-testid={`img-supplier-logo-${service.id}`}>
+                  <AvatarImage src={supplier.logoUrl} alt={supplier.name} />
+                  <AvatarFallback className="text-[8px]">{supplier.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              ) : (
+                <Building2 className="h-3.5 w-3.5" />
+              )}
               {supplier?.name || t("common.supplier")}
             </div>
 
@@ -249,14 +257,16 @@ export default function ResellerUtilityServices() {
             </div>
 
             {onCreatePractice && (
-              <Button 
-                className="w-full gap-2" 
-                onClick={(e) => { e.stopPropagation(); onCreatePractice(service.id); }}
-                data-testid={`button-create-practice-${service.id}`}
-              >
-                <FileCheck className="h-4 w-4" />
-                {t("utility.createPractice")}
-              </Button>
+              <div className="mt-auto pt-1">
+                <Button 
+                  className="w-full gap-2" 
+                  onClick={(e) => { e.stopPropagation(); onCreatePractice(service.id); }}
+                  data-testid={`button-create-practice-${service.id}`}
+                >
+                  <FileCheck className="h-4 w-4" />
+                  {t("utility.createPractice")}
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>
@@ -359,9 +369,11 @@ export default function ResellerUtilityServices() {
             <h2 className="text-lg font-semibold">{t("utility.mostProfitable")}</h2>
             <Badge variant="secondary" className="ml-2">{t("utility.topCommissions")}</Badge>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
             {topCommissionServices.map((service) => (
-              <ServiceCard key={service.id} service={service} featured onCreatePractice={handleCreatePractice} onViewDetail={handleOpenDetail} />
+              <div key={service.id} className="flex flex-col">
+                <ServiceCard service={service} featured onCreatePractice={handleCreatePractice} onViewDetail={handleOpenDetail} />
+              </div>
             ))}
           </div>
         </div>
