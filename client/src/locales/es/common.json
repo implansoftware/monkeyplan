@@ -9691,7 +9691,9 @@
     "courtesyPhoneActiveBadge": "Activado Loan",
     "courtesyPhoneReturnedBadge": "Returned",
     "courtesyPhoneReturnedDate": "Returned",
-    "courtesyPhoneAssignedDate": "Asignado Fecha"
+    "courtesyPhoneAssignedDate": "Asignado Fecha",
+    "courtesyPhoneReseller": "Revendedor",
+    "courtesyPhoneRepairCenter": "Centro de Reparación"
   },
   "staff": {
     "permissions": "Permisos",

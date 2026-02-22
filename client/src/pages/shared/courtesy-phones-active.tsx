@@ -34,7 +34,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, RotateCcw, Loader2, ExternalLink, ArrowLeft } from "lucide-react";
+import { Phone, RotateCcw, Loader2, ExternalLink, ArrowLeft, Store, Building } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
@@ -62,6 +62,14 @@ type CourtesyPhoneLoan = {
     fullName: string | null;
     phone: string | null;
   } | null;
+  reseller?: {
+    id: string;
+    fullName: string | null;
+  } | null;
+  repairCenter?: {
+    id: string;
+    fullName: string | null;
+  } | null;
 };
 
 interface CourtesyPhonesActivePageProps {
@@ -76,6 +84,8 @@ export default function CourtesyPhonesActivePage({ backPath, rolePrefix }: Court
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [returnDialogOrderId, setReturnDialogOrderId] = useState<string | null>(null);
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'admin_staff';
 
   const { data: loans = [], isLoading } = useQuery<CourtesyPhoneLoan[]>({
     queryKey: ["/api/courtesy-phones/active", statusFilter],
@@ -157,6 +167,12 @@ export default function CourtesyPhonesActivePage({ backPath, rolePrefix }: Court
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("repairs.orderNumber", "N. Ordine")}</TableHead>
+                    {isAdmin && (
+                      <>
+                        <TableHead>{t("repair.courtesyPhoneReseller", "Reseller")}</TableHead>
+                        <TableHead>{t("repair.courtesyPhoneRepairCenter", "Centro Riparazione")}</TableHead>
+                      </>
+                    )}
                     <TableHead>{t("repairs.customer", "Cliente")}</TableHead>
                     <TableHead>{t("repair.courtesyPhoneLabel", "Tel. Cortesia")}</TableHead>
                     <TableHead>{t("repair.courtesyPhoneAssignedDate", "Data assegnazione")}</TableHead>
@@ -178,6 +194,22 @@ export default function CourtesyPhonesActivePage({ backPath, rolePrefix }: Court
                           {loan.brand} {loan.deviceModel}
                         </p>
                       </TableCell>
+                      {isAdmin && (
+                        <>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5" data-testid={`text-reseller-${loan.repairOrderId}`}>
+                              <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-sm">{loan.reseller?.fullName || "-"}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5" data-testid={`text-repair-center-${loan.repairOrderId}`}>
+                              <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <span className="text-sm">{loan.repairCenter?.fullName || "-"}</span>
+                            </div>
+                          </TableCell>
+                        </>
+                      )}
                       <TableCell>
                         <p className="font-medium" data-testid={`text-customer-${loan.repairOrderId}`}>
                           {loan.customer?.fullName || "-"}

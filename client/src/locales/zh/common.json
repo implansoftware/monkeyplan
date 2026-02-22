@@ -7338,7 +7338,9 @@
     "courtesyPhoneActiveBadge": "On Loan",
     "courtesyPhoneReturnedBadge": "Returned",
     "courtesyPhoneReturnedDate": "Returned",
-    "courtesyPhoneAssignedDate": "Assigned Date"
+    "courtesyPhoneAssignedDate": "Assigned Date",
+    "courtesyPhoneReseller": "经销商",
+    "courtesyPhoneRepairCenter": "维修中心"
   },
   "integrations": {
     "bearerToken": "Bearer Token",

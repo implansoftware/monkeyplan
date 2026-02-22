@@ -6963,7 +6963,9 @@
     "courtesyPhoneActiveBadge": "In Gebruik",
     "courtesyPhoneReturnedBadge": "Geretourneerd",
     "courtesyPhoneReturnedDate": "Geretourneerd",
-    "courtesyPhoneAssignedDate": "Toewijzingsdatum"
+    "courtesyPhoneAssignedDate": "Toewijzingsdatum",
+    "courtesyPhoneReseller": "Wederverkoper",
+    "courtesyPhoneRepairCenter": "Reparatiecentrum"
   },
   "integrations": {
     "bearerToken": "Dragertoken",

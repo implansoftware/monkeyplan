@@ -6389,7 +6389,9 @@
     "courtesyPhoneActiveBadge": "قيد الاستعارة",
     "courtesyPhoneReturnedBadge": "تم الإرجاع",
     "courtesyPhoneReturnedDate": "تم الإرجاع",
-    "courtesyPhoneAssignedDate": "تاريخ التعيين"
+    "courtesyPhoneAssignedDate": "تاريخ التعيين",
+    "courtesyPhoneReseller": "الموزع",
+    "courtesyPhoneRepairCenter": "مركز الإصلاح"
   },
   "integrations": {
     "bearerToken": "Bearer Token",

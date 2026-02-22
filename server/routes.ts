@@ -15583,7 +15583,8 @@ export function registerRoutes(app: Express): Server {
         .where(and(...conditions))
         .orderBy(desc(repairOrders.courtesyPhoneAssignedAt));
 
-      // Fetch customer data for each order
+      const isAdmin = req.user.role === 'admin' || req.user.role === 'admin_staff';
+
       const enrichedResults = await Promise.all(results.map(async (r) => {
         let customer = null;
         if (r.repairOrder.customerId) {
@@ -15596,6 +15597,24 @@ export function registerRoutes(app: Express): Server {
             };
           }
         }
+
+        let reseller = null;
+        let repairCenter = null;
+        if (isAdmin) {
+          if (r.repairOrder.resellerId) {
+            const resellerData = await storage.getUser(r.repairOrder.resellerId);
+            if (resellerData) {
+              reseller = { id: resellerData.id, fullName: resellerData.fullName };
+            }
+          }
+          if (r.repairOrder.repairCenterId) {
+            const rcData = await storage.getUser(r.repairOrder.repairCenterId);
+            if (rcData) {
+              repairCenter = { id: rcData.id, fullName: rcData.fullName };
+            }
+          }
+        }
+
         return {
           repairOrderId: r.repairOrder.id,
           orderNumber: r.repairOrder.orderNumber,
@@ -15613,6 +15632,7 @@ export function registerRoutes(app: Express): Server {
             imageUrl: r.product.imageUrl,
           } : null,
           customer,
+          ...(isAdmin ? { reseller, repairCenter } : {}),
         };
       }));
 

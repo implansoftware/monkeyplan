@@ -9699,7 +9699,9 @@
     "courtesyPhoneActiveBadge": "In prestito",
     "courtesyPhoneReturnedBadge": "Restituito",
     "courtesyPhoneReturnedDate": "Restituito",
-    "courtesyPhoneAssignedDate": "Data assegnazione"
+    "courtesyPhoneAssignedDate": "Data assegnazione",
+    "courtesyPhoneReseller": "Rivenditore",
+    "courtesyPhoneRepairCenter": "Centro Riparazione"
   },
   "staff": {
     "permissions": "Permessi",

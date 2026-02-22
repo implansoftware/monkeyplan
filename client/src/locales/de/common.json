@@ -7057,7 +7057,9 @@
     "courtesyPhoneActiveBadge": "On Loan",
     "courtesyPhoneReturnedBadge": "Returned",
     "courtesyPhoneReturnedDate": "Returned",
-    "courtesyPhoneAssignedDate": "Assigned Date"
+    "courtesyPhoneAssignedDate": "Assigned Date",
+    "courtesyPhoneReseller": "Händler",
+    "courtesyPhoneRepairCenter": "Reparaturzentrum"
   },
   "integrations": {
     "bearerToken": "Bearer Token",
