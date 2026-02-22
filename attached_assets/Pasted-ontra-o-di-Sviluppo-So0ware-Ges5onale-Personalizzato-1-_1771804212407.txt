@@ -1,0 +1,161 @@
+ontra'o di Sviluppo So0ware Ges5onale Personalizzato
+1. Par5 Coinvolte
+Il presente contra-o ("Contra-o") è s3pulato in data ________________
+tra:
+• IMPLAN GROUP srl, start-up innova3va cer3ficata dalla Camera di Commercio di
+Palermo-Enna, di cui Par3ta IVA IT07188110824, con sede legale in VIA NICOLÒ
+GALLO 3 - PALERMO, di seguito denominata “IMPLAN", rappresentata legalmente
+da Giulio Ferlazzo;
+e
+• ________________, con sede legale in ________________________________, P.IVA
+________________ , rappresentata legalmente da ________________________________,
+PEC
+________________________________ di seguito denominata “Cliente".
+2. Ogge'o del Contra'o
+Il presente Contra-o ha per ogge-o:
+• La proge'azione, lo sviluppo e la fornitura di un so0ware ges5onale personalizzato,
+come de'agliato nel documento di quotazione uﬃciale n____________________
+3. Termini di Pagamento
+Il Cliente si impegna a corrispondere a IMPLAN l’importo complessivo di €
+________________ (________________________________) come da preven5vo
+________________________________
+ll pagamento dell’importo complessivo pa-uito potrà avvenire secondo una delle seguen3
+modalità, come concordato tra le Par3 e indicato nel preven3vo allegato al presente
+contra-o (SEGNARE CON UNA X I TERMINI SCELTI):
+In X rate:
+€ ________________ a 3tolo di acconto, pre-saldo e saldo all’acce'azione del contra'o;
+€ ________________ a 3tolo di pre-saldo alla consegna del so0ware
+€ ________________ a 3tolo di saldo alla consegna dell’App (file ipa e apk del so^ware
+pron3 alla pubblicazione)
+*La proprietà del so0ware, dei codici sorgente, della documentazione tecnica e di ogni materiale consegnato rimane dell’Appaltatore
+fino all’integrale pagamento di tu'e le somme pa'uite.
+Il Cliente oaene un diri-o d’uso limitato e provvisorio, valido esclusivamente fino alla data di scadenza dei termini di pagamento previs3.
+In caso di mancato saldo, l’Appaltatore avrà facoltà di sospendere i servizi, revocare le licenze d’uso e disabilitare l’accesso al so^ware,
+fermo restando il diri-o al recupero coaavo del credito e al risarcimento di eventuali danni.
+Tutti i diritti sono riservati. © IMPLAN GROUP SRL - P.IVA IT07188110824 - implangroup@pec.it
+Sedi: Palermo • Reggio Calabria • Roma • Verona | Sede Legale: Via N.Gallo 3 Palermo
+3.1 Condizioni aggiun5ve
+• A seguito della ricezione dell’acconto concordato, l’Amministratore Legale di IMPLAN
+provvederà a fissare un incontro di persona con il Cliente presso la ci-à di residenza o
+sede opera3va del Cliente. Tale incontro ha lo scopo di approfondire le esigenze
+specifiche del proge-o, definire con precisione le funzionalità del so^ware e concordare il
+piano opera3vo preliminare, al fine di garan3re il corre-o avvio delle aavità di sviluppo.
+• Qualche seZmana prima della consegna uﬃciale del so0ware, IMPLAN presenterà al
+Cliente una pianificazione marke5ng personalizzata per il proge'o, accompagnata da
+diverse proposte commerciali con diﬀeren5 percentuali di commissione.
+La percentuale concordata dovrà essere liquidata mensilmente, previa emissione di
+regolare fa'ura da parte di IMPLAN.
+In virtù di tale accordo, IMPLAN si impegna a fornire in modo inclusivo, con5nua5vo e
+senza cos5 aggiun5vi i seguen3 servizi:
+• Manutenzione tecnica gratuita a tempo indeterminato del so^ware consegnato,
+comprensiva di aggiornamen3 correavi e oamizzazioni funzionali.
+• Supporto marke5ng e consulenza strategica, finalizza3 alla crescita, al posizionamento e
+alla sostenibilità economica del proge-o.
+• Ges5one degli inves5men5 pubblicitari, inclusa la pianificazione, oamizzazione e
+monitoraggio delle campagne.
+• Ges5one completa dell’immagine e del brand digitale del so^ware, volta a garan3re
+coerenza comunica3va, visibilità e sviluppo del marchio nel tempo.
+Il presente accordo economico e opera3vo rimarrà in vigore sino a revoca scri-a da una
+delle Par3, fermo restando l’obbligo del Commi-ente di adempiere a tua i pagamen3
+matura3 sino alla data di cessazione.
+4. Clausola di Proprietà in caso di Inadempimento
+In caso di saldo non avvenuto da parte del Cliente non regolarizzato IMPLAN avrà il diri-o
+di Sospendere immediatamente lo sviluppo del proge-o;
+4.1 Riconoscimento della 5tolarità intelle'uale del Cliente
+IMPLAN riconosce che l’idea proge'uale, il concept generale e l’obieZvo funzionale del
+so0ware sono e rimangono proprietà intelle'uale del Cliente.
+Tu-avia, fino all’integrale saldo delle somme dovute, IMPLAN si riserva il diri'o di non
+rendere disponibile online, pubblicare o installare su server di produzione il so0ware
+ogge'o del presente contra'o, né di rilasciare i rela5vi codici sorgente, database o
+ambien5 tecnici.
+Tutti i diritti sono riservati. © IMPLAN GROUP SRL - P.IVA IT07188110824 - implangroup@pec.it
+Sedi: Palermo • Reggio Calabria • Roma • Verona | Sede Legale: Via N.Gallo 3 Palermo
+Solo a saldo avvenuto e regolarmente quietanzato, la piena disponibilità tecnica, opera3va
+e legale del so^ware sarà trasferita al Cliente.
+La presente clausola ha lo scopo di tutelare l’inves3mento dell’azienda sviluppatrice, senza
+in alcun modo ledere o comprome-ere la 3tolarità conce-uale e intelle-uale del proge-o
+ideato dal Cliente.
+5. Clausola “VISTO SI SVILUPPA” e Clausola di Tutela del Cliente
+IMPLAN garan5sce al Cliente un periodo di supporto tecnico gratuito finalizzato ad
+assicurare che il so0ware sviluppato corrisponda pienamente alle funzionalità, ai flussi e
+alle cara'eris5che illustrate nella demo e descri'e nel preven5vo acce'ato.
+Durante tale periodo, IMPLAN si impegna a:
+1. Correggere gratuitamente eventuali diﬀormità rispe-o alle funzionalità previste e/o
+illustrate nella demo;
+2. Adeguare senza cos5 aggiun5vi i comportamen3 del so^ware qualora risultassero
+incomple3 o non coeren3 con quanto concordato;
+3. Oﬀrire supporto tecnico con5nua5vo per garan3re il corre-o funzionamento del
+sistema.
+Il cliente acce'a che tale supporto gratuito riguarda esclusivamente:
+• la messa a punto del so^ware aﬃnché rispecchi esa-amente il proge-o approvato,
+• le correzioni di eventuali anomalie o incompletezze rientran3 nel perimetro del
+preven3vo.
+Restano invece escluse, e pertanto da preven3vare a parte:
+• richieste di nuove funzionalità non presen3 nella demo o nel preven3vo,
+• modifiche sostanziali, aggiunte o integrazioni extra richieste dal Cliente.
+Il periodo di supporto gratuito rimane aZvo fino alla consegna uﬃciale della versione
+defini5va del so0ware e alla conferma scri'a del Cliente di piena soddisfazione.
+Le demo ILLUSTRATIVE sviluppata visitabile tramite ques5 link
+________________________________________________ rispe'ano tu'e le funzionalità
+richieste dal cliente e presen5 nel preven5vo.
+Tutti i diritti sono riservati. © IMPLAN GROUP SRL - P.IVA IT07188110824 - implangroup@pec.it
+Sedi: Palermo • Reggio Calabria • Roma • Verona | Sede Legale: Via N.Gallo 3 Palermo
+La so-oscrizione del seguente contra-o aaverà la clausola “Visto si sviluppa”, che:
+• Cos3tuisce l’approvazione defini3va e vincolante del so^ware;
+• Autorizza IMPLAN ad avviare la fase esecu3va di sviluppo;
+• Blocca ogni futura richiesta di modifica o aggiunta non previamente autorizzata e
+preven3vata.
+6. Manutenzione e Supporto
+In assenza dell’accordo commerciale post-consegna di cui all’Art. 3.1, IMPLAN oﬀrirà un
+periodo di manutenzione tecnica gratuita di 3 (tre) mesi, decorren3 dalla messa in rete del
+so^ware.
+Alla scadenza del periodo gratuito, il Cliente potrà scegliere tra:
+• Manutenzione a preven3vo, con tariﬀazione per singolo intervento;
+• Manutenzione con3nua3va a € 100,00 + IVA mensili, con vincolo di durata minima di
+12 mesi.
+7. Termini di Consegna
+I tempi di sviluppo e consegna del so^ware sono s3ma3 in 40 giorni lavora5vi dalla
+ricezione dell’acconto del presente contra-o, salvo richieste di modifica da parte del Cliente
+o cause di forza maggiore.
+8. Risoluzione del Contra'o
+Entrambe le Par3 potranno risolvere il presente Contra-o in caso di inadempimento
+sostanziale da parte dell’altra, previa comunicazione scri-a con concessione di 30 giorni per
+adempiere.
+9. Legge Applicabile e Foro Competente
+Il presente Contra-o è disciplinato dalla legge italiana.
+Per qualsiasi controversia rela3va all’interpretazione o all’esecuzione del presente
+Contra-o, sarà competente in via esclusiva il Foro di Palermo.
+10. Modifiche al Contra'o
+Eventuali modifiche e/o integrazioni al presente Contra-o dovranno essere formalizzate
+per iscri-o e firmate da entrambe le Par3.
+11. Firma delle Part
+Il presente contra-o è composto da n. 5 pagine e viene so-oscri-o in duplice copia, una
+per ciascuna delle Par3.
+Tutti i diritti sono riservati. © IMPLAN GROUP SRL - P.IVA IT07188110824 - implangroup@pec.it
+Sedi: Palermo • Reggio Calabria • Roma • Verona | Sede Legale: Via N.Gallo 3 Palermo
+12. Consegna del so0ware
+A) Fase di Pre-Consegna (15-20 gg lavora5vi)
+Prima della consegna uﬃciale, il Commi-ente avrà la possibilità di visionare e testare il
+so^ware in videoconferenza con l’Amministratore Legale della IMPLAN.
+Durante tale sessione verranno analizza3 eventuali bug, imperfezioni o modifiche
+migliora3ve richieste dal Commi-ente, al fine di garan3re la piena conformità del prodo-o
+alle specifiche concordate.
+B) Fase di Consegna Uﬃciale
+A seguito della conferma scri-a del Commi-ente a-estante che il so^ware risponde
+integralmente alle proprie aspe-a3ve e alle cara-eris3che previste dal contra-o, la
+IMPLAN procederà alla consegna uﬃciale del so0ware.
+Tale consegna avverrà solo dopo l’avvenuto saldo del corrispeZvo totale pa'uito.
+C) Fase Post-Consegna
+Qualora nel preven3vo approvato sia inclusa anche la realizzazione dell’app mobile
+connessa al so^ware, l’Amministratore Legale provvederà a coordinarne lo sviluppo, da
+completarsi indica3vamente entro un periodo compreso tra 7 e 30 giorni lavora5vi dalla
+data di consegna del so^ware principale.
+Parallelamente, verrà elaborata una pianificazione strategica di marke5ng volta a definire
+gli obieavi economici e opera3vi del proge-o, con l’intento di favorire il raggiungimento
+della sostenibilità e autosostenibilità finanziaria (ROAS) del so^ware per conto del
+Commi-ente.
+Luogo e data: PALERMO, 12/02/2026
+Ogni foglio del presente Contratto deve essere firmato e timbrato dal Cliente.
+[IMPLAN] [Cliente]
+Tutti i diritti sono riservati. © IMPLAN GROUP SRL - P.IVA IT07188110824 - implangroup@pec.it
+Sedi: Palermo • Reggio Calabria • Roma • Verona | Sede Legale: Via N.Gallo 3 Palermo
