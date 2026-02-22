@@ -4457,7 +4457,13 @@
     "editCommissionData": "Modifier commission données.",
     "registerNewCommission": "Enregistrer un nouveau commission pour un utility pratique.",
     "completedOf": "{{completed}}de{{total}} terminé",
-    "foundFields": "{{count}} champs trouvés"
+    "foundFields": "{{count}} champs trouvés",
+    "coverImage": "Image de couverture",
+    "uploadCoverImage": "Télécharger l'image de couverture",
+    "removeCoverImage": "Supprimer l'image",
+    "coverImageUploaded": "Image de couverture téléchargée",
+    "coverImageRemoved": "Image de couverture supprimée",
+    "coverImageUploadError": "Erreur lors du téléchargement de l'image"
   },
   "suppliers": {
     "title": "Fournisseurs",

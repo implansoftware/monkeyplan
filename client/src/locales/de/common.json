@@ -2667,7 +2667,13 @@
     "editCommissionData": "Edit commission data.",
     "registerNewCommission": "Register a new commission for a utility practice.",
     "completedOf": "{{completed}} von {{total}} abgeschlossen",
-    "foundFields": "{{count}} fields found"
+    "foundFields": "{{count}} fields found",
+    "coverImage": "Titelbild",
+    "uploadCoverImage": "Titelbild hochladen",
+    "removeCoverImage": "Bild entfernen",
+    "coverImageUploaded": "Titelbild hochgeladen",
+    "coverImageRemoved": "Titelbild entfernt",
+    "coverImageUploadError": "Fehler beim Hochladen des Bildes"
   },
   "suppliers": {
     "title": "Lieferanten",

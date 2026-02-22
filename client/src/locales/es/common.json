@@ -4457,7 +4457,13 @@
     "editCommissionData": "Editar comisión datos.",
     "registerNewCommission": "Registrar un nuevo comisión para un utility práctica.",
     "completedOf": "{{completed}} of {{total}} completado",
-    "foundFields": "{{count}} fields found"
+    "foundFields": "{{count}} fields found",
+    "coverImage": "Imagen de portada",
+    "uploadCoverImage": "Subir imagen de portada",
+    "removeCoverImage": "Eliminar imagen",
+    "coverImageUploaded": "Imagen de portada subida",
+    "coverImageRemoved": "Imagen de portada eliminada",
+    "coverImageUploadError": "Error al subir la imagen"
   },
   "suppliers": {
     "title": "Proveedores",

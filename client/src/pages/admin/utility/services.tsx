@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { 
   Plus, Search, Package, Pencil, Trash2, 
-  ArrowLeft, Building2, Euro, Clock
+  ArrowLeft, Building2, Euro, Clock, ImagePlus, X, Loader2
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -62,6 +62,9 @@ export default function AdminUtilityServices() {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<ServiceCategory>("fisso");
   const [isActive, setIsActive] = useState(true);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { toast } = useToast();
 
   const { data: services = [], isLoading } = useQuery<UtilityService[]>({
@@ -72,15 +75,47 @@ export default function AdminUtilityServices() {
     queryKey: ["/api/utility/suppliers"],
   });
 
+  const uploadCoverImage = async (serviceId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`/api/utility/services/${serviceId}/cover-image`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+  };
+
+  const removeCoverImage = async (serviceId: string) => {
+    const res = await fetch(`/api/utility/services/${serviceId}/cover-image`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error(await res.text());
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: InsertUtilityService) => {
       const res = await apiRequest("POST", "/api/utility/services", data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
+    onSuccess: async (service: UtilityService) => {
+      if (coverImageFile) {
+        try {
+          setUploadingImage(true);
+          await uploadCoverImage(service.id, coverImageFile);
+        } catch {
+          toast({ title: t("utility.coverImageUploadError"), variant: "destructive" });
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
       setDialogOpen(false);
       setEditingService(null);
+      setCoverImageFile(null);
+      setCoverImagePreview(null);
       toast({ title: t("utility.serviceCreated") });
     },
     onError: (error: Error) => {
@@ -93,10 +128,22 @@ export default function AdminUtilityServices() {
       const res = await apiRequest("PATCH", `/api/utility/services/${id}`, data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
+    onSuccess: async (service: UtilityService) => {
+      if (coverImageFile) {
+        try {
+          setUploadingImage(true);
+          await uploadCoverImage(service.id, coverImageFile);
+        } catch {
+          toast({ title: t("utility.coverImageUploadError"), variant: "destructive" });
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
       setDialogOpen(false);
       setEditingService(null);
+      setCoverImageFile(null);
+      setCoverImagePreview(null);
       toast({ title: t("utility.serviceUpdated") });
     },
     onError: (error: Error) => {
@@ -155,6 +202,8 @@ export default function AdminUtilityServices() {
     setSelectedSupplierId(service.supplierId);
     setSelectedCategory(service.category);
     setIsActive(service.isActive);
+    setCoverImageFile(null);
+    setCoverImagePreview(service.coverImageUrl || null);
     setDialogOpen(true);
   };
 
@@ -163,7 +212,36 @@ export default function AdminUtilityServices() {
     setSelectedSupplierId("");
     setSelectedCategory("fisso");
     setIsActive(true);
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
     setDialogOpen(true);
+  };
+
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCoverImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveCoverImage = async () => {
+    if (editingService?.coverImageUrl) {
+      try {
+        await removeCoverImage(editingService.id);
+        await queryClient.invalidateQueries({ queryKey: ["/api/utility/services"] });
+        toast({ title: t("utility.coverImageRemoved") });
+      } catch {
+        toast({ title: t("common.error"), variant: "destructive" });
+        return;
+      }
+    }
+    setCoverImageFile(null);
+    setCoverImagePreview(null);
   };
 
   const filteredServices = services.filter((service) => {
@@ -441,6 +519,48 @@ export default function AdminUtilityServices() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label>{t("utility.coverImage")}</Label>
+              {coverImagePreview ? (
+                <div className="relative group">
+                  <img
+                    src={coverImagePreview}
+                    alt="Cover"
+                    className="w-full h-32 object-cover rounded-md border"
+                    data-testid="img-cover-preview"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveCoverImage}
+                    data-testid="button-remove-cover"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="coverImage"
+                  className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-md cursor-pointer hover-elevate transition-colors"
+                  data-testid="label-upload-cover"
+                >
+                  <ImagePlus className="h-6 w-6 text-muted-foreground mb-1" />
+                  <span className="text-sm text-muted-foreground">{t("utility.uploadCoverImage")}</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">JPEG, PNG, WebP (max 10MB)</span>
+                  <input
+                    id="coverImage"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={handleCoverImageChange}
+                    data-testid="input-cover-image"
+                  />
+                </label>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="monthlyPriceCents">{t("utility.monthlyPriceEur")}</Label>
@@ -556,9 +676,12 @@ export default function AdminUtilityServices() {
               </Button>
               <Button 
                 type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending || uploadingImage}
                 data-testid="button-save"
               >
+                {(createMutation.isPending || updateMutation.isPending || uploadingImage) && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
                 {editingService ? t("utility.saveChangesBtn") : t("utility.createServiceBtn")}
               </Button>
             </div>

@@ -4457,7 +4457,13 @@
     "editCommissionData": "Edit commission data.",
     "registerNewCommission": "Register a new commission for a utility practice.",
     "completedOf": "{{completed}} of {{total}} completed",
-    "foundFields": "{{count}} fields found"
+    "foundFields": "{{count}} fields found",
+    "coverImage": "Cover Image",
+    "uploadCoverImage": "Upload cover image",
+    "removeCoverImage": "Remove image",
+    "coverImageUploaded": "Cover image uploaded",
+    "coverImageRemoved": "Cover image removed",
+    "coverImageUploadError": "Error uploading cover image"
   },
   "suppliers": {
     "title": "Suppliers",

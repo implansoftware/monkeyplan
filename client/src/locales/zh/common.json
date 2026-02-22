@@ -1817,7 +1817,13 @@
     "editCommissionData": "Edit commission data.",
     "registerNewCommission": "Register a new commission for a utility practice.",
     "completedOf": "{{completed}}个，共{{total}}个已完成",
-    "foundFields": "{{count}} fields found"
+    "foundFields": "{{count}} fields found",
+    "coverImage": "封面图片",
+    "uploadCoverImage": "上传封面图片",
+    "removeCoverImage": "移除图片",
+    "coverImageUploaded": "封面图片已上传",
+    "coverImageRemoved": "封面图片已移除",
+    "coverImageUploadError": "上传图片时出错"
   },
   "suppliers": {
     "title": "供应商",

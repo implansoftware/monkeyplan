@@ -2667,7 +2667,13 @@
     "editCommissionData": "Edit commission data.",
     "registerNewCommission": "Register a new commission for a utility practice.",
     "completedOf": "{{completed}} من {{total}} مكتمل",
-    "foundFields": "{{count}} fields found"
+    "foundFields": "{{count}} fields found",
+    "coverImage": "صورة الغلاف",
+    "uploadCoverImage": "تحميل صورة الغلاف",
+    "removeCoverImage": "إزالة الصورة",
+    "coverImageUploaded": "تم تحميل صورة الغلاف",
+    "coverImageRemoved": "تمت إزالة صورة الغلاف",
+    "coverImageUploadError": "خطأ في تحميل الصورة"
   },
   "suppliers": {
     "title": "الموردون",

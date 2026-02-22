@@ -165,6 +165,17 @@ export function UtilityServiceDetailSheet({
         </SheetHeader>
 
         <div className="space-y-5 pt-2">
+          {service.coverImageUrl && (
+            <div className="relative w-full h-40 overflow-hidden rounded-lg border">
+              <img
+                src={service.coverImageUrl}
+                alt={service.name}
+                className="w-full h-full object-cover"
+                data-testid="img-service-cover"
+              />
+            </div>
+          )}
+
           {supplier && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               <Building2 className="h-4 w-4" />

@@ -1817,7 +1817,13 @@
     "editCommissionData": "Edit commission data.",
     "registerNewCommission": "Register a new commission for a utility practice.",
     "completedOf": "{{completed}} van {{total}} voltooid",
-    "foundFields": "{{count}} fields found"
+    "foundFields": "{{count}} fields found",
+    "coverImage": "Omslagafbeelding",
+    "uploadCoverImage": "Omslagafbeelding uploaden",
+    "removeCoverImage": "Afbeelding verwijderen",
+    "coverImageUploaded": "Omslagafbeelding geüpload",
+    "coverImageRemoved": "Omslagafbeelding verwijderd",
+    "coverImageUploadError": "Fout bij het uploaden van de afbeelding"
   },
   "suppliers": {
     "title": "Leveranciers",

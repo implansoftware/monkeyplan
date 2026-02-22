@@ -159,6 +159,17 @@ export default function RepairCenterUtilityServices() {
         onClick={() => onViewDetail?.(service.id)}
         data-testid={`card-service-${service.id}`}
       >
+        {service.coverImageUrl && (
+          <div className="relative w-full h-36 overflow-hidden rounded-t-xl">
+            <img
+              src={service.coverImageUrl}
+              alt={service.name}
+              className="w-full h-full object-cover"
+              data-testid={`img-cover-${service.id}`}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+          </div>
+        )}
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">

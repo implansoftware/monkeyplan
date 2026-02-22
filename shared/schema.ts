@@ -2999,6 +2999,8 @@ export const utilityServices = pgTable("utility_services", {
   // Durata contratto
   contractMonths: integer("contract_months").default(24), // Durata contratto in mesi
   
+  coverImageUrl: text("cover_image_url"),
+
   // Stato
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -27226,6 +27226,64 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/utility/services/:id/cover-image - Upload cover image
+  app.post("/api/utility/services/:id/cover-image", requireAuth, requireRole("admin"), upload.single("image"), async (req, res) => {
+    try {
+      const service = await storage.getUtilityService(req.params.id);
+      if (!service) {
+        return res.status(404).send("Service not found");
+      }
+
+      if (!req.file) {
+        return res.status(400).send("No file uploaded");
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).send("Unsupported image format. Use JPEG, PNG, WebP or GIF.");
+      }
+
+      const ext = req.file.originalname.split(".").pop() || "jpg";
+      const objectPath = `utility-services/${req.params.id}/${Date.now()}.${ext}`;
+
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+
+      const coverImageUrl = `/objects/${objectPath}`;
+
+      await storage.updateUtilityService(req.params.id, { coverImageUrl });
+
+      res.json({ coverImageUrl });
+    } catch (error: any) {
+      console.error("Error uploading utility service cover image:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/services/:id/cover-image - Remove cover image
+  app.delete("/api/utility/services/:id/cover-image", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const service = await storage.getUtilityService(req.params.id);
+      if (!service) {
+        return res.status(404).send("Service not found");
+      }
+
+      await storage.updateUtilityService(req.params.id, { coverImageUrl: null });
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error removing utility service cover image:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ----- UTILITY PRACTICES -----
 
   // GET /api/utility/practices - List utility practices
