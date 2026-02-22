@@ -4463,7 +4463,11 @@
     "removeCoverImage": "Eliminar imagen",
     "coverImageUploaded": "Imagen de portada subida",
     "coverImageRemoved": "Imagen de portada eliminada",
-    "coverImageUploadError": "Error al subir la imagen"
+    "coverImageUploadError": "Error al subir la imagen",
+    "supplierLogo": "Logo del proveedor",
+    "supplierLogoUpload": "Subir logo",
+    "supplierLogoRemoved": "Logo eliminado",
+    "supplierLogoUploadError": "Error al cargar el logo"
   },
   "suppliers": {
     "title": "Proveedores",

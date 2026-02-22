@@ -15,6 +15,7 @@ import {
   Search, Phone, Mail, Globe, Plus, Pencil, Trash2,
   ArrowLeft, Building2, CheckCircle2, XCircle, Globe2, User
 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -190,6 +191,7 @@ export default function ResellerUtilitySuppliers() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Logo</TableHead>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.code")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
@@ -202,6 +204,16 @@ export default function ResellerUtilitySuppliers() {
               <TableBody>
                 {filteredSuppliers.map((supplier) => (
                   <TableRow key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
+                    <TableCell>
+                      <Avatar className="h-8 w-8" data-testid={`img-logo-${supplier.id}`}>
+                        {supplier.logoUrl ? (
+                          <AvatarImage src={supplier.logoUrl} alt={supplier.name} />
+                        ) : null}
+                        <AvatarFallback className="text-xs">
+                          {supplier.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
                     <TableCell className="font-medium">{supplier.name}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{supplier.code}</Badge>

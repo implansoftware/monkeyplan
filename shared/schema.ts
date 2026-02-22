@@ -2966,6 +2966,9 @@ export const utilitySuppliers = pgTable("utility_suppliers", {
   defaultCommissionFixed: integer("default_commission_fixed"), // Commissione fissa in centesimi
   paymentTermsDays: integer("payment_terms_days").default(30), // Giorni pagamento commissioni
   
+  // Logo
+  logoUrl: text("logo_url"),
+  
   // Note
   notes: text("notes"),
   

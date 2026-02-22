@@ -1823,7 +1823,11 @@
     "removeCoverImage": "Afbeelding verwijderen",
     "coverImageUploaded": "Omslagafbeelding geüpload",
     "coverImageRemoved": "Omslagafbeelding verwijderd",
-    "coverImageUploadError": "Fout bij het uploaden van de afbeelding"
+    "coverImageUploadError": "Fout bij het uploaden van de afbeelding",
+    "supplierLogo": "Leverancierslogo",
+    "supplierLogoUpload": "Logo uploaden",
+    "supplierLogoRemoved": "Logo verwijderd",
+    "supplierLogoUploadError": "Fout bij het uploaden van het logo"
   },
   "suppliers": {
     "title": "Leveranciers",

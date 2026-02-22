@@ -2673,7 +2673,11 @@
     "removeCoverImage": "Bild entfernen",
     "coverImageUploaded": "Titelbild hochgeladen",
     "coverImageRemoved": "Titelbild entfernt",
-    "coverImageUploadError": "Fehler beim Hochladen des Bildes"
+    "coverImageUploadError": "Fehler beim Hochladen des Bildes",
+    "supplierLogo": "Lieferanten-Logo",
+    "supplierLogoUpload": "Logo hochladen",
+    "supplierLogoRemoved": "Logo entfernt",
+    "supplierLogoUploadError": "Fehler beim Hochladen des Logos"
   },
   "suppliers": {
     "title": "Lieferanten",

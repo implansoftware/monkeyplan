@@ -4463,7 +4463,11 @@
     "removeCoverImage": "Remove image",
     "coverImageUploaded": "Cover image uploaded",
     "coverImageRemoved": "Cover image removed",
-    "coverImageUploadError": "Error uploading cover image"
+    "coverImageUploadError": "Error uploading cover image",
+    "supplierLogo": "Supplier logo",
+    "supplierLogoUpload": "Upload logo",
+    "supplierLogoRemoved": "Logo removed",
+    "supplierLogoUploadError": "Error uploading logo"
   },
   "suppliers": {
     "title": "Suppliers",

@@ -1823,7 +1823,11 @@
     "removeCoverImage": "移除图片",
     "coverImageUploaded": "封面图片已上传",
     "coverImageRemoved": "封面图片已移除",
-    "coverImageUploadError": "上传图片时出错"
+    "coverImageUploadError": "上传图片时出错",
+    "supplierLogo": "供应商标志",
+    "supplierLogoUpload": "上传标志",
+    "supplierLogoRemoved": "标志已删除",
+    "supplierLogoUploadError": "上传标志时出错"
   },
   "suppliers": {
     "title": "供应商",

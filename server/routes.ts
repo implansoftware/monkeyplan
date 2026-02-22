@@ -27284,6 +27284,65 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // POST /api/utility/suppliers/:id/logo - Upload supplier logo
+  app.post("/api/utility/suppliers/:id/logo", requireAuth, requireRole("admin"), upload.single("image"), async (req, res) => {
+    try {
+      const supplier = await storage.getUtilitySupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).send("Supplier not found");
+      }
+
+      if (!req.file) {
+        return res.status(400).send("No file uploaded");
+      }
+
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).send("Unsupported image format. Use JPEG, PNG, WebP, GIF or SVG.");
+      }
+
+      const ext = req.file.originalname.split(".").pop() || "png";
+      const objectPath = `utility-suppliers/${req.params.id}/logo-${Date.now()}.${ext}`;
+
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+
+      const logoUrl = `/objects/${objectPath}`;
+
+      await storage.updateUtilitySupplier(req.params.id, { logoUrl } as any);
+
+      res.json({ logoUrl });
+    } catch (error: any) {
+      console.error("Error uploading utility supplier logo:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // DELETE /api/utility/suppliers/:id/logo - Remove supplier logo
+  app.delete("/api/utility/suppliers/:id/logo", requireAuth, requireRole("admin"), async (req, res) => {
+    try {
+      const supplier = await storage.getUtilitySupplier(req.params.id);
+      if (!supplier) {
+        return res.status(404).send("Supplier not found");
+      }
+
+      await storage.updateUtilitySupplier(req.params.id, { logoUrl: null } as any);
+
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error removing utility supplier logo:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ----- UTILITY PRACTICES -----
 
   // GET /api/utility/practices - List utility practices

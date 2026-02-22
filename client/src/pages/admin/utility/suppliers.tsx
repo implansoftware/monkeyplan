@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { UtilitySupplier, InsertUtilitySupplier } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,35 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Plus, Search, Phone, Mail, Globe, Pencil, Trash2, 
-  ArrowLeft, Building2, CheckCircle2, XCircle
+  ArrowLeft, Building2, CheckCircle2, XCircle, Upload, X, ImageIcon
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+
+async function uploadSupplierLogo(supplierId: string, file: File) {
+  const formData = new FormData();
+  formData.append("image", file);
+  const res = await fetch(`/api/utility/suppliers/${supplierId}/logo`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function removeSupplierLogo(supplierId: string) {
+  const res = await fetch(`/api/utility/suppliers/${supplierId}/logo`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 
 export default function AdminUtilitySuppliers() {
   const { t } = useTranslation();
@@ -35,6 +57,10 @@ export default function AdminUtilitySuppliers() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<UtilitySupplier | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("fisso");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: suppliers = [], isLoading } = useQuery<UtilitySupplier[]>({
@@ -46,10 +72,22 @@ export default function AdminUtilitySuppliers() {
       const res = await apiRequest("POST", "/api/utility/suppliers", data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
+    onSuccess: async (supplier: UtilitySupplier) => {
+      if (logoFile) {
+        try {
+          setUploadingLogo(true);
+          await uploadSupplierLogo(supplier.id, logoFile);
+        } catch {
+          toast({ title: t("utility.supplierLogoUploadError"), variant: "destructive" });
+        } finally {
+          setUploadingLogo(false);
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
+      setLogoFile(null);
+      setLogoPreview(null);
       toast({ title: t("utility.supplierCreated") });
     },
     onError: (error: Error) => {
@@ -62,10 +100,22 @@ export default function AdminUtilitySuppliers() {
       const res = await apiRequest("PATCH", `/api/utility/suppliers/${id}`, data);
       return await res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
+    onSuccess: async (supplier: UtilitySupplier) => {
+      if (logoFile) {
+        try {
+          setUploadingLogo(true);
+          await uploadSupplierLogo(supplier.id, logoFile);
+        } catch {
+          toast({ title: t("utility.supplierLogoUploadError"), variant: "destructive" });
+        } finally {
+          setUploadingLogo(false);
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
       setDialogOpen(false);
       setEditingSupplier(null);
+      setLogoFile(null);
+      setLogoPreview(null);
       toast({ title: t("utility.supplierUpdated") });
     },
     onError: (error: Error) => {
@@ -114,13 +164,48 @@ export default function AdminUtilitySuppliers() {
   const handleEdit = (supplier: UtilitySupplier) => {
     setEditingSupplier(supplier);
     setSelectedCategory(supplier.category);
+    setLogoFile(null);
+    setLogoPreview(supplier.logoUrl || null);
     setDialogOpen(true);
   };
 
   const handleNewSupplier = () => {
     setEditingSupplier(null);
     setSelectedCategory("fisso");
+    setLogoFile(null);
+    setLogoPreview(null);
     setDialogOpen(true);
+  };
+
+  const handleLogoFileChange = (file: File) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: t("utility.supplierLogoUploadError"), description: "JPEG, PNG, WebP, GIF, SVG", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: t("utility.supplierLogoUploadError"), description: "Max 5MB", variant: "destructive" });
+      return;
+    }
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setLogoPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveLogo = async () => {
+    if (editingSupplier?.logoUrl) {
+      try {
+        await removeSupplierLogo(editingSupplier.id);
+        await queryClient.invalidateQueries({ queryKey: ["/api/utility/suppliers"] });
+        toast({ title: t("utility.supplierLogoRemoved") });
+      } catch {
+        toast({ title: t("common.error"), variant: "destructive" });
+        return;
+      }
+    }
+    setLogoFile(null);
+    setLogoPreview(null);
   };
 
   const filteredSuppliers = suppliers.filter((supplier) =>
@@ -180,6 +265,7 @@ export default function AdminUtilitySuppliers() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Logo</TableHead>
                   <TableHead>{t("common.name")}</TableHead>
                   <TableHead>{t("common.code")}</TableHead>
                   <TableHead>{t("common.category")}</TableHead>
@@ -191,6 +277,16 @@ export default function AdminUtilitySuppliers() {
               <TableBody>
                 {filteredSuppliers.map((supplier) => (
                   <TableRow key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
+                    <TableCell>
+                      <Avatar className="h-8 w-8" data-testid={`img-logo-${supplier.id}`}>
+                        {supplier.logoUrl ? (
+                          <AvatarImage src={supplier.logoUrl} alt={supplier.name} />
+                        ) : null}
+                        <AvatarFallback className="text-xs">
+                          {supplier.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
                     <TableCell className="font-medium">{supplier.name}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{supplier.code}</Badge>
@@ -284,6 +380,61 @@ export default function AdminUtilitySuppliers() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("utility.supplierLogo")}</Label>
+              <div className="flex flex-wrap items-center gap-4">
+                {logoPreview ? (
+                  <div className="relative">
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={logoPreview} alt="Logo preview" />
+                      <AvatarFallback><ImageIcon className="h-6 w-6" /></AvatarFallback>
+                    </Avatar>
+                    <button
+                      type="button"
+                      className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                      onClick={handleRemoveLogo}
+                      data-testid="button-remove-logo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    className="h-16 w-16 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center cursor-pointer hover-elevate"
+                    onClick={() => logoInputRef.current?.click()}
+                    data-testid="area-upload-logo"
+                  >
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => logoInputRef.current?.click()}
+                    disabled={uploadingLogo}
+                    data-testid="button-upload-logo"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    {t("utility.supplierLogoUpload")}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">JPEG, PNG, WebP, SVG - Max 5MB</span>
+                </div>
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleLogoFileChange(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">{t("common.name")} *</Label>
@@ -422,7 +573,7 @@ export default function AdminUtilitySuppliers() {
               </Button>
               <Button 
                 type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
+                disabled={createMutation.isPending || updateMutation.isPending || uploadingLogo}
                 data-testid="button-save"
               >
                 {editingSupplier ? t("utility.saveChangesBtn") : t("utility.createSupplierBtn")}

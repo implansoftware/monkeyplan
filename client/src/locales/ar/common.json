@@ -2673,7 +2673,11 @@
     "removeCoverImage": "إزالة الصورة",
     "coverImageUploaded": "تم تحميل صورة الغلاف",
     "coverImageRemoved": "تمت إزالة صورة الغلاف",
-    "coverImageUploadError": "خطأ في تحميل الصورة"
+    "coverImageUploadError": "خطأ في تحميل الصورة",
+    "supplierLogo": "شعار المورد",
+    "supplierLogoUpload": "تحميل الشعار",
+    "supplierLogoRemoved": "تم حذف الشعار",
+    "supplierLogoUploadError": "خطأ في تحميل الشعار"
   },
   "suppliers": {
     "title": "الموردون",
