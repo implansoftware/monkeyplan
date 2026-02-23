@@ -6170,7 +6170,12 @@
     "noTicketsPresent": "Geen tickets gevonden",
     "open": "Openen",
     "selectCenter": "Selecteren Center",
-    "tryChangingFilters": "Try changing the filters"
+    "tryChangingFilters": "Try changing the filters",
+    "openedBy": "Geopend door",
+    "ticketTypeLbl": "Ticket Type",
+    "recipientType": "Type Ontvanger",
+    "selectRecipientType": "Selecteer type ontvanger...",
+    "createTicketDesc": "Maak een nieuw ticket aan om te communiceren met dealers of reparatiecentra"
   },
   "remoteRequests": {
     "title": "Remote Requests",

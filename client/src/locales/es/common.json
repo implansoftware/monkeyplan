@@ -1417,7 +1417,12 @@
     "noTicketsPresent": "No tickets found",
     "open": "Abrir",
     "selectCenter": "Seleccionar Centro",
-    "tryChangingFilters": "Try changing el filters"
+    "tryChangingFilters": "Intenta cambiar los filtros",
+    "openedBy": "Abierto por",
+    "ticketTypeLbl": "Tipo de Ticket",
+    "recipientType": "Tipo de Destinatario",
+    "selectRecipientType": "Seleccionar tipo de destinatario...",
+    "createTicketDesc": "Crear un nuevo ticket para comunicarse con revendedores o centros de reparación"
   },
   "warehouse": {
     "title": "Almacén",

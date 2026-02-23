@@ -14620,7 +14620,36 @@ export function registerRoutes(app: Express): Server {
       
       if (!hasAccess) return res.status(403).send("Accesso negato");
       
-      res.json(ticket);
+      const creatorId = ticket.initiatorId || ticket.customerId;
+      let creator: { id: string; username: string; email: string; role: string; companyName?: string } | null = null;
+      if (creatorId) {
+        const creatorUser = await storage.getUser(creatorId);
+        if (creatorUser) {
+          creator = {
+            id: creatorUser.id,
+            username: creatorUser.username,
+            email: creatorUser.email || '',
+            role: creatorUser.role,
+            companyName: creatorUser.companyName || undefined,
+          };
+        }
+      }
+
+      let target: { id: string; username: string; email: string; role: string; companyName?: string } | null = null;
+      if (ticket.targetId) {
+        const targetUser = await storage.getUser(ticket.targetId);
+        if (targetUser) {
+          target = {
+            id: targetUser.id,
+            username: targetUser.username,
+            email: targetUser.email || '',
+            role: targetUser.role,
+            companyName: targetUser.companyName || undefined,
+          };
+        }
+      }
+
+      res.json({ ...ticket, creator, target });
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(500).send(error.message);

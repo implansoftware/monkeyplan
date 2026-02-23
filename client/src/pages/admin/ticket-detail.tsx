@@ -31,6 +31,14 @@ import { format } from "date-fns";
 import { it as itLocale } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 
+type TicketCreator = {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  companyName?: string;
+};
+
 type Ticket = {
   id: string;
   ticketNumber: string;
@@ -40,6 +48,13 @@ type Ticket = {
   status: string;
   priority: string;
   assignedTo: string | null;
+  ticketType?: string;
+  initiatorId?: string;
+  initiatorRole?: string;
+  targetType?: string;
+  targetId?: string;
+  creator?: TicketCreator | null;
+  target?: TicketCreator | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -519,13 +534,61 @@ function TicketDetailManageView({ basePath }: { basePath: string }) {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t("tickets.customerInfo")}</CardTitle>
+              <CardTitle>{t("tickets.openedBy")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-sm">
-                <span className="text-muted-foreground">{t("tickets.customerId")}: </span>
-                <span className="font-mono">{ticket.customerId}</span>
-              </div>
+            <CardContent className="space-y-3">
+              {ticket.creator ? (
+                <>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">{t("common.name")}: </span>
+                    <span className="font-medium" data-testid="text-creator-name">{ticket.creator.username}</span>
+                  </div>
+                  {ticket.creator.email && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">Email: </span>
+                      <span data-testid="text-creator-email">{ticket.creator.email}</span>
+                    </div>
+                  )}
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">{t("common.role")}: </span>
+                    <Badge variant="outline" data-testid="text-creator-role">
+                      {ticket.creator.role === 'admin' ? t("tickets.admin") :
+                       ticket.creator.role === 'reseller' ? t("tickets.reseller") :
+                       ticket.creator.role === 'repair_center' ? t("tickets.repairCenter") :
+                       ticket.creator.role === 'customer' ? t("common.customer") :
+                       ticket.creator.role}
+                    </Badge>
+                  </div>
+                  {ticket.creator.companyName && (
+                    <div className="text-sm">
+                      <span className="text-muted-foreground">{t("common.company")}: </span>
+                      <span data-testid="text-creator-company">{ticket.creator.companyName}</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  <span>{t("tickets.customerId")}: </span>
+                  <span className="font-mono">{ticket.customerId}</span>
+                </div>
+              )}
+              {ticket.ticketType && (
+                <div className="text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">{t("tickets.ticketTypeLbl")}: </span>
+                  <Badge variant="secondary" data-testid="text-ticket-type">
+                    {ticket.ticketType === 'support' ? t("tickets.type.support") : t("tickets.type.internal")}
+                  </Badge>
+                </div>
+              )}
+              {ticket.target && (
+                <div className="text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">{t("tickets.recipient")}: </span>
+                  <span className="font-medium" data-testid="text-target-name">{ticket.target.username}</span>
+                  {ticket.target.companyName && (
+                    <span className="text-muted-foreground"> ({ticket.target.companyName})</span>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -1417,7 +1417,12 @@
     "noTicketsPresent": "No tickets found",
     "open": "Open",
     "selectCenter": "Select Center",
-    "tryChangingFilters": "Try changing the filters"
+    "tryChangingFilters": "Try changing the filters",
+    "openedBy": "Opened by",
+    "ticketTypeLbl": "Ticket Type",
+    "recipientType": "Recipient Type",
+    "selectRecipientType": "Select recipient type...",
+    "createTicketDesc": "Create a new ticket to communicate with resellers or repair centers"
   },
   "warehouse": {
     "title": "Warehouse",

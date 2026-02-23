@@ -6005,7 +6005,12 @@
     "inProgress": "قيد التنفيذ",
     "manageAllTickets": "إدارة جميع التذاكر",
     "management": "إدارة التذاكر",
-    "noTicketsPresent": "لم يتم العثور على تذاكر"
+    "noTicketsPresent": "لم يتم العثور على تذاكر",
+    "openedBy": "فتح بواسطة",
+    "ticketTypeLbl": "نوع التذكرة",
+    "recipientType": "نوع المستلم",
+    "selectRecipientType": "اختر نوع المستلم...",
+    "createTicketDesc": "إنشاء تذكرة جديدة للتواصل مع الموزعين أو مراكز الإصلاح"
   },
   "repair": {
     "acceptance": "الاستقبال",

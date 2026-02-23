@@ -6545,7 +6545,12 @@
     "noTicketsPresent": "未找到工单",
     "open": "打开",
     "selectCenter": "Select Center",
-    "tryChangingFilters": "Try changing the filters"
+    "tryChangingFilters": "Try changing the filters",
+    "openedBy": "创建者",
+    "ticketTypeLbl": "工单类型",
+    "recipientType": "接收方类型",
+    "selectRecipientType": "选择接收方类型...",
+    "createTicketDesc": "创建新工单与经销商或维修中心沟通"
   },
   "remoteRequests": {
     "title": "Remote Requests",

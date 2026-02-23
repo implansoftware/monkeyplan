@@ -1,16 +1,28 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Ticket, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, Ticket, Clock, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type TicketType = {
   id: string;
@@ -25,18 +37,93 @@ type TicketType = {
   updatedAt: string;
 };
 
+type EntityOption = {
+  id: string;
+  username: string;
+  companyName?: string;
+  role?: string;
+};
+
 export default function AdminTickets() {
   const { t } = useTranslation();
   usePageTitle(t("tickets.title"));
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [targetType, setTargetType] = useState<string>("");
+  const [targetId, setTargetId] = useState<string>("");
+  const [ticketSubject, setTicketSubject] = useState("");
+  const [ticketDescription, setTicketDescription] = useState("");
+  const [ticketPriority, setTicketPriority] = useState("medium");
 
   const { data: tickets = [], isLoading } = useQuery<TicketType[]>({
     queryKey: ["/api/tickets"],
     retry: false,
   });
+
+  const { data: resellers = [] } = useQuery<EntityOption[]>({
+    queryKey: ["/api/admin/resellers"],
+  });
+
+  const { data: repairCenters = [] } = useQuery<EntityOption[]>({
+    queryKey: ["/api/admin/repair-centers"],
+  });
+
+  const { data: customers = [] } = useQuery<EntityOption[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const customerList = customers.filter((u: any) => u.role === 'customer');
+
+  const createTicketMutation = useMutation({
+    mutationFn: async (data: { subject: string; description: string; priority: string; targetType: string; targetId?: string }) => {
+      const res = await apiRequest("POST", "/api/internal-tickets", data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/internal-tickets"] });
+      toast({ title: t("tickets.ticketCreated") });
+      resetCreateForm();
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message.replace(/^\d+:\s*/, ''), variant: "destructive" });
+    },
+  });
+
+  const resetCreateForm = () => {
+    setShowCreateDialog(false);
+    setTargetType("");
+    setTargetId("");
+    setTicketSubject("");
+    setTicketDescription("");
+    setTicketPriority("medium");
+  };
+
+  const handleCreateTicket = () => {
+    if (!ticketSubject.trim() || !ticketDescription.trim() || !targetType) return;
+    createTicketMutation.mutate({
+      subject: ticketSubject,
+      description: ticketDescription,
+      priority: ticketPriority,
+      targetType,
+      targetId: targetType !== 'admin' ? targetId : undefined,
+    });
+  };
+
+  const getTargetOptions = () => {
+    switch (targetType) {
+      case 'reseller':
+        return resellers.map((r) => ({ id: r.id, label: r.companyName || r.username }));
+      case 'repair_center':
+        return repairCenters.map((rc) => ({ id: rc.id, label: (rc as any).companyName || rc.username }));
+      default:
+        return [];
+    }
+  };
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesSearch = ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -66,7 +153,6 @@ export default function AdminTickets() {
 
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/5 via-primary/10 to-slate-100 dark:from-primary/10 dark:via-primary/5 dark:to-slate-900 p-6 border">
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -83,6 +169,10 @@ export default function AdminTickets() {
               </p>
             </div>
           </div>
+          <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-ticket">
+            <Plus className="h-4 w-4 mr-2" />
+            {t("tickets.newTicket")}
+          </Button>
         </div>
       </div>
 
@@ -197,6 +287,89 @@ export default function AdminTickets() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showCreateDialog} onOpenChange={(open) => { if (!open) resetCreateForm(); else setShowCreateDialog(true); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("tickets.createNewInternalTicket")}</DialogTitle>
+            <DialogDescription>{t("tickets.createTicketDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("tickets.recipientType")}</Label>
+              <Select value={targetType} onValueChange={(v) => { setTargetType(v); setTargetId(""); }}>
+                <SelectTrigger data-testid="select-target-type">
+                  <SelectValue placeholder={t("tickets.selectRecipientType")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="reseller">{t("tickets.reseller")}</SelectItem>
+                  <SelectItem value="repair_center">{t("tickets.repairCenter")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {targetType && (
+              <div className="space-y-2">
+                <Label>{t("tickets.recipient")}</Label>
+                <Select value={targetId} onValueChange={setTargetId}>
+                  <SelectTrigger data-testid="select-target-id">
+                    <SelectValue placeholder={t("tickets.selectRecipient")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getTargetOptions().map((opt) => (
+                      <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>{t("tickets.subjectRequired")}</Label>
+              <Input
+                value={ticketSubject}
+                onChange={(e) => setTicketSubject(e.target.value)}
+                placeholder={t("tickets.subjectPlaceholder")}
+                data-testid="input-ticket-subject"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("tickets.descriptionRequired")}</Label>
+              <Textarea
+                value={ticketDescription}
+                onChange={(e) => setTicketDescription(e.target.value)}
+                placeholder={t("tickets.descriptionPlaceholder")}
+                rows={4}
+                data-testid="textarea-ticket-description"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("common.priority")}</Label>
+              <Select value={ticketPriority} onValueChange={setTicketPriority}>
+                <SelectTrigger data-testid="select-ticket-priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">{t("common.priorityLow")}</SelectItem>
+                  <SelectItem value="medium">{t("common.priorityMedium")}</SelectItem>
+                  <SelectItem value="high">{t("common.priorityHigh")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handleCreateTicket}
+              className="w-full"
+              disabled={!ticketSubject.trim() || !ticketDescription.trim() || !targetType || (targetType !== 'admin' && !targetId) || createTicketMutation.isPending}
+              data-testid="button-submit-ticket"
+            >
+              {createTicketMutation.isPending ? t("tickets.invio") : t("tickets.submitTicket")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

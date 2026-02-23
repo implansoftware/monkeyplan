@@ -6673,7 +6673,12 @@
     "inProgress": "In Bearbeitung",
     "manageAllTickets": "Alle Tickets verwalten",
     "management": "Ticket-Verwaltung",
-    "noTicketsPresent": "Keine Tickets gefunden"
+    "noTicketsPresent": "Keine Tickets gefunden",
+    "openedBy": "Eröffnet von",
+    "ticketTypeLbl": "Ticket-Typ",
+    "recipientType": "Empfängertyp",
+    "selectRecipientType": "Empfängertyp auswählen...",
+    "createTicketDesc": "Neues Ticket erstellen um mit Händlern oder Reparaturzentren zu kommunizieren"
   },
   "repair": {
     "acceptance": "Annahme",

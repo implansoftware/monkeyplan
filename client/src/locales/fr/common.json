@@ -1417,7 +1417,12 @@
     "noTicketsPresent": "Aucun tickets trouvé",
     "open": "Ouvert",
     "selectCenter": "Sélectionner le centre",
-    "tryChangingFilters": "Essayez de modifier les filtres"
+    "tryChangingFilters": "Essayez de modifier les filtres",
+    "openedBy": "Ouvert par",
+    "ticketTypeLbl": "Type de ticket",
+    "recipientType": "Type de destinataire",
+    "selectRecipientType": "Sélectionner le type de destinataire...",
+    "createTicketDesc": "Créer un nouveau ticket pour communiquer avec les revendeurs ou les centres de réparation"
   },
   "warehouse": {
     "title": "Entrepôt",

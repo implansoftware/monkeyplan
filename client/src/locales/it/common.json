@@ -1417,7 +1417,12 @@
     "noTicketsPresent": "Nessun ticket trovato",
     "open": "Aperto",
     "selectCenter": "Seleziona Centro",
-    "tryChangingFilters": "Prova a modificare i filtri"
+    "tryChangingFilters": "Prova a modificare i filtri",
+    "openedBy": "Aperto da",
+    "ticketTypeLbl": "Tipo Ticket",
+    "recipientType": "Tipo Destinatario",
+    "selectRecipientType": "Seleziona tipo destinatario...",
+    "createTicketDesc": "Crea un nuovo ticket per comunicare con rivenditori o centri riparazione"
   },
   "warehouse": {
     "title": "Magazzino",
