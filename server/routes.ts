@@ -12617,7 +12617,14 @@ export function registerRoutes(app: Express): Server {
           }
           return { ...d, photos: photoUrls };
         }));
-        return { ...r, devices: enrichedDevices };
+        const customer = r.customerId ? await storage.getUser(r.customerId) : null;
+        return {
+          ...r,
+          devices: enrichedDevices,
+          customerName: customer?.fullName || customer?.username || null,
+          customerEmail: customer?.email || null,
+          customerPhone: customer?.phone || null,
+        };
       }));
       
       res.json(enrichedRequests);

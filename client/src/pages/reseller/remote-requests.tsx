@@ -9,11 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck, Image, Smartphone } from "lucide-react";
+import { Loader2, Package, Truck, Check, X, Clock, Building2, UserCheck, Image, Smartphone, User2, Mail, Phone } from "lucide-react";
 import type { RemoteRepairRequest, RepairCenter, RemoteRepairRequestDevice } from "@shared/schema";
 
 type RepairCenterWithUserId = RepairCenter & { userId: string | null };
-type EnrichedRemoteRequest = RemoteRepairRequest & { devices: RemoteRepairRequestDevice[] };
+type EnrichedRemoteRequest = RemoteRepairRequest & {
+  devices: RemoteRepairRequestDevice[];
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+};
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -200,6 +205,26 @@ export default function ResellerRemoteRequests() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
+                        {(request.customerName || request.customerEmail) && (
+                          <div className="flex flex-wrap items-center gap-4 p-3 rounded-md bg-muted/50" data-testid={`customer-info-${request.id}`}>
+                            <div className="flex items-center gap-2">
+                              <User2 className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">{request.customerName || t("common.nd")}</span>
+                            </div>
+                            {request.customerEmail && (
+                              <div className="flex items-center gap-1.5">
+                                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">{request.customerEmail}</span>
+                              </div>
+                            )}
+                            {request.customerPhone && (
+                              <div className="flex items-center gap-1.5">
+                                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">{request.customerPhone}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {request.devices?.map((device) => (
                           <div key={device.id} className="p-3 border rounded-md space-y-2" data-testid={`device-${device.id}`}>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -288,6 +313,13 @@ export default function ResellerRemoteRequests() {
                           </span>
                         </div>
                       </div>
+                      {(request.customerName || request.customerEmail) && (
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-sm" data-testid={`customer-info-${request.id}`}>
+                          <span className="flex items-center gap-1.5"><User2 className="h-3.5 w-3.5 text-muted-foreground" />{request.customerName || t("common.nd")}</span>
+                          {request.customerEmail && <span className="flex items-center gap-1.5 text-muted-foreground"><Mail className="h-3.5 w-3.5" />{request.customerEmail}</span>}
+                          {request.customerPhone && <span className="flex items-center gap-1.5 text-muted-foreground"><Phone className="h-3.5 w-3.5" />{request.customerPhone}</span>}
+                        </div>
+                      )}
                     </CardHeader>
                   </Card>
                 ))}
@@ -326,6 +358,13 @@ export default function ResellerRemoteRequests() {
                           </span>
                         </div>
                       </div>
+                      {(request.customerName || request.customerEmail) && (
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-sm" data-testid={`customer-info-active-${request.id}`}>
+                          <span className="flex items-center gap-1.5"><User2 className="h-3.5 w-3.5 text-muted-foreground" />{request.customerName || t("common.nd")}</span>
+                          {request.customerEmail && <span className="flex items-center gap-1.5 text-muted-foreground"><Mail className="h-3.5 w-3.5" />{request.customerEmail}</span>}
+                          {request.customerPhone && <span className="flex items-center gap-1.5 text-muted-foreground"><Phone className="h-3.5 w-3.5" />{request.customerPhone}</span>}
+                        </div>
+                      )}
                     </CardHeader>
                   </Card>
                 ))}
@@ -359,6 +398,13 @@ export default function ResellerRemoteRequests() {
                         <span className="text-sm text-muted-foreground">
                           {request.devices?.map(d => `${d.brand} ${d.model}`).join(', ') || '-'}
                         </span>
+                      {(request.customerName || request.customerEmail) && (
+                        <div className="flex flex-wrap items-center gap-3 mt-1 text-sm" data-testid={`customer-info-completed-${request.id}`}>
+                          <span className="flex items-center gap-1.5"><User2 className="h-3.5 w-3.5 text-muted-foreground" />{request.customerName || t("common.nd")}</span>
+                          {request.customerEmail && <span className="flex items-center gap-1.5 text-muted-foreground"><Mail className="h-3.5 w-3.5" />{request.customerEmail}</span>}
+                          {request.customerPhone && <span className="flex items-center gap-1.5 text-muted-foreground"><Phone className="h-3.5 w-3.5" />{request.customerPhone}</span>}
+                        </div>
+                      )}
                       </div>
                     </CardHeader>
                   </Card>
