@@ -648,7 +648,26 @@
       "testFinale": "Slottest"
     },
     "richiedeAzioni": "Vereist acties",
-    "tariffe": "Tarieven"
+    "tariffe": "Tarieven",
+    "categories": {
+      "display": "Scherm",
+      "battery": "Batterij",
+      "motherboard": "Moederbord",
+      "camera": "Camera",
+      "speaker": "Luidspreker",
+      "microphone": "Microfoon",
+      "chargingConnector": "Oplaadconnector",
+      "buttons": "Knoppen",
+      "cover": "Hoesje",
+      "rearGlass": "Achterglas",
+      "sensors": "Sensoren",
+      "flexCable": "Flexkabel",
+      "antenna": "Antenne",
+      "vibrationMotor": "Trillingsmotor",
+      "simTray": "SIM-lade",
+      "accessory": "Accessoire",
+      "other": "Overig"
+    }
   },
   "standalone": {
     "quotes": "Standalone Offertes",
@@ -2799,7 +2818,23 @@
       "software": "Software",
       "hardware": "Hardware",
       "diagnostica": "Diagnostics",
-      "altro": "Overig"
+      "altro": "Overig",
+      "battery": "Batterij",
+      "motherboard": "Moederbord",
+      "camera": "Camera",
+      "speaker": "Luidspreker",
+      "microphone": "Microfoon",
+      "chargingConnector": "Oplaadconnector",
+      "buttons": "Knoppen",
+      "cover": "Hoesje",
+      "rearGlass": "Achterglas",
+      "sensors": "Sensoren",
+      "flexCable": "Flexkabel",
+      "antenna": "Antenne",
+      "vibrationMotor": "Trillingsmotor",
+      "simTray": "SIM-lade",
+      "accessory": "Accessoire",
+      "other": "Overig"
     },
     "invalidPrice": "Enter a valid price",
     "selectTarget": "Select a reseller or repair center",

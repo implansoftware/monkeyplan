@@ -648,7 +648,26 @@
       "testFinale": "最终测试"
     },
     "richiedeAzioni": "需要采取行动",
-    "tariffe": "费率"
+    "tariffe": "费率",
+    "categories": {
+      "display": "显示屏",
+      "battery": "电池",
+      "motherboard": "主板",
+      "camera": "摄像头",
+      "speaker": "扬声器",
+      "microphone": "麦克风",
+      "chargingConnector": "充电接口",
+      "buttons": "按键",
+      "cover": "保护壳",
+      "rearGlass": "后玻璃",
+      "sensors": "传感器",
+      "flexCable": "排线",
+      "antenna": "天线",
+      "vibrationMotor": "振动马达",
+      "simTray": "SIM卡托",
+      "accessory": "配件",
+      "other": "其他"
+    }
   },
   "standalone": {
     "quotes": "独立报价",
@@ -2799,7 +2818,23 @@
       "software": "Software",
       "hardware": "Hardware",
       "diagnostica": "诊断",
-      "altro": "其他"
+      "altro": "其他",
+      "battery": "电池",
+      "motherboard": "主板",
+      "camera": "摄像头",
+      "speaker": "扬声器",
+      "microphone": "麦克风",
+      "chargingConnector": "充电接口",
+      "buttons": "按键",
+      "cover": "保护壳",
+      "rearGlass": "后玻璃",
+      "sensors": "传感器",
+      "flexCable": "排线",
+      "antenna": "天线",
+      "vibrationMotor": "振动马达",
+      "simTray": "SIM卡托",
+      "accessory": "配件",
+      "other": "其他"
     },
     "invalidPrice": "Enter a valid price",
     "selectTarget": "Select a reseller or repair center",
