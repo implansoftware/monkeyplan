@@ -7052,7 +7052,12 @@
       "selectRepairCentersDesc": "Sélectionner le centre de réparations à assigner",
       "standard": "Standard",
       "uploadLogo": "Téléverser le logo",
-      "centersSelected": "Centres sélectionné"
+      "centersSelected": "Centres sélectionné",
+      "wizardCredentials": "Identifiants",
+      "wizardBasicInfo": "Infos de base",
+      "wizardFiscalData": "Données fiscales",
+      "wizardConfig": "Configuration",
+      "wizardRepairCenters": "Centres de réparation"
     },
     "resellerDetail": {
       "overview": "Aperçu",

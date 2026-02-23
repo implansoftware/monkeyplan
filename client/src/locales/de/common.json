@@ -8631,7 +8631,12 @@
       "selectRepairCentersDesc": "Wählen Sie die zuzuordnenden Reparaturzentren",
       "standard": "Standard",
       "uploadLogo": "Logo hochladen",
-      "centersSelected": "Zentren ausgewählt"
+      "centersSelected": "Zentren ausgewählt",
+      "wizardCredentials": "Zugangsdaten",
+      "wizardBasicInfo": "Basisdaten",
+      "wizardFiscalData": "Steuerdaten",
+      "wizardConfig": "Konfiguration",
+      "wizardRepairCenters": "Reparaturzentren"
     },
     "resellerDetail": {
       "overview": "Übersicht",

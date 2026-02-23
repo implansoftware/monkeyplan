@@ -8912,7 +8912,12 @@
       "selectRepairCentersDesc": "Select the repair centers to assign",
       "standard": "Standard",
       "uploadLogo": "Upload Logo",
-      "centersSelected": "Centers selected"
+      "centersSelected": "Centers selected",
+      "wizardCredentials": "凭证",
+      "wizardBasicInfo": "基本信息",
+      "wizardFiscalData": "税务数据",
+      "wizardConfig": "配置",
+      "wizardRepairCenters": "维修中心"
     },
     "resellerDetail": {
       "overview": "Overview",

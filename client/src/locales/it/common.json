@@ -7050,7 +7050,12 @@
       "selectRepairCentersDesc": "Seleziona i centri di riparazione da assegnare",
       "standard": "Standard",
       "uploadLogo": "Carica Logo",
-      "centersSelected": "Centri selezionati"
+      "centersSelected": "Centri selezionati",
+      "wizardCredentials": "Credenziali",
+      "wizardBasicInfo": "Info Base",
+      "wizardFiscalData": "Dati Fiscali",
+      "wizardConfig": "Configurazione",
+      "wizardRepairCenters": "Centri Riparazione"
     },
     "resellerDetail": {
       "overview": "Panoramica",

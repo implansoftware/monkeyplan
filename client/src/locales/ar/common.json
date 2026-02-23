@@ -7963,7 +7963,12 @@
       "selectRepairCentersDesc": "حدد مراكز الإصلاح المراد تعيينها",
       "standard": "قياسي",
       "uploadLogo": "تحميل الشعار",
-      "centersSelected": "تم تحديد المراكز"
+      "centersSelected": "تم تحديد المراكز",
+      "wizardCredentials": "بيانات الاعتماد",
+      "wizardBasicInfo": "المعلومات الأساسية",
+      "wizardFiscalData": "البيانات المالية",
+      "wizardConfig": "التكوين",
+      "wizardRepairCenters": "مراكز الإصلاح"
     },
     "resellerDetail": {
       "overview": "نظرة عامة",

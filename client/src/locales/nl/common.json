@@ -7246,7 +7246,12 @@
       "selectRepairCentersDesc": "Selecteer de reparatiecentra die u wilt toewijzen",
       "standard": "Standaard",
       "uploadLogo": "Logo Uploaden",
-      "centersSelected": "Centra Geselecteerd"
+      "centersSelected": "Centra Geselecteerd",
+      "wizardCredentials": "Inloggegevens",
+      "wizardBasicInfo": "Basisinfo",
+      "wizardFiscalData": "Fiscale gegevens",
+      "wizardConfig": "Configuratie",
+      "wizardRepairCenters": "Reparatiecentra"
     },
     "resellerDetail": {
       "overview": "Overzicht",
