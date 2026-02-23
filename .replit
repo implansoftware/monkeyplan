@@ -41,3 +41,11 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_websocket:1.0.0", "javascript_auth_all_persistance:1.0.0", "javascript_database:1.0.0", "javascript_object_storage:1.0.0"]
+
+[userenv]
+
+[userenv.shared]
+SMTP_HOST = "mail.tophost.it"
+SMTP_PORT = "587"
+SMTP_FROM = "noreply@monkeyplan.it"
+SMTP_FROM_NAME = "MonkeyPlan"
