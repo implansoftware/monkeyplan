@@ -828,7 +828,16 @@
     "catDesktop": "حاسوب مكتبي",
     "catSmartwatch": "ساعة ذكية",
     "catConsole": "جهاز ألعاب",
-    "catOther": "أخرى"
+    "catOther": "أخرى",
+    "typeCover": "غطاء / حافظة",
+    "typeScreenProtector": "واقي شاشة",
+    "typeCharger": "شاحن",
+    "typeCable": "كابل",
+    "typeEarphones": "سماعات",
+    "typePowerBank": "بطارية محمولة",
+    "typeStand": "حامل",
+    "typeAdapter": "محول",
+    "typeOther": "أخرى"
   },
   "settings": {
     "title": "Settings",

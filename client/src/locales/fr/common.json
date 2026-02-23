@@ -2416,7 +2416,16 @@
     "catDesktop": "PC de bureau",
     "catSmartwatch": "Montre connectée",
     "catConsole": "Console",
-    "catOther": "Autre"
+    "catOther": "Autre",
+    "typeCover": "Coque / Étui",
+    "typeScreenProtector": "Film protecteur",
+    "typeCharger": "Chargeur",
+    "typeCable": "Câble",
+    "typeEarphones": "Écouteurs",
+    "typePowerBank": "Batterie externe",
+    "typeStand": "Support",
+    "typeAdapter": "Adaptateur",
+    "typeOther": "Autre"
   },
   "customers": {
     "title": "Clients",

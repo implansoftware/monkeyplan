@@ -2416,7 +2416,16 @@
     "catDesktop": "PC Fisso",
     "catSmartwatch": "Smartwatch",
     "catConsole": "Console",
-    "catOther": "Altro"
+    "catOther": "Altro",
+    "typeCover": "Cover / Custodia",
+    "typeScreenProtector": "Pellicola Protettiva",
+    "typeCharger": "Caricatore",
+    "typeCable": "Cavo",
+    "typeEarphones": "Auricolari",
+    "typePowerBank": "Power Bank",
+    "typeStand": "Supporto / Montaggio",
+    "typeAdapter": "Adattatore",
+    "typeOther": "Altro"
   },
   "customers": {
     "title": "Clienti",

@@ -828,7 +828,16 @@
     "catDesktop": "Desktop-PC",
     "catSmartwatch": "Smartwatch",
     "catConsole": "Konsole",
-    "catOther": "Sonstiges"
+    "catOther": "Sonstiges",
+    "typeCover": "Hülle / Case",
+    "typeScreenProtector": "Displayschutz",
+    "typeCharger": "Ladegerät",
+    "typeCable": "Kabel",
+    "typeEarphones": "Kopfhörer",
+    "typePowerBank": "Powerbank",
+    "typeStand": "Ständer / Halterung",
+    "typeAdapter": "Adapter",
+    "typeOther": "Sonstiges"
   },
   "settings": {
     "title": "Settings",

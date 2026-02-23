@@ -2416,7 +2416,16 @@
     "catDesktop": "Desktop PC",
     "catSmartwatch": "Smartwatch",
     "catConsole": "Console",
-    "catOther": "Other"
+    "catOther": "Other",
+    "typeCover": "Cover / Case",
+    "typeScreenProtector": "Screen Protector",
+    "typeCharger": "Charger",
+    "typeCable": "Cable",
+    "typeEarphones": "Earphones",
+    "typePowerBank": "Power Bank",
+    "typeStand": "Stand / Mount",
+    "typeAdapter": "Adapter",
+    "typeOther": "Other"
   },
   "customers": {
     "title": "Customers",

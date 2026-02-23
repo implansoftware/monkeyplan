@@ -674,7 +674,19 @@
     "catDesktop": "Desktop PC",
     "catSmartwatch": "Smartwatch",
     "catConsole": "Console",
-    "catOther": "Overig"
+    "catOther": "Overig",
+    "typeCover": "Hoesje",
+    "typeScreenProtector": "Screenprotector",
+    "typeCharger": "Oplader",
+    "typeCable": "Kabel",
+    "typeEarphones": "Oordopjes",
+    "typePowerBank": "Powerbank",
+    "typeStand": "Standaard / Houder",
+    "typeAdapter": "Adapter",
+    "typeOther": "Overig",
+    "typeDevice": "Apparaat",
+    "typeSparePart": "Onderdeel",
+    "typeAccessory": "Accessoire"
   },
   "standalone": {
     "quotes": "Standalone Offertes",

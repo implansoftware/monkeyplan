@@ -674,7 +674,19 @@
     "catDesktop": "台式电脑",
     "catSmartwatch": "智能手表",
     "catConsole": "游戏机",
-    "catOther": "其他"
+    "catOther": "其他",
+    "typeCover": "保护壳",
+    "typeScreenProtector": "屏幕保护膜",
+    "typeCharger": "充电器",
+    "typeCable": "数据线",
+    "typeEarphones": "耳机",
+    "typePowerBank": "充电宝",
+    "typeStand": "支架",
+    "typeAdapter": "转接器",
+    "typeOther": "其他",
+    "typeDevice": "设备",
+    "typeSparePart": "备件",
+    "typeAccessory": "配件"
   },
   "standalone": {
     "quotes": "独立报价",
