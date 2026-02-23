@@ -29,6 +29,15 @@ import {
   ArrowRight,
   FileText,
   Smartphone,
+  Tablet,
+  Laptop,
+  Monitor,
+  Tv,
+  Gamepad2,
+  Watch,
+  Headphones,
+  Printer,
+  Tag,
   Wrench,
   User,
   CheckCircle,
@@ -41,8 +50,46 @@ import {
   Warehouse,
   Truck,
 } from "lucide-react";
+import {
+  SiApple, SiSamsung, SiHuawei, SiXiaomi, SiSony, SiLg,
+  SiLenovo, SiDell, SiHp, SiAsus, SiAcer, SiGoogle, SiOneplus,
+} from "react-icons/si";
+import { cn } from "@/lib/utils";
 import type { ServiceItem } from "@shared/schema";
 import { useTranslation } from "react-i18next";
+
+const DEVICE_TYPE_ICONS: Record<string, any> = {
+  smartphone: Smartphone,
+  tablet: Tablet,
+  laptop: Laptop,
+  pc: Monitor,
+  tv: Tv,
+  console: Gamepad2,
+  smartwatch: Watch,
+  cuffie: Headphones,
+  stampante: Printer,
+};
+
+const BRAND_ICONS: Record<string, any> = {
+  apple: SiApple,
+  samsung: SiSamsung,
+  huawei: SiHuawei,
+  xiaomi: SiXiaomi,
+  sony: SiSony,
+  lg: SiLg,
+  lenovo: SiLenovo,
+  dell: SiDell,
+  hp: SiHp,
+  asus: SiAsus,
+  acer: SiAcer,
+  google: SiGoogle,
+  oneplus: SiOneplus,
+};
+
+function getBrandIcon(brandName: string) {
+  const normalized = brandName.toLowerCase().replace(/\s+/g, '');
+  return BRAND_ICONS[normalized] || null;
+}
 
 interface ServiceItemWithPrice extends ServiceItem {
   effectivePriceCents: number;
@@ -377,40 +424,80 @@ export default function NewStandaloneQuote() {
           <CardHeader>
             <CardTitle className="text-lg">{t("standalone.selectDevice")}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <p className="text-sm text-muted-foreground">
               {t("standalone.selectDeviceDesc")}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1.5">
-                <Label>{t("repairs.deviceType")}</Label>
-                <Select value={deviceTypeId} onValueChange={(v) => { setDeviceTypeId(v); setBrandId(""); setModelId(""); }}>
-                  <SelectTrigger data-testid="select-device-type">
-                    <SelectValue placeholder={t("standalone.selectTypePlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {deviceTypes.map((dt: any) => (
-                      <SelectItem key={dt.id} value={dt.id}>{dt.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+            <div className="space-y-2">
+              <Label>{t("repairs.deviceType")} *</Label>
+              <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}>
+                {deviceTypes.map((type: any) => {
+                  const Icon = DEVICE_TYPE_ICONS[type.name.toLowerCase()] || Smartphone;
+                  return (
+                    <Card
+                      key={type.id}
+                      className={cn(
+                        "cursor-pointer transition-colors min-w-0 w-full hover-elevate",
+                        deviceTypeId === type.id && "ring-2 ring-primary"
+                      )}
+                      onClick={() => {
+                        setDeviceTypeId(type.id);
+                        setBrandId("");
+                        setModelId("");
+                      }}
+                      data-testid={`card-device-type-${type.id}`}
+                    >
+                      <CardContent className="p-3 text-center">
+                        <Icon className="h-6 w-6 mx-auto mb-1" />
+                        <span className="text-sm truncate block">{type.name}</span>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
-              <div className="space-y-1.5">
+            </div>
+
+            {deviceTypeId && (
+              <div className="space-y-2">
                 <Label>{t("products.brand")}</Label>
-                <Select value={brandId} onValueChange={(v) => { setBrandId(v); setModelId(""); }} disabled={!deviceTypeId}>
-                  <SelectTrigger data-testid="select-brand">
-                    <SelectValue placeholder={t("standalone.selectBrandPlaceholder")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {deviceBrands.map((b: any) => (
-                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid gap-2 w-full min-w-0" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}>
+                  {deviceBrands.map((brand: any) => {
+                    const BrandIcon = getBrandIcon(brand.name);
+                    return (
+                      <Card
+                        key={brand.id}
+                        className={cn(
+                          "cursor-pointer transition-colors min-w-0 w-full hover-elevate",
+                          brandId === brand.id && "ring-2 ring-primary"
+                        )}
+                        onClick={() => {
+                          setBrandId(brand.id);
+                          setModelId("");
+                        }}
+                        data-testid={`card-brand-${brand.id}`}
+                      >
+                        <CardContent className="p-3 text-center">
+                          {BrandIcon ? (
+                            <BrandIcon className="h-6 w-6 mx-auto mb-1" />
+                          ) : brand.logoUrl ? (
+                            <img src={brand.logoUrl} alt={brand.name} className="h-6 w-6 mx-auto mb-1 object-contain" />
+                          ) : (
+                            <Tag className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+                          )}
+                          <span className="text-xs truncate block">{brand.name}</span>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
+            )}
+
+            {brandId && (
               <div className="space-y-1.5">
                 <Label>{t("products.model")}</Label>
-                <Select value={modelId} onValueChange={setModelId} disabled={!brandId}>
+                <Select value={modelId} onValueChange={setModelId}>
                   <SelectTrigger data-testid="select-model">
                     <SelectValue placeholder={t("products.selectModel")} />
                   </SelectTrigger>
@@ -421,7 +508,8 @@ export default function NewStandaloneQuote() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+            )}
+
             <div className="space-y-1.5">
               <Label>{t("standalone.deviceDescriptionLabel")}</Label>
               <Input
@@ -431,6 +519,7 @@ export default function NewStandaloneQuote() {
                 data-testid="input-device-description"
               />
             </div>
+
             {(deviceTypeId || brandId || modelId) && (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">{t("standalone.selection")}:</span>
