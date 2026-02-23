@@ -317,8 +317,8 @@ export default function AdminSalesOrders() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("repairs.allStatuses")}</SelectItem>
-            {Object.entries(statusLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>{label}</SelectItem>
+            {Object.keys(statusLabels).map((value) => (
+              <SelectItem key={value} value={value}>{t(`salesOrders.statuses.${value}`)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -371,7 +371,7 @@ export default function AdminSalesOrders() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={statusColors[order.status] as any || "secondary"}>
-                        {statusLabels[order.status] || order.status}
+                        {t(`salesOrders.statuses.${order.status}`, order.status)}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -548,7 +548,7 @@ export default function AdminSalesOrders() {
                   <SelectContent>
                     {statusTransitions[selectedOrder.status]?.map((status) => (
                       <SelectItem key={status} value={status}>
-                        {statusLabels[status]}
+                        {t(`salesOrders.statuses.${status}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
