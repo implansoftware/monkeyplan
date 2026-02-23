@@ -10963,6 +10963,8 @@
     "roleReseller": "Dealer",
     "roleSubReseller": "Sub-Dealer",
     "roleRepairCenter": "Reparatiecentrum",
-    "roleCustomer": "Klant"
+    "roleCustomer": "Klant",
+    "filterByRole": "Filteren op rol",
+    "allRoles": "Alle Rollen"
   }
 }

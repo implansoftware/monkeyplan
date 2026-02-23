@@ -11044,6 +11044,8 @@
     "roleReseller": "الموزع",
     "roleSubReseller": "الموزع الفرعي",
     "roleRepairCenter": "مركز الإصلاح",
-    "roleCustomer": "العميل"
+    "roleCustomer": "العميل",
+    "filterByRole": "تصفية حسب الدور",
+    "allRoles": "جميع الأدوار"
   }
 }

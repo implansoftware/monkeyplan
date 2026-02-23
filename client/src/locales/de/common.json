@@ -11418,6 +11418,8 @@
     "roleReseller": "Händler",
     "roleSubReseller": "Unterhändler",
     "roleRepairCenter": "Reparaturzentrum",
-    "roleCustomer": "Kunde"
+    "roleCustomer": "Kunde",
+    "filterByRole": "Nach Rolle filtern",
+    "allRoles": "Alle Rollen"
   }
 }

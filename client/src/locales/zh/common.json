@@ -11536,6 +11536,8 @@
     "roleReseller": "经销商",
     "roleSubReseller": "子经销商",
     "roleRepairCenter": "维修中心",
-    "roleCustomer": "客户"
+    "roleCustomer": "客户",
+    "filterByRole": "按角色筛选",
+    "allRoles": "所有角色"
   }
 }

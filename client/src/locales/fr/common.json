@@ -11732,6 +11732,8 @@
     "roleReseller": "Revendeur",
     "roleSubReseller": "Sous-Revendeur",
     "roleRepairCenter": "Centre de Réparation",
-    "roleCustomer": "Client"
+    "roleCustomer": "Client",
+    "filterByRole": "Filtrer par rôle",
+    "allRoles": "Tous les Rôles"
   }
 }
