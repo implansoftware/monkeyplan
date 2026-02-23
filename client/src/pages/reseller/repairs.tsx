@@ -293,6 +293,16 @@ export default function ResellerRepairs() {
                   <Plus className="h-4 w-4 mr-2" />
                   {t("repairs.newIntake", "Nuovo Ingresso")}
                 </Button>
+                <Button
+                  onClick={handleExport}
+                  disabled={isExporting || repairs.length === 0}
+                  variant="outline"
+                  className="bg-white/10 backdrop-blur-sm border border-white/30 text-white"
+                  data-testid="button-export-repairs"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {isExporting ? t("pages.exporting") : t("reports.exportExcel")}
+                </Button>
               </div>
             </ActionGuard>
           </div>
@@ -374,9 +384,9 @@ export default function ResellerRepairs() {
         </Card>
       </div>
 
-      <Card className="overflow-visible">
-        <CardHeader className="space-y-0">
-          <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-center w-full">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-center">
             <div className="flex-1 relative min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -489,15 +499,6 @@ export default function ResellerRepairs() {
                 />
               </PopoverContent>
             </Popover>
-            <Button
-              onClick={handleExport}
-              disabled={isExporting || repairs.length === 0}
-              variant="outline"
-              data-testid="button-export-repairs"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              {isExporting ? t("pages.exporting") : t("reports.exportExcel")}
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
