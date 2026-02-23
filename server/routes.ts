@@ -49366,6 +49366,39 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Admin: get/set OpenAI API key
+  app.get("/api/admin/ai-settings/openai-key", requireRole("admin"), async (req, res) => {
+    try {
+      const setting = await storage.getAdminSetting("openai_api_key");
+      const hasKey = !!(setting?.settingValue);
+      const envKey = !!process.env.OPENAI_API_KEY;
+      res.json({
+        hasKey,
+        keySource: hasKey ? "database" : envKey ? "environment" : "none",
+        maskedKey: hasKey && setting?.settingValue ? "sk-..." + setting.settingValue.slice(-4) : envKey && process.env.OPENAI_API_KEY ? "sk-..." + process.env.OPENAI_API_KEY.slice(-4) : null,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/admin/ai-settings/openai-key", requireRole("admin"), async (req, res) => {
+    try {
+      const { apiKey } = req.body;
+      if (apiKey === null || apiKey === "") {
+        await storage.setAdminSetting("openai_api_key", "", "Chiave OpenAI rimossa", req.user!.username);
+        return res.json({ success: true, message: "Chiave API rimossa" });
+      }
+      if (!apiKey || typeof apiKey !== "string" || !apiKey.startsWith("sk-")) {
+        return res.status(400).json({ error: "Chiave API non valida. Deve iniziare con sk-" });
+      }
+      await storage.setAdminSetting("openai_api_key", apiKey, "Chiave API OpenAI configurata", req.user!.username);
+      res.json({ success: true, message: "Chiave API salvata con successo" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
   // Admin: get AI access status for all entities
   app.get("/api/admin/ai-access", requireRole("admin"), async (req, res) => {
     try {
@@ -49484,7 +49517,9 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Resolve API key: admin uses global key, entities use their own BYOK key
-      let resolvedApiKey = process.env.OPENAI_API_KEY; // fallback for admin
+      // Resolve API key: check admin DB setting first, then env var fallback
+      const adminKeySetting = await storage.getAdminSetting("openai_api_key");
+      let resolvedApiKey = (adminKeySetting?.settingValue) || process.env.OPENAI_API_KEY;
       if (req.user.role !== "admin") {
         // Check if admin has disabled AI for this entity
         let adminDisabledKey: string | null = null;

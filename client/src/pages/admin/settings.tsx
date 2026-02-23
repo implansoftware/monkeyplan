@@ -147,6 +147,117 @@ interface AiAccessData {
   repairCenters: AiEntity[];
 }
 
+function OpenAiKeySettings() {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [apiKey, setApiKey] = useState("");
+  const [showKey, setShowKey] = useState(false);
+
+  const { data: keyData, isLoading: keyLoading } = useQuery<{
+    hasKey: boolean;
+    keySource: "database" | "environment" | "none";
+    maskedKey: string | null;
+  }>({
+    queryKey: ["/api/admin/ai-settings/openai-key"],
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (key: string) => {
+      return apiRequest("PUT", "/api/admin/ai-settings/openai-key", { apiKey: key });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai-settings/openai-key"] });
+      setApiKey("");
+      setShowKey(false);
+      toast({ title: t("common.savedSuccessfully"), description: "Chiave API OpenAI salvata" });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("PUT", "/api/admin/ai-settings/openai-key", { apiKey: "" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/ai-settings/openai-key"] });
+      toast({ title: t("common.savedSuccessfully"), description: "Chiave API rimossa, verrà usata la variabile d'ambiente se disponibile" });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2">
+          <Bot className="h-5 w-5" />
+          Chiave API OpenAI
+        </CardTitle>
+        <CardDescription>
+          Configura la chiave API OpenAI per l'assistente AI della piattaforma
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {keyLoading ? (
+          <Skeleton className="h-10 w-full" />
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={keyData?.hasKey || keyData?.keySource === "environment" ? "default" : "secondary"}>
+                {keyData?.keySource === "database"
+                  ? "Configurata (database)"
+                  : keyData?.keySource === "environment"
+                  ? "Configurata (variabile ambiente)"
+                  : "Non configurata"}
+              </Badge>
+              {keyData?.maskedKey && (
+                <span className="text-sm text-muted-foreground font-mono" data-testid="text-masked-key">
+                  {keyData.maskedKey}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  placeholder="sk-..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  data-testid="input-openai-key"
+                />
+              </div>
+              <Button
+                onClick={() => saveMutation.mutate(apiKey)}
+                disabled={!apiKey.trim() || saveMutation.isPending}
+                data-testid="button-save-openai-key"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                <span className="ml-1">Salva</span>
+              </Button>
+              {keyData?.keySource === "database" && (
+                <Button
+                  variant="outline"
+                  onClick={() => removeMutation.mutate()}
+                  disabled={removeMutation.isPending}
+                  data-testid="button-remove-openai-key"
+                >
+                  Rimuovi
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              La chiave viene salvata in modo sicuro nel database. Se rimossa, il sistema utilizzerà la variabile d'ambiente OPENAI_API_KEY come fallback.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function AiAccessManagement() {
   const { t } = useTranslation();
   const { toast } = useToast();
@@ -1100,6 +1211,7 @@ export default function AdminSettings() {
           <AdminFiscalConfig />
         </TabsContent>
         <TabsContent value="ai" className="space-y-6">
+          <OpenAiKeySettings />
           <AiAccessManagement />
         </TabsContent>
       </Tabs>
