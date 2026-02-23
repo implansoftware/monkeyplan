@@ -60,9 +60,9 @@ function getDaysRemainingBadge(daysRemaining: number | null, status: string, t: 
     return <Badge variant="destructive" className="gap-1 text-xs"><AlertTriangle className="h-3 w-3" />{t("invoices.overdue")}</Badge>;
   }
   if (daysRemaining <= 30) {
-    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{t("reseller.daysRemaining", { count: daysRemaining })}</Badge>;
+    return <Badge variant="outline" className="gap-1 text-xs border-amber-300 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" />{daysRemaining}g</Badge>;
   }
-  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{t("reseller.daysRemaining", { count: daysRemaining })}</Badge>;
+  return <Badge variant="outline" className="gap-1 text-xs border-emerald-300 text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-3 w-3" />{daysRemaining}g</Badge>;
 }
 
 export default function ResellerWarranties() {
