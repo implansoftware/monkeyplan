@@ -370,9 +370,9 @@ export default function AdminRepairs() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
+        <CardHeader className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-center">
+            <div className="flex-1 relative min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t("repairs.searchRepair")}
@@ -499,6 +499,8 @@ export default function AdminRepairs() {
                 />
               </PopoverContent>
             </Popover>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               onClick={() => setReturnWizardOpen(true)}
