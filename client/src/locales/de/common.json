@@ -821,7 +821,14 @@
       "simTray": "SIM-Fach",
       "accessory": "Zubehör",
       "other": "Sonstiges"
-    }
+    },
+    "catSmartphone": "Smartphone",
+    "catTablet": "Tablet",
+    "catLaptop": "Laptop",
+    "catDesktop": "Desktop-PC",
+    "catSmartwatch": "Smartwatch",
+    "catConsole": "Konsole",
+    "catOther": "Sonstiges"
   },
   "settings": {
     "title": "Settings",

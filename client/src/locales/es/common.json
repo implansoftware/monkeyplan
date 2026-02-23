@@ -2409,7 +2409,14 @@
       "simTray": "Bandeja SIM",
       "accessory": "Accesorio",
       "other": "Otro"
-    }
+    },
+    "catSmartphone": "Smartphone",
+    "catTablet": "Tableta",
+    "catLaptop": "Portátil",
+    "catDesktop": "PC de escritorio",
+    "catSmartwatch": "Smartwatch",
+    "catConsole": "Consola",
+    "catOther": "Otro"
   },
   "customers": {
     "title": "Clientes",

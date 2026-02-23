@@ -2409,7 +2409,14 @@
       "simTray": "Carrellino SIM",
       "accessory": "Accessorio",
       "other": "Altro"
-    }
+    },
+    "catSmartphone": "Smartphone",
+    "catTablet": "Tablet",
+    "catLaptop": "Portatile",
+    "catDesktop": "PC Fisso",
+    "catSmartwatch": "Smartwatch",
+    "catConsole": "Console",
+    "catOther": "Altro"
   },
   "customers": {
     "title": "Clienti",

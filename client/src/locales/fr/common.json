@@ -2409,7 +2409,14 @@
       "simTray": "Tiroir SIM",
       "accessory": "Accessoire",
       "other": "Autre"
-    }
+    },
+    "catSmartphone": "Smartphone",
+    "catTablet": "Tablette",
+    "catLaptop": "Ordinateur portable",
+    "catDesktop": "PC de bureau",
+    "catSmartwatch": "Montre connectée",
+    "catConsole": "Console",
+    "catOther": "Autre"
   },
   "customers": {
     "title": "Clients",

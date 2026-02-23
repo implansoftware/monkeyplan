@@ -821,7 +821,14 @@
       "simTray": "درج الشريحة",
       "accessory": "إكسسوار",
       "other": "أخرى"
-    }
+    },
+    "catSmartphone": "هاتف ذكي",
+    "catTablet": "جهاز لوحي",
+    "catLaptop": "حاسوب محمول",
+    "catDesktop": "حاسوب مكتبي",
+    "catSmartwatch": "ساعة ذكية",
+    "catConsole": "جهاز ألعاب",
+    "catOther": "أخرى"
   },
   "settings": {
     "title": "Settings",

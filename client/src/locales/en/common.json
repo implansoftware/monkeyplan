@@ -2409,7 +2409,14 @@
       "simTray": "SIM Tray",
       "accessory": "Accessory",
       "other": "Other"
-    }
+    },
+    "catSmartphone": "Smartphone",
+    "catTablet": "Tablet",
+    "catLaptop": "Laptop",
+    "catDesktop": "Desktop PC",
+    "catSmartwatch": "Smartwatch",
+    "catConsole": "Console",
+    "catOther": "Other"
   },
   "customers": {
     "title": "Customers",

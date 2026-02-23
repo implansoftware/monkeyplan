@@ -667,7 +667,14 @@
       "simTray": "SIM-lade",
       "accessory": "Accessoire",
       "other": "Overig"
-    }
+    },
+    "catSmartphone": "Smartphone",
+    "catTablet": "Tablet",
+    "catLaptop": "Laptop",
+    "catDesktop": "Desktop PC",
+    "catSmartwatch": "Smartwatch",
+    "catConsole": "Console",
+    "catOther": "Overig"
   },
   "standalone": {
     "quotes": "Standalone Offertes",
