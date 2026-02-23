@@ -374,10 +374,10 @@ export default function ResellerRepairs() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
-            <div className="flex-1 relative min-w-[200px]">
+      <Card className="overflow-visible">
+        <CardHeader className="space-y-0">
+          <div className="flex flex-col sm:flex-row gap-3 flex-wrap items-center w-full">
+            <div className="flex-1 relative min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t("repairs.searchWork")}
