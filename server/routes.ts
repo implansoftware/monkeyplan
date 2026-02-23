@@ -9,6 +9,7 @@ import { promisify } from "util";
 import ExcelJS from "exceljs";
 import multer from "multer";
 import { enqueuePushNotification } from "./services/expoPush";
+import { sendEmail, verifySmtpConnection, buildEmailTemplate } from "./services/email";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -50121,6 +50122,41 @@ REGOLE DI FORMATTAZIONE (OBBLIGATORIE):
       res.json(invoices);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/smtp/test", requireRole("admin"), async (req, res) => {
+    try {
+      const verified = await verifySmtpConnection();
+      if (!verified) {
+        return res.status(500).json({ success: false, message: "SMTP connection failed" });
+      }
+      res.json({ success: true, message: "SMTP connection verified" });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post("/api/admin/smtp/send-test", requireRole("admin"), async (req, res) => {
+    try {
+      const { to } = req.body;
+      if (!to) {
+        return res.status(400).json({ success: false, message: "Recipient email required" });
+      }
+      const html = buildEmailTemplate(
+        "Email di Test",
+        `<p>Questa è un'email di test inviata da <strong>MonkeyPlan</strong>.</p>
+         <p>Se stai leggendo questo messaggio, la configurazione SMTP è corretta.</p>
+         <p>Data invio: ${new Date().toLocaleString("it-IT")}</p>`
+      );
+      const sent = await sendEmail({ to, subject: "MonkeyPlan - Test SMTP", html });
+      if (sent) {
+        res.json({ success: true, message: `Email di test inviata a ${to}` });
+      } else {
+        res.status(500).json({ success: false, message: "Invio email fallito" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
     }
   });
 
