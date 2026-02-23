@@ -11714,5 +11714,28 @@
     "importError": "Errore durante l'importazione",
     "close": "Chiudi",
     "showingFirst": "Mostrate prime {{count}} righe su {{total}} totali"
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Chat in tempo reale con rivenditori, centri e clienti",
+    "conversations": "Conversazioni",
+    "newConversation": "Nuova Conversazione",
+    "searchConversations": "Cerca conversazioni...",
+    "noConversations": "Nessuna conversazione attiva",
+    "startConversation": "Inizia una conversazione",
+    "selectConversation": "Seleziona una conversazione",
+    "selectConversationDesc": "Scegli una conversazione dal pannello a sinistra o avviane una nuova",
+    "noMessagesYet": "Nessun messaggio ancora",
+    "startTyping": "Inizia a scrivere per inviare un messaggio",
+    "typeMessage": "Scrivi un messaggio...",
+    "searchUsers": "Cerca utente per nome, email o ruolo...",
+    "selectUserToChat": "Seleziona un utente con cui chattare",
+    "noUsersFound": "Nessun utente trovato",
+    "connectionError": "Errore di connessione alla chat",
+    "roleAdmin": "Amministratore",
+    "roleReseller": "Rivenditore",
+    "roleSubReseller": "Sub-Rivenditore",
+    "roleRepairCenter": "Centro Riparazione",
+    "roleCustomer": "Cliente"
   }
 }

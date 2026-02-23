@@ -10941,5 +10941,28 @@
     "importError": "Fout tijdens het importeren",
     "close": "Sluiten",
     "showingFirst": "Toon eerste {{count}} rijen van {{total}} totaal"
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Realtime chat met dealers, centra en klanten",
+    "conversations": "Gesprekken",
+    "newConversation": "Nieuw Gesprek",
+    "searchConversations": "Gesprekken zoeken...",
+    "noConversations": "Geen actieve gesprekken",
+    "startConversation": "Gesprek starten",
+    "selectConversation": "Selecteer een gesprek",
+    "selectConversationDesc": "Kies een gesprek in het linkerpaneel of start een nieuw gesprek",
+    "noMessagesYet": "Nog geen berichten",
+    "startTyping": "Begin te typen om een bericht te sturen",
+    "typeMessage": "Schrijf een bericht...",
+    "searchUsers": "Zoek gebruiker op naam, e-mail of rol...",
+    "selectUserToChat": "Selecteer een gebruiker om mee te chatten",
+    "noUsersFound": "Geen gebruikers gevonden",
+    "connectionError": "Chat verbindingsfout",
+    "roleAdmin": "Beheerder",
+    "roleReseller": "Dealer",
+    "roleSubReseller": "Sub-Dealer",
+    "roleRepairCenter": "Reparatiecentrum",
+    "roleCustomer": "Klant"
   }
 }

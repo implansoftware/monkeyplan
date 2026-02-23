@@ -11396,5 +11396,28 @@
     "importError": "Fehler beim Import",
     "close": "Schließen",
     "showingFirst": "Zeige erste {{count}} Zeilen von {{total}} gesamt"
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Echtzeit-Chat mit Händlern, Zentren und Kunden",
+    "conversations": "Unterhaltungen",
+    "newConversation": "Neue Unterhaltung",
+    "searchConversations": "Unterhaltungen suchen...",
+    "noConversations": "Keine aktiven Unterhaltungen",
+    "startConversation": "Unterhaltung starten",
+    "selectConversation": "Unterhaltung auswählen",
+    "selectConversationDesc": "Wählen Sie eine Unterhaltung aus dem linken Bereich oder starten Sie eine neue",
+    "noMessagesYet": "Noch keine Nachrichten",
+    "startTyping": "Beginnen Sie zu tippen um eine Nachricht zu senden",
+    "typeMessage": "Nachricht schreiben...",
+    "searchUsers": "Benutzer nach Name, E-Mail oder Rolle suchen...",
+    "selectUserToChat": "Wählen Sie einen Benutzer zum Chatten",
+    "noUsersFound": "Keine Benutzer gefunden",
+    "connectionError": "Chat-Verbindungsfehler",
+    "roleAdmin": "Administrator",
+    "roleReseller": "Händler",
+    "roleSubReseller": "Unterhändler",
+    "roleRepairCenter": "Reparaturzentrum",
+    "roleCustomer": "Kunde"
   }
 }

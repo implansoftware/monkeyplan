@@ -11707,5 +11707,28 @@
     "importError": "Error during import",
     "close": "Close",
     "showingFirst": "Showing first {{count}} rows of {{total}} total"
+  },
+  "chat": {
+    "title": "Chat",
+    "subtitle": "Real-time chat with resellers, centers and customers",
+    "conversations": "Conversations",
+    "newConversation": "New Conversation",
+    "searchConversations": "Search conversations...",
+    "noConversations": "No active conversations",
+    "startConversation": "Start a conversation",
+    "selectConversation": "Select a conversation",
+    "selectConversationDesc": "Choose a conversation from the left panel or start a new one",
+    "noMessagesYet": "No messages yet",
+    "startTyping": "Start typing to send a message",
+    "typeMessage": "Type a message...",
+    "searchUsers": "Search user by name, email or role...",
+    "selectUserToChat": "Select a user to chat with",
+    "noUsersFound": "No users found",
+    "connectionError": "Chat connection error",
+    "roleAdmin": "Administrator",
+    "roleReseller": "Reseller",
+    "roleSubReseller": "Sub-Reseller",
+    "roleRepairCenter": "Repair Center",
+    "roleCustomer": "Customer"
   }
 }

@@ -11022,5 +11022,28 @@
     "importError": "خطأ أثناء الاستيراد",
     "close": "إغلاق",
     "showingFirst": "عرض أول {{count}} صف من إجمالي {{total}}"
+  },
+  "chat": {
+    "title": "المحادثة",
+    "subtitle": "محادثة فورية مع الموزعين والمراكز والعملاء",
+    "conversations": "المحادثات",
+    "newConversation": "محادثة جديدة",
+    "searchConversations": "البحث في المحادثات...",
+    "noConversations": "لا توجد محادثات نشطة",
+    "startConversation": "بدء محادثة",
+    "selectConversation": "اختر محادثة",
+    "selectConversationDesc": "اختر محادثة من اللوحة اليسرى أو ابدأ محادثة جديدة",
+    "noMessagesYet": "لا توجد رسائل بعد",
+    "startTyping": "ابدأ بالكتابة لإرسال رسالة",
+    "typeMessage": "اكتب رسالة...",
+    "searchUsers": "البحث عن مستخدم بالاسم أو البريد أو الدور...",
+    "selectUserToChat": "اختر مستخدمًا للدردشة",
+    "noUsersFound": "لم يتم العثور على مستخدمين",
+    "connectionError": "خطأ في اتصال المحادثة",
+    "roleAdmin": "المسؤول",
+    "roleReseller": "الموزع",
+    "roleSubReseller": "الموزع الفرعي",
+    "roleRepairCenter": "مركز الإصلاح",
+    "roleCustomer": "العميل"
   }
 }

@@ -11514,5 +11514,28 @@
     "importError": "导入时出错",
     "close": "关闭",
     "showingFirst": "显示前 {{count}} 行，共 {{total}} 行"
+  },
+  "chat": {
+    "title": "聊天",
+    "subtitle": "与经销商、维修中心和客户实时聊天",
+    "conversations": "对话",
+    "newConversation": "新对话",
+    "searchConversations": "搜索对话...",
+    "noConversations": "没有活跃的对话",
+    "startConversation": "开始对话",
+    "selectConversation": "选择一个对话",
+    "selectConversationDesc": "从左侧面板选择一个对话或开始新的对话",
+    "noMessagesYet": "暂无消息",
+    "startTyping": "开始输入以发送消息",
+    "typeMessage": "输入消息...",
+    "searchUsers": "按名称、邮箱或角色搜索用户...",
+    "selectUserToChat": "选择一个用户进行聊天",
+    "noUsersFound": "未找到用户",
+    "connectionError": "聊天连接错误",
+    "roleAdmin": "管理员",
+    "roleReseller": "经销商",
+    "roleSubReseller": "子经销商",
+    "roleRepairCenter": "维修中心",
+    "roleCustomer": "客户"
   }
 }

@@ -23347,6 +23347,61 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ CHAT REST ENDPOINTS ============
+
+  app.get("/api/chat/conversations", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const conversations = await storage.listChatConversations(req.user.id);
+      res.json(conversations);
+    } catch (error: any) {
+      console.error("Chat conversations error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/chat/messages/:userId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const messages = await storage.listChatMessages(req.user.id, req.params.userId);
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Chat messages error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/chat/messages/read/:userId", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      await storage.markChatMessagesRead(req.params.userId, req.user.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Mark read error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/chat/users", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allUsers = await storage.listUsers();
+      const chatUsers = allUsers
+        .filter((u: any) => u.id !== req.user!.id && ['admin', 'reseller', 'sub_reseller', 'repair_center', 'customer'].includes(u.role))
+        .map((u: any) => ({
+          id: u.id,
+          username: u.username,
+          email: u.email || '',
+          role: u.role,
+          companyName: u.companyName || null,
+        }));
+      res.json(chatUsers);
+    } catch (error: any) {
+      console.error("Chat users error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
 

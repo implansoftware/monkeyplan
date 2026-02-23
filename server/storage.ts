@@ -317,6 +317,8 @@ export interface IStorage {
   // Chat Messages
   listChatMessages(userId1: string, userId2: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  listChatConversations(userId: string): Promise<Array<{ partnerId: string; partnerUsername: string; partnerEmail: string; partnerRole: string; partnerCompanyName: string | null; lastMessage: string; lastMessageAt: string; unreadCount: number }>>;
+  markChatMessagesRead(senderId: string, receiverId: string): Promise<void>;
   
   // Inventory
   listInventoryStock(repairCenterId?: string): Promise<InventoryStock[]>;
@@ -3460,6 +3462,62 @@ export class DatabaseStorage implements IStorage {
   async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
     const [message] = await db.insert(chatMessages).values(insertMessage).returning();
     return message;
+  }
+
+  async listChatConversations(userId: string): Promise<Array<{ partnerId: string; partnerUsername: string; partnerEmail: string; partnerRole: string; partnerCompanyName: string | null; lastMessage: string; lastMessageAt: string; unreadCount: number }>> {
+    const allMessages = await db.select().from(chatMessages)
+      .where(or(
+        eq(chatMessages.senderId, userId),
+        eq(chatMessages.receiverId, userId)
+      ))
+      .orderBy(desc(chatMessages.createdAt));
+
+    const conversationMap = new Map<string, { partnerId: string; lastMessage: string; lastMessageAt: string; unreadCount: number }>();
+
+    for (const msg of allMessages) {
+      const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
+      if (!conversationMap.has(partnerId)) {
+        conversationMap.set(partnerId, {
+          partnerId,
+          lastMessage: msg.message,
+          lastMessageAt: msg.createdAt.toISOString(),
+          unreadCount: 0,
+        });
+      }
+      if (msg.receiverId === userId && !msg.isRead) {
+        const conv = conversationMap.get(partnerId)!;
+        conv.unreadCount++;
+      }
+    }
+
+    const results: Array<{ partnerId: string; partnerUsername: string; partnerEmail: string; partnerRole: string; partnerCompanyName: string | null; lastMessage: string; lastMessageAt: string; unreadCount: number }> = [];
+
+    for (const conv of conversationMap.values()) {
+      const partner = await this.getUser(conv.partnerId);
+      if (partner) {
+        results.push({
+          ...conv,
+          partnerUsername: partner.username,
+          partnerEmail: partner.email || '',
+          partnerRole: partner.role,
+          partnerCompanyName: partner.companyName || null,
+        });
+      }
+    }
+
+    return results.sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
+  }
+
+  async markChatMessagesRead(senderId: string, receiverId: string): Promise<void> {
+    await db.update(chatMessages)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(chatMessages.senderId, senderId),
+          eq(chatMessages.receiverId, receiverId),
+          eq(chatMessages.isRead, false)
+        )
+      );
   }
 
   // Inventory
