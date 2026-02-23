@@ -1733,7 +1733,20 @@
     "awaitingDeliveryChoice": "Wartet auf Lieferwahl vom Kunden",
     "processingStarted": "Verarbeitung gestartet",
     "receptionConfirmed": "Empfang bestätigt",
-    "deviceReceivedProcessing": "Gerät erhalten, Verarbeitung gestartet"
+    "deviceReceivedProcessing": "Gerät erhalten, Verarbeitung gestartet",
+    "statusPending": "Ausstehend",
+    "statusAccepted": "Akzeptiert",
+    "statusScheduled": "Geplant",
+    "statusInProgress": "In Bearbeitung",
+    "statusCompleted": "Abgeschlossen",
+    "statusCancelled": "Storniert",
+    "paymentPending": "Ausstehend",
+    "paymentPaid": "Bezahlt",
+    "paymentCancelled": "Storniert",
+    "methodInPerson": "Vor Ort",
+    "methodBankTransfer": "Überweisung",
+    "methodCard": "Karte",
+    "methodPaypal": "PayPal"
   },
   "sales": {
     "title": "Sales Orders",

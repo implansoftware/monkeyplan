@@ -1733,7 +1733,20 @@
     "awaitingDeliveryChoice": "Awaiting delivery choice from customer",
     "processingStarted": "Processing started",
     "receptionConfirmed": "Reception confirmed",
-    "deviceReceivedProcessing": "Device received, processing started"
+    "deviceReceivedProcessing": "Device received, processing started",
+    "statusPending": "قيد الانتظار",
+    "statusAccepted": "مقبول",
+    "statusScheduled": "مجدول",
+    "statusInProgress": "قيد التنفيذ",
+    "statusCompleted": "مكتمل",
+    "statusCancelled": "ملغي",
+    "paymentPending": "قيد الانتظار",
+    "paymentPaid": "مدفوع",
+    "paymentCancelled": "ملغي",
+    "methodInPerson": "شخصياً",
+    "methodBankTransfer": "تحويل بنكي",
+    "methodCard": "بطاقة",
+    "methodPaypal": "PayPal"
   },
   "sales": {
     "title": "Sales Orders",

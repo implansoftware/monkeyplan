@@ -8771,7 +8771,20 @@
     "awaitingDeliveryChoice": "In attesa scelta consegna dal cliente",
     "processingStarted": "Lavorazione avviata",
     "receptionConfirmed": "Ricezione confermata",
-    "deviceReceivedProcessing": "Dispositivo ricevuto, lavorazione avviata"
+    "deviceReceivedProcessing": "Dispositivo ricevuto, lavorazione avviata",
+    "statusPending": "In attesa",
+    "statusAccepted": "Accettato",
+    "statusScheduled": "Programmato",
+    "statusInProgress": "In corso",
+    "statusCompleted": "Completato",
+    "statusCancelled": "Annullato",
+    "paymentPending": "In attesa",
+    "paymentPaid": "Pagato",
+    "paymentCancelled": "Annullato",
+    "methodInPerson": "Di persona",
+    "methodBankTransfer": "Bonifico",
+    "methodCard": "Carta",
+    "methodPaypal": "PayPal"
   },
   "catalog": {
     "addedToCart": "Aggiunto al carrello",

@@ -8763,7 +8763,20 @@
     "awaitingDeliveryChoice": "Awaiting entrega choice desde cliente",
     "processingStarted": "Procesando started",
     "receptionConfirmed": "Reception confirmado",
-    "deviceReceivedProcessing": "Dispositivo recibido, procesando started"
+    "deviceReceivedProcessing": "Dispositivo recibido, procesando started",
+    "statusPending": "Pendiente",
+    "statusAccepted": "Aceptado",
+    "statusScheduled": "Programado",
+    "statusInProgress": "En curso",
+    "statusCompleted": "Completado",
+    "statusCancelled": "Cancelado",
+    "paymentPending": "Pendiente",
+    "paymentPaid": "Pagado",
+    "paymentCancelled": "Cancelado",
+    "methodInPerson": "En persona",
+    "methodBankTransfer": "Transferencia",
+    "methodCard": "Tarjeta",
+    "methodPaypal": "PayPal"
   },
   "catalog": {
     "addedToCart": "Added hasta carrito",

@@ -20,26 +20,48 @@ type ServiceOrderWithDetails = ServiceOrder & {
   serviceCode: string;
 };
 
-const statusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "pending", variant: "secondary" },
-  accepted: { label: "accepted", variant: "default" },
-  scheduled: { label: "scheduled", variant: "outline" },
-  in_progress: { label: "in_progress", variant: "default" },
-  completed: { label: "completed", variant: "default" },
-  cancelled: { label: "cancelled", variant: "destructive" },
+const statusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  pending: "secondary",
+  accepted: "default",
+  scheduled: "outline",
+  in_progress: "default",
+  completed: "default",
+  cancelled: "destructive",
 };
 
-const paymentStatusLabels: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  pending: { label: "pending", variant: "secondary" },
-  paid: { label: "paid", variant: "default" },
-  cancelled: { label: "cancelled", variant: "destructive" },
+const statusI18nKeys: Record<string, string> = {
+  pending: "serviceOrders.statusPending",
+  accepted: "serviceOrders.statusAccepted",
+  scheduled: "serviceOrders.statusScheduled",
+  in_progress: "serviceOrders.statusInProgress",
+  completed: "serviceOrders.statusCompleted",
+  cancelled: "serviceOrders.statusCancelled",
 };
 
-const paymentMethodLabels: Record<string, { label: string; icon: any }> = {
-  in_person: { label: "in_person", icon: Banknote },
-  bank_transfer: { label: "bank_transfer", icon: Building },
-  card: { label: "card", icon: CreditCard },
-  paypal: { label: "paypal", icon: CreditCard },
+const paymentStatusVariants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  pending: "secondary",
+  paid: "default",
+  cancelled: "destructive",
+};
+
+const paymentStatusI18nKeys: Record<string, string> = {
+  pending: "serviceOrders.paymentPending",
+  paid: "serviceOrders.paymentPaid",
+  cancelled: "serviceOrders.paymentCancelled",
+};
+
+const paymentMethodIcons: Record<string, any> = {
+  in_person: Banknote,
+  bank_transfer: Building,
+  card: CreditCard,
+  paypal: CreditCard,
+};
+
+const paymentMethodI18nKeys: Record<string, string> = {
+  in_person: "serviceOrders.methodInPerson",
+  bank_transfer: "serviceOrders.methodBankTransfer",
+  card: "serviceOrders.methodCard",
+  paypal: "serviceOrders.methodPaypal",
 };
 
 export default function AdminServiceOrders() {
@@ -124,7 +146,7 @@ export default function AdminServiceOrders() {
                 </TableRow>
               ) : (
                 filteredOrders.map((order) => {
-                  const PaymentIcon = paymentMethodLabels[order.paymentMethod]?.icon || Banknote;
+                  const PaymentIcon = paymentMethodIcons[order.paymentMethod] || Banknote;
                   return (
                     <TableRow key={order.id} data-testid={`row-order-${order.id}`}>
                       <TableCell>
@@ -161,15 +183,15 @@ export default function AdminServiceOrders() {
                       </TableCell>
                       <TableCell className="font-medium">{formatPrice(order.priceCents)}</TableCell>
                       <TableCell>
-                        <Badge variant={statusLabels[order.status]?.variant || "secondary"}>
-                          {statusLabels[order.status]?.label || order.status}
+                        <Badge variant={statusVariants[order.status] || "secondary"}>
+                          {t(statusI18nKeys[order.status] || order.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <PaymentIcon className="w-4 h-4 text-muted-foreground" />
-                          <Badge variant={paymentStatusLabels[order.paymentStatus]?.variant || "secondary"}>
-                            {paymentStatusLabels[order.paymentStatus]?.label || order.paymentStatus}
+                          <Badge variant={paymentStatusVariants[order.paymentStatus] || "secondary"}>
+                            {t(paymentStatusI18nKeys[order.paymentStatus] || order.paymentStatus)}
                           </Badge>
                         </div>
                       </TableCell>
@@ -234,8 +256,8 @@ export default function AdminServiceOrders() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">{t("serviceOrders.paymentStatus")}</label>
-                  <Badge variant={paymentStatusLabels[selectedOrder.paymentStatus]?.variant || "secondary"}>
-                    {paymentStatusLabels[selectedOrder.paymentStatus]?.label}
+                  <Badge variant={paymentStatusVariants[selectedOrder.paymentStatus] || "secondary"}>
+                    {t(paymentStatusI18nKeys[selectedOrder.paymentStatus] || selectedOrder.paymentStatus)}
                   </Badge>
                 </div>
               </div>

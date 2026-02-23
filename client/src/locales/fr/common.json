@@ -8763,7 +8763,20 @@
     "awaitingDeliveryChoice": "Awaiting livraison choice de client",
     "processingStarted": "Traitement démarré",
     "receptionConfirmed": "Reception confirmeré",
-    "deviceReceivedProcessing": "Appareil reçu, traitement started"
+    "deviceReceivedProcessing": "Appareil reçu, traitement started",
+    "statusPending": "En attente",
+    "statusAccepted": "Accepté",
+    "statusScheduled": "Programmé",
+    "statusInProgress": "En cours",
+    "statusCompleted": "Terminé",
+    "statusCancelled": "Annulé",
+    "paymentPending": "En attente",
+    "paymentPaid": "Payé",
+    "paymentCancelled": "Annulé",
+    "methodInPerson": "En personne",
+    "methodBankTransfer": "Virement",
+    "methodCard": "Carte",
+    "methodPaypal": "PayPal"
   },
   "catalog": {
     "addedToCart": "Added à panier",

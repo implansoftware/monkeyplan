@@ -11304,7 +11304,20 @@
     "awaitingDeliveryChoice": "等待客户的交付选择",
     "processingStarted": "处理已开始",
     "receptionConfirmed": "接待已确认",
-    "deviceReceivedProcessing": "已收到设备，处理已开始"
+    "deviceReceivedProcessing": "已收到设备，处理已开始",
+    "statusPending": "待处理",
+    "statusAccepted": "已接受",
+    "statusScheduled": "已安排",
+    "statusInProgress": "进行中",
+    "statusCompleted": "已完成",
+    "statusCancelled": "已取消",
+    "paymentPending": "待付款",
+    "paymentPaid": "已付款",
+    "paymentCancelled": "已取消",
+    "methodInPerson": "当面支付",
+    "methodBankTransfer": "银行转账",
+    "methodCard": "银行卡",
+    "methodPaypal": "PayPal"
   },
   "wizard": {
     "deviceInfo": "设备信息"

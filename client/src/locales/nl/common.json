@@ -10096,7 +10096,20 @@
     "awaitingDeliveryChoice": "In afwachting van leveringskeuze van klant",
     "processingStarted": "Verwerking gestart",
     "receptionConfirmed": "Ontvangst bevestigd",
-    "deviceReceivedProcessing": "Apparaat ontvangen, verwerking gestart"
+    "deviceReceivedProcessing": "Apparaat ontvangen, verwerking gestart",
+    "statusPending": "In afwachting",
+    "statusAccepted": "Geaccepteerd",
+    "statusScheduled": "Gepland",
+    "statusInProgress": "Bezig",
+    "statusCompleted": "Voltooid",
+    "statusCancelled": "Geannuleerd",
+    "paymentPending": "In afwachting",
+    "paymentPaid": "Betaald",
+    "paymentCancelled": "Geannuleerd",
+    "methodInPerson": "Ter plaatse",
+    "methodBankTransfer": "Overschrijving",
+    "methodCard": "Kaart",
+    "methodPaypal": "PayPal"
   },
   "salesReturns": {
     "returnRequest": "Retourverzoek",
