@@ -90,6 +90,7 @@ export default function ResellerRepairCenters() {
   const { toast } = useToast();
   const { user } = useUser();
   const formLogoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
   const [pendingLogoPreview, setPendingLogoPreview] = useState<string | null>(null);
 
