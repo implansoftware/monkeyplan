@@ -7461,6 +7461,7 @@
     "describeTechnicalReason": "صف السبب الفني لعدم إمكانية إصلاح الجهاز...",
     "createDiagnosis": "إنشاء التشخيص",
     "technicalDiagnosis": "التشخيص الفني",
+    "autoSkippedByRemote": "تم تخطي التشخيص تلقائياً — اكتمل التشخيص عن بُعد من قبل العميل",
     "editTechnicalDiagnosis": "تحرير التشخيص الفني",
     "diagnosisResults": "نتائج التشخيص",
     "issuesFound": "المشاكل الموجودة",

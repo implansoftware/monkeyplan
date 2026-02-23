@@ -8129,6 +8129,7 @@
     "describeTechnicalReason": "Beschreiben Sie den technischen Grund, warum das Gerät nicht repariert werden kann...",
     "createDiagnosis": "Diagnose erstellen",
     "technicalDiagnosis": "Technische Diagnose",
+    "autoSkippedByRemote": "Diagnose automatisch übersprungen — Ferndiagnose vom Kunden abgeschlossen",
     "editTechnicalDiagnosis": "Technische Diagnose bearbeiten",
     "diagnosisResults": "Diagnoseergebnisse",
     "issuesFound": "Gefundene Probleme",

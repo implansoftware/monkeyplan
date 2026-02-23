@@ -49054,6 +49054,31 @@ export function registerRoutes(app: Express): Server {
         completedAt: new Date(),
       });
 
+      // Auto-advance repair order: if linked repair is still in 'ingressato', skip diagnosis automatically
+      if (session.repairOrderId) {
+        try {
+          const repair = await storage.getRepairOrder(session.repairOrderId);
+          if (repair && repair.status === 'ingressato') {
+            await storage.updateRepairOrder(session.repairOrderId, {
+              skipDiagnosis: true,
+              skipDiagnosisReason: 'Diagnostica remota completata dal cliente',
+              status: 'in_diagnosi' as any,
+            });
+            await storage.closeRepairOrderStateHistory(session.repairOrderId, null);
+            await storage.createRepairOrderStateHistory({
+              repairOrderId: session.repairOrderId,
+              status: 'in_diagnosi' as any,
+              enteredAt: new Date(),
+              changedBy: null,
+            });
+            await storage.invalidateCache('overview_%');
+            await storage.invalidateCache('centers_%');
+          }
+        } catch (autoAdvanceErr) {
+          console.error("Auto-advance after self-diagnosis failed (non-blocking):", autoAdvanceErr);
+        }
+      }
+
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

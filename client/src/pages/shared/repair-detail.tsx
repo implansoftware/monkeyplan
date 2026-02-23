@@ -1172,10 +1172,47 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                     <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                       {repair.skipDiagnosis ? (
                         <div className="space-y-2">
-                          <div className="flex flex-wrap items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
-                            <SkipForward className="h-4 w-4" />
-                            <span>{t("standalone.diagnosisSkippedLabel")}{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
-                          </div>
+                          {completedSelfDiagnosis ? (
+                            <>
+                              <div className="flex flex-wrap items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                                <CheckCircle className="h-4 w-4" />
+                                <strong>{t("diagnosis.autoSkippedByRemote", "Diagnosi saltata automaticamente — diagnostica remota completata dal cliente")}</strong>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                                {[
+                                  { key: "displayTest", label: "Display" },
+                                  { key: "touchTest", label: "Touch" },
+                                  { key: "speakerTest", label: "Speaker" },
+                                  { key: "microphoneTest", label: t("diagnosis.microphone", "Microfono") },
+                                  { key: "cameraFrontTest", label: t("diagnosis.frontCamera", "Cam frontale") },
+                                  { key: "cameraRearTest", label: t("diagnosis.rearCamera", "Cam posteriore") },
+                                  { key: "vibrationTest", label: t("diagnosis.vibration", "Vibrazione") },
+                                  { key: "batteryTest", label: t("diagnosis.battery", "Batteria") },
+                                  { key: "connectivityTest", label: t("diagnosis.connectivity", "Connettività") },
+                                  { key: "sensorsTest", label: t("diagnosis.sensors", "Sensori") },
+                                  { key: "buttonsTest", label: t("diagnosis.buttons", "Pulsanti") },
+                                ].map(({ key, label }) => {
+                                  const val = completedSelfDiagnosis[key];
+                                  return (
+                                    <div key={key} className="flex items-center justify-between gap-1 text-xs p-1.5 rounded bg-background">
+                                      <span className="text-muted-foreground">{label}</span>
+                                      {val === true && <Badge variant="default" className="text-[10px] px-1.5 py-0">OK</Badge>}
+                                      {val === false && <Badge variant="destructive" className="text-[10px] px-1.5 py-0">KO</Badge>}
+                                      {val === null && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">-</Badge>}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {completedSelfDiagnosis.notes && (
+                                <p className="text-xs text-muted-foreground">{t("common.notes", "Note")}: {completedSelfDiagnosis.notes}</p>
+                              )}
+                            </>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
+                              <SkipForward className="h-4 w-4" />
+                              <span>{t("standalone.diagnosisSkippedLabel")}{repair.skipDiagnosisReason ? `: ${repair.skipDiagnosisReason}` : ''}</span>
+                            </div>
+                          )}
                           <p className="text-sm">
                             <strong>{t("repairs.creaIlPreventivo")}</strong> {t("standalone.createQuoteForCustomer")}
                           </p>

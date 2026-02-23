@@ -9097,6 +9097,7 @@
     "describeTechnicalReason": "Décrivez le motif technique pour lequel l'appareil ne peut pas être réparé...",
     "createDiagnosis": "Créer Diagnostic",
     "technicalDiagnosis": "Diagnostic technique",
+    "autoSkippedByRemote": "Diagnostic automatiquement ignoré — diagnostic à distance effectué par le client",
     "editTechnicalDiagnosis": "Modifier le diagnostic technique",
     "diagnosisResults": "Résultats du diagnostic",
     "issuesFound": "Problèmes identifiés",

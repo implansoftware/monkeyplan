@@ -9105,6 +9105,7 @@
     "describeTechnicalReason": "Descrivi il motivo tecnico per cui il dispositivo non può essere riparato...",
     "createDiagnosis": "Crea Diagnosi",
     "technicalDiagnosis": "Diagnosi Tecnica",
+    "autoSkippedByRemote": "Diagnosi saltata automaticamente — diagnostica remota completata dal cliente",
     "editTechnicalDiagnosis": "Modifica Diagnosi Tecnica",
     "diagnosisResults": "Risultati Diagnosi",
     "issuesFound": "Problemi Riscontrati",

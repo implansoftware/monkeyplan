@@ -9097,6 +9097,7 @@
     "describeTechnicalReason": "Describe the technical reason why the device cannot be repaired...",
     "createDiagnosis": "Create Diagnosis",
     "technicalDiagnosis": "Technical Diagnosis",
+    "autoSkippedByRemote": "Diagnosis automatically skipped — remote diagnostics completed by customer",
     "editTechnicalDiagnosis": "Edit Technical Diagnosis",
     "diagnosisResults": "Diagnosis Results",
     "issuesFound": "Issues Found",

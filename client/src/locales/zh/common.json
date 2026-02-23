@@ -8410,6 +8410,7 @@
     "describeTechnicalReason": "描述设备无法维修的技术原因...",
     "createDiagnosis": "创建诊断",
     "technicalDiagnosis": "技术诊断",
+    "autoSkippedByRemote": "诊断已自动跳过 — 客户已完成远程诊断",
     "editTechnicalDiagnosis": "编辑技术诊断",
     "diagnosisResults": "诊断结果",
     "issuesFound": "发现问题",

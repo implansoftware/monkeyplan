@@ -7968,6 +7968,7 @@
     "describeTechnicalReason": "Beschrijf de technische reden waarom het apparaat niet kan worden gerepareerd...",
     "createDiagnosis": "Diagnose Aanmaken",
     "technicalDiagnosis": "Technische Diagnose",
+    "autoSkippedByRemote": "Diagnose automatisch overgeslagen — externe diagnose voltooid door klant",
     "editTechnicalDiagnosis": "Bewerk Technische Diagnose",
     "diagnosisResults": "Diagnoseresultaten",
     "issuesFound": "Gevonden Problemen",
