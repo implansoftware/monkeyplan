@@ -26,8 +26,8 @@ type TicketType = {
 };
 
 export default function AdminTickets() {
-  usePageTitle(t("tickets.title"));
   const { t } = useTranslation();
+  usePageTitle(t("tickets.title"));
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
