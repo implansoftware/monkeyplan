@@ -10,6 +10,7 @@ import ExcelJS from "exceljs";
 import multer from "multer";
 import { enqueuePushNotification } from "./services/expoPush";
 import { sendEmail, verifySmtpConnection, buildEmailTemplate } from "./services/email";
+import { notifyRepairCreated, notifyRepairStatusChanged, notifyQuoteIssued, notifyInvoiceCreated, notifyTicketCreated, notifyTicketReply, notifyTicketClosed, notifyUserCreated, notifyDeliveryAppointment, notifyStandaloneQuote, notifyWarrantyActivated, notifyB2BOrderCreated, notifyB2BOrderShipped } from "./services/emailNotifications";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -4194,6 +4195,7 @@ export function registerRoutes(app: Express): Server {
       await storage.invalidateCache('centers_%');
       
       // Notify customer and reseller about repair status change
+      const oldStatusAdmin = req.body._oldStatus || "pending";
       if (repair.customerId) {
         await storage.createNotification({
           userId: repair.customerId,
@@ -4226,6 +4228,7 @@ export function registerRoutes(app: Express): Server {
           status: validatedData.status,
         });
       }
+      notifyRepairStatusChanged(repair, oldStatusAdmin).catch(e => console.error("[Email]", e));
 
       res.json(repair);
     } catch (error: any) {
@@ -4386,6 +4389,7 @@ export function registerRoutes(app: Express): Server {
           invoiceId: invoice.id,
         });
       }
+      notifyInvoiceCreated(invoice).catch(e => console.error("[Email]", e));
       
       res.status(201).json(invoice);
     } catch (error: any) {
@@ -5975,6 +5979,7 @@ export function registerRoutes(app: Express): Server {
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');
       
+      notifyRepairCreated(repair).catch(e => console.error("[Email]", e));
       res.status(201).json(repair);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -6236,6 +6241,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'users', id: user.id });
+      notifyUserCreated(user, password).catch(e => console.error("[Email]", e));
       const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: password });
     } catch (error: any) {
@@ -8873,6 +8879,7 @@ export function registerRoutes(app: Express): Server {
       });
       
       if (appointment.customerId) { try { await storage.createNotification({ userId: appointment.customerId, type: "system", title: "Nuovo appuntamento", message: `È stato fissato un appuntamento per il ${new Date(appointment.date).toLocaleDateString("it-IT")} alle ${appointment.startTime}`, data: JSON.stringify({ appointmentId: appointment.id }) }); } catch(e) { console.error("Notification error:", e); } }
+      notifyDeliveryAppointment(appointment).catch(e => console.error("[Email]", e));
       res.status(201).json(appointment);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -10867,6 +10874,7 @@ export function registerRoutes(app: Express): Server {
           status: validatedData.status,
         });
       }
+      notifyRepairStatusChanged({ ...updated, customerId: repair.customerId }, repair.status).catch(e => console.error("[Email]", e));
       
       res.json(updated);
     } catch (error: any) {
@@ -11049,6 +11057,7 @@ export function registerRoutes(app: Express): Server {
         priority: validatedData.priority,
       });
       setActivityEntity(res, { type: 'tickets', id: ticket.id });
+      notifyTicketCreated(ticket).catch(e => console.error("[Email]", e));
 
       // Notify admin about new ticket
       const adminsForTicket = (await storage.listUsers()).filter((u: any) => u.role === "admin");
@@ -14694,6 +14703,7 @@ export function registerRoutes(app: Express): Server {
       });
       
       setActivityEntity(res, { type: 'ticket', id: ticket.id });
+      notifyTicketCreated(ticket).catch(e => console.error("[Email]", e));
       res.json(ticket);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -15228,6 +15238,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'ticket_message', id: ticketMessage.id });
+      notifyTicketReply(ticket, message.trim(), req.user.id).catch(e => console.error("[Email]", e));
       res.json(ticketMessage);
     } catch (error: any) {
       console.error("Service order creation error:", error);
@@ -15603,6 +15614,7 @@ export function registerRoutes(app: Express): Server {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
         setActivityEntity(res, { type: 'repair_order', id: order.id });
+        notifyRepairCreated(order).catch(e => console.error("[Email]", e));
         res.json(order);
       }
     } catch (error: any) {
@@ -18320,6 +18332,9 @@ export function registerRoutes(app: Express): Server {
           quoteId: quote.id,
         });
       }
+      if (repairForQuote) {
+        notifyQuoteIssued({ ...repairForQuote, estimatedCost: (quote.totalAmount || 0) / 100 }).catch(e => console.error("[Email]", e));
+      }
 
       res.status(201).json(quote);
     } catch (error: any) {
@@ -19345,6 +19360,7 @@ export function registerRoutes(app: Express): Server {
           broadcastNotification(repairOrder.customerId, { type: "system", title: "Dispositivo pronto per il ritiro", message: `La riparazione #${repairOrder.orderNumber} è completata. Il dispositivo è pronto per il ritiro.` });
         }
       } catch(e) { console.error("Notification error:", e); }
+      notifyRepairStatusChanged({ ...repairOrder, status: 'pronto_ritiro' }, repairOrder.status).catch(e => console.error("[Email]", e));
 
       res.json({ message: "Device marked as ready for pickup" });
     } catch (error: any) {
@@ -19456,6 +19472,8 @@ export function registerRoutes(app: Express): Server {
         }
       }
       
+      notifyRepairStatusChanged({ ...repairOrder, status: 'consegnato', finalCost: repairOrder.finalCost }, repairOrder.status).catch(e => console.error("[Email]", e));
+      if (invoice) { notifyInvoiceCreated(invoice).catch(e => console.error("[Email]", e)); }
       res.json({ delivery, invoice });
     } catch (error: any) {
       console.error("Service order creation error:", error);
