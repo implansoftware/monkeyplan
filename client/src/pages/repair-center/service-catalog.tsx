@@ -49,8 +49,13 @@ import {
 import type { ServiceItem } from "@shared/schema";
 
 
-const getCategoryLabel = (category: string) => {
-  return SERVICE_CATEGORIES.find(c => c.value === category)?.label || category;
+const CATEGORY_KEYS: Record<string, string> = {
+  display: "spareParts.displayLcd",
+  batteria: "settings.battery",
+  software: "",
+  hardware: "",
+  diagnostica: "sidebar.items.diagnostics",
+  altro: "common.more",
 };
 
 const getCategoryColor = (category: string) => {
@@ -93,6 +98,15 @@ interface ServiceCatalogItem extends ServiceItem {
 
 export default function RepairCenterServiceCatalog() {
   const { t } = useTranslation();
+
+  const getCategoryLabel = (category: string) => {
+    const key = CATEGORY_KEYS[category];
+    if (key) return t(key);
+    if (category === "software") return "Software";
+    if (category === "hardware") return "Hardware";
+    return category;
+  };
+
   const SERVICE_CATEGORIES = [
     { value: "display", label: t("spareParts.displayLcd") },
     { value: "batteria", label: t("settings.battery") },
