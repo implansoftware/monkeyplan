@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, MessageSquare, Search, UserPlus, ArrowLeft, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +73,7 @@ export default function AdminChat() {
   const [searchConv, setSearchConv] = useState("");
   const [searchUsers, setSearchUsers] = useState("");
   const [showNewChat, setShowNewChat] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<string>("all");
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -179,20 +181,26 @@ export default function AdminChat() {
   }, [conversations, searchConv]);
 
   const filteredUsers = useMemo(() => {
-    if (!searchUsers.trim()) return allUsers;
-    const q = searchUsers.toLowerCase();
-    return allUsers.filter(u =>
-      u.username.toLowerCase().includes(q) ||
-      (u.companyName && u.companyName.toLowerCase().includes(q)) ||
-      u.role.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q)
-    );
-  }, [allUsers, searchUsers]);
+    let list = allUsers;
+    if (roleFilter !== "all") {
+      list = list.filter(u => u.role === roleFilter);
+    }
+    if (searchUsers.trim()) {
+      const q = searchUsers.toLowerCase();
+      list = list.filter(u =>
+        u.username.toLowerCase().includes(q) ||
+        (u.companyName && u.companyName.toLowerCase().includes(q)) ||
+        u.email.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [allUsers, searchUsers, roleFilter]);
 
   const startNewChat = (userId: string) => {
     setSelectedUserId(userId);
     setShowNewChat(false);
     setSearchUsers("");
+    setRoleFilter("all");
   };
 
   return (
@@ -363,13 +371,25 @@ export default function AdminChat() {
         </Card>
       </div>
 
-      <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
+      <Dialog open={showNewChat} onOpenChange={(open) => { setShowNewChat(open); if (!open) { setSearchUsers(""); setRoleFilter("all"); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{t("chat.newConversation")}</DialogTitle>
             <DialogDescription>{t("chat.selectUserToChat")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger data-testid="select-chat-role-filter">
+                <SelectValue placeholder={t("chat.filterByRole")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("chat.allRoles")}</SelectItem>
+                <SelectItem value="reseller">{t("chat.roleReseller")}</SelectItem>
+                <SelectItem value="sub_reseller">{t("chat.roleSubReseller")}</SelectItem>
+                <SelectItem value="repair_center">{t("chat.roleRepairCenter")}</SelectItem>
+                <SelectItem value="customer">{t("chat.roleCustomer")}</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
