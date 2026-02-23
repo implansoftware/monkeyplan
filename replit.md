@@ -32,6 +32,7 @@ The backend is an `Express.js` application with TypeScript, featuring a RESTful 
 *   **Push Notification System**: Expo Push Notification integration for real-time alerts to users, featuring token management, queued sending with retry mechanisms, and receipt tracking.
 *   **SEO & Accessibility**: Comprehensive SEO overhaul including meta tags, sitemap, robots.txt, JSON-LD, dynamic page titles, and semantic HTML.
 *   **Multilingual Support (i18n)**: 8-language internationalization using `react-i18next`: Italian, English, French, Spanish, German, Chinese (Simplified), Dutch, Arabic. 3,700+ translation keys organized by domain (common, repairs, invoices, tickets, warehouse, products, customers, b2b, pos, hr, warranties, utility, suppliers, shipping, settings, dashboard, reports, ai, shop, marketplace, license, fiscal, public). Language switcher in all app headers. Config at `client/src/i18n.ts`, locales at `client/src/locales/{it,en,fr,es,de,zh,nl,ar}/common.json`. Language detection: localStorage key `monkeyplan-lang` → navigator → Italian fallback.
+*   **CSV Customer Import**: Bulk customer import from CSV files. Available to resellers, sub-resellers, reseller staff, and repair centers. Supports comma/semicolon separators, auto-parses Italian-format addresses, auto-generates usernames/passwords, handles email deduplication. Max 500 customers per import. Component: `client/src/components/CsvImportDialog.tsx`. Endpoints: `POST /api/reseller/customers/import-csv`, `POST /api/repair-center/customers/import-csv`.
 
 ## External Dependencies
 

@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
-import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus, Pencil } from "lucide-react";
+import { Users, Search, Phone, Mail, MapPin, Wrench, Eye, CheckCircle, Clock, User, Plus, Pencil, Upload } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { queryClient } from "@/lib/queryClient";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
 import type { User as UserType, RepairOrder } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -33,6 +34,7 @@ export default function RepairCenterCustomers() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithStats | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
 
   const { data: customers = [], isLoading } = useQuery<CustomerWithStats[]>({
     queryKey: ["/api/repair-center/customers"],
@@ -82,6 +84,15 @@ export default function RepairCenterCustomers() {
             <Badge variant="outline" className="bg-white/20 backdrop-blur-sm text-white border-white/30 text-lg px-3 py-1">
               {customers.length} Clienti
             </Badge>
+            <Button
+              onClick={() => setCsvImportOpen(true)}
+              variant="outline"
+              className="w-full sm:w-auto bg-white/10 backdrop-blur-sm text-white border-white/30"
+              data-testid="button-import-csv"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {t("csvImport.importCsv")}
+            </Button>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               className="w-full sm:w-auto bg-white/20 backdrop-blur-sm text-white border-white/30 hover:bg-white/30"
@@ -402,6 +413,12 @@ export default function RepairCenterCustomers() {
           queryClient.invalidateQueries({ queryKey: ["/api/repair-center/customers"] });
           setCreateDialogOpen(false);
         }}
+      />
+      <CsvImportDialog
+        open={csvImportOpen}
+        onOpenChange={setCsvImportOpen}
+        apiEndpoint="/api/repair-center/customers/import-csv"
+        queryKeyToInvalidate="/api/repair-center/customers"
       />
     </div>
   );

@@ -6243,6 +6243,89 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Import customers from CSV
+  app.post("/api/reseller/customers/import-csv", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "create"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const effectiveResellerId = getResellerId(req);
+      const { customers } = req.body;
+
+      if (!Array.isArray(customers) || customers.length === 0) {
+        return res.status(400).json({ error: "Nessun cliente da importare" });
+      }
+      if (customers.length > 500) {
+        return res.status(400).json({ error: "Massimo 500 clienti per importazione" });
+      }
+
+      const results = { imported: 0, skipped: 0, errors: [] as { row: number; name: string; message: string }[], created: [] as { fullName: string; email: string }[] };
+
+      for (let i = 0; i < customers.length; i++) {
+        const row = customers[i];
+        const rowNum = i + 1;
+        const fullName = (row.fullName || "").trim();
+
+        if (!fullName) {
+          results.errors.push({ row: rowNum, name: "-", message: "Nome mancante" });
+          results.skipped++;
+          continue;
+        }
+
+        try {
+          const email = (row.email || "").trim();
+          if (email) {
+            const existingByEmail = await storage.getUserByEmail(email);
+            if (existingByEmail) {
+              results.errors.push({ row: rowNum, name: fullName, message: `Email già esistente: ${email}` });
+              results.skipped++;
+              continue;
+            }
+          }
+
+          let baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 20);
+          if (baseUsername.length < 3) baseUsername = "cliente";
+          let username = baseUsername;
+          let counter = 1;
+          while (await storage.getUserByUsername(username)) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+          }
+
+          const tempPassword = randomBytes(8).toString("hex");
+          const hashedPassword = await hashPassword(tempPassword);
+
+          const emailToUse = email || `${username}_${Date.now()}@noemail.local`;
+
+          const user = await storage.createUser({
+            username,
+            password: hashedPassword,
+            email: emailToUse,
+            fullName,
+            phone: (row.phone || "").trim() || null,
+            isActive: true,
+            role: "customer",
+            resellerId: effectiveResellerId,
+            repairCenterId: null,
+            indirizzo: (row.address || "").trim() || null,
+            cap: (row.cap || "").trim() || null,
+            citta: (row.city || "").trim() || null,
+            provincia: (row.province || "").trim() || null,
+          });
+
+          results.imported++;
+          results.created.push({ fullName: user.fullName, email: emailToUse });
+        } catch (err: any) {
+          results.errors.push({ row: rowNum, name: fullName, message: err.message || "Errore sconosciuto" });
+          results.skipped++;
+        }
+      }
+
+      res.json(results);
+    } catch (error: any) {
+      console.error("CSV import error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Update an existing customer
 
   // Get single customer detail
@@ -37871,6 +37954,94 @@ export function registerRoutes(app: Express): Server {
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(400).send(error.message);
+    }
+  });
+
+  // Import customers from CSV (Repair Center)
+  app.post("/api/repair-center/customers/import-csv", requireRole("repair_center", "repair_center_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const repairCenterId = req.user.repairCenterId || req.user.id;
+      
+      const repairCenter = await storage.getRepairCenter(repairCenterId);
+      if (!repairCenter) {
+        return res.status(404).send("Centro riparazione non trovato");
+      }
+
+      const { customers } = req.body;
+      if (!Array.isArray(customers) || customers.length === 0) {
+        return res.status(400).json({ error: "Nessun cliente da importare" });
+      }
+      if (customers.length > 500) {
+        return res.status(400).json({ error: "Massimo 500 clienti per importazione" });
+      }
+
+      const results = { imported: 0, skipped: 0, errors: [] as { row: number; name: string; message: string }[], created: [] as { fullName: string; email: string }[] };
+
+      for (let i = 0; i < customers.length; i++) {
+        const row = customers[i];
+        const rowNum = i + 1;
+        const fullName = (row.fullName || "").trim();
+
+        if (!fullName) {
+          results.errors.push({ row: rowNum, name: "-", message: "Nome mancante" });
+          results.skipped++;
+          continue;
+        }
+
+        try {
+          const email = (row.email || "").trim();
+          if (email) {
+            const existingByEmail = await storage.getUserByEmail(email);
+            if (existingByEmail) {
+              results.errors.push({ row: rowNum, name: fullName, message: `Email già esistente: ${email}` });
+              results.skipped++;
+              continue;
+            }
+          }
+
+          let baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 20);
+          if (baseUsername.length < 3) baseUsername = "cliente";
+          let username = baseUsername;
+          let counter = 1;
+          while (await storage.getUserByUsername(username)) {
+            username = `${baseUsername}${counter}`;
+            counter++;
+          }
+
+          const tempPassword = randomBytes(8).toString("hex");
+          const hashedPassword = await hashPassword(tempPassword);
+          const emailToUse = email || `${username}_${Date.now()}@noemail.local`;
+
+          const user = await storage.createUser({
+            username,
+            password: hashedPassword,
+            email: emailToUse,
+            fullName,
+            phone: (row.phone || "").trim() || null,
+            isActive: true,
+            role: "customer",
+            resellerId: repairCenter.resellerId,
+            repairCenterId: repairCenterId,
+            indirizzo: (row.address || "").trim() || null,
+            cap: (row.cap || "").trim() || null,
+            citta: (row.city || "").trim() || null,
+            provincia: (row.province || "").trim() || null,
+          });
+
+          await storage.ensureCustomerRepairCenterAssociation(user.id, repairCenterId);
+          results.imported++;
+          results.created.push({ fullName: user.fullName, email: emailToUse });
+        } catch (err: any) {
+          results.errors.push({ row: rowNum, name: fullName, message: err.message || "Errore sconosciuto" });
+          results.skipped++;
+        }
+      }
+
+      res.json(results);
+    } catch (error: any) {
+      console.error("CSV import error (RC):", error);
+      res.status(500).json({ error: error.message });
     }
   });
 

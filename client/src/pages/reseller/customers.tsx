@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload } from "lucide-react";
 import { Link } from "wouter";
 import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { User, RepairOrder, RepairCenter } from "@shared/schema";
 import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 import { CustomerWizardDialog } from "@/components/CustomerWizardDialog";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
 import { useToast } from "@/hooks/use-toast";
 import { ActionGuard } from "@/components/permission-guard";
 import { useTranslation } from "react-i18next";
@@ -38,6 +39,7 @@ export default function ResellerCustomers() {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<CustomerWithRepairCenters | null>(null);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
@@ -233,12 +235,24 @@ export default function ResellerCustomers() {
             </div>
           </div>
           <ActionGuard module="customers" action="create">
-            <Button onClick={() => setDialogOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-new-customer">
-              <Plus className="h-4 w-4 mr-2" />{t("customers.newCustomer")}</Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={() => setCsvImportOpen(true)} variant="outline" className="bg-white/10 backdrop-blur-sm border border-white/30 text-white" data-testid="button-import-csv">
+                <Upload className="h-4 w-4 mr-2" />{t("csvImport.importCsv")}
+              </Button>
+              <Button onClick={() => setDialogOpen(true)} className="bg-white/20 backdrop-blur-sm border border-white/30 text-white shadow-lg" data-testid="button-new-customer">
+                <Plus className="h-4 w-4 mr-2" />{t("customers.newCustomer")}
+              </Button>
+            </div>
             <CustomerWizardDialog 
               open={dialogOpen} 
               onOpenChange={setDialogOpen}
               onSuccess={handleCustomerCreated}
+            />
+            <CsvImportDialog
+              open={csvImportOpen}
+              onOpenChange={setCsvImportOpen}
+              apiEndpoint="/api/reseller/customers/import-csv"
+              queryKeyToInvalidate="/api/reseller/customers"
             />
           </ActionGuard>
         </div>
