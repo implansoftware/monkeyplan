@@ -49338,6 +49338,17 @@ export function registerRoutes(app: Express): Server {
                 }
               }
             }
+          } else if (userRole === "admin") {
+            const allWarehouses = await storage.listWarehouses({});
+            if (allWarehouses.length > 0) {
+              dataContext += `\n\n--- TUTTI I MAGAZZINI (${allWarehouses.length}) ---`;
+              for (const wh of allWarehouses.slice(0, 5)) {
+                const stock = await storage.listWarehouseStock(wh.id);
+                const totalQty = stock.reduce((s: number, item: any) => s + (Number(item.quantity) || 0), 0);
+                dataContext += `\n- ${wh.name} (${wh.location || "sede"}): ${stock.length} articoli, ${totalQty} pezzi totali`;
+              }
+              if (allWarehouses.length > 5) dataContext += `\n... e altri ${allWarehouses.length - 5} magazzini`;
+            }
           }
         } catch (whErr) {
           console.error("AI context: warehouse error:", whErr);
@@ -49386,6 +49397,31 @@ export function registerRoutes(app: Express): Server {
           console.error("AI context: repairs error:", repErr);
         }
 
+        // --- USERS OVERVIEW (admin only) ---
+        try {
+          if (userRole === "admin") {
+            const allUsers = await storage.listUsers();
+            const roleCounts: Record<string, number> = {};
+            for (const u of allUsers) {
+              roleCounts[u.role] = (roleCounts[u.role] || 0) + 1;
+            }
+            dataContext += `\n\n--- PANORAMICA UTENTI (${allUsers.length} totali) ---\n`;
+            dataContext += Object.entries(roleCounts).map(([role, count]) => `- ${role}: ${count}`).join("\n");
+            const resellers = allUsers.filter(u => u.role === "reseller");
+            if (resellers.length > 0) {
+              dataContext += `\n\nRivenditori (${resellers.length}):\n`;
+              dataContext += resellers.slice(0, 15).map(r => `- ${r.fullName || r.username}${r.companyName ? ` (${r.companyName})` : ""}: ${r.email || "N/D"}`).join("\n");
+            }
+            const rCenters = allUsers.filter(u => u.role === "repair_center");
+            if (rCenters.length > 0) {
+              dataContext += `\n\nCentri Riparazione (${rCenters.length}):\n`;
+              dataContext += rCenters.slice(0, 15).map(r => `- ${r.fullName || r.username}${r.companyName ? ` (${r.companyName})` : ""}: ${r.email || "N/D"}`).join("\n");
+            }
+          }
+        } catch (usersErr) {
+          console.error("AI context: users overview error:", usersErr);
+        }
+
         // --- CUSTOMERS SECTION ---
         try {
           if (resellerId) {
@@ -49403,6 +49439,15 @@ export function registerRoutes(app: Express): Server {
               dataContext += customers.slice(0, 20).map(c => 
                 `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
               ).join("\n");
+            }
+          } else if (userRole === "admin") {
+            const customers = await storage.listCustomers({});
+            if (customers.length > 0) {
+              dataContext += `\n\n--- TUTTI I CLIENTI (${customers.length}) ---\n`;
+              dataContext += customers.slice(0, 30).map(c => 
+                `- ${c.fullName || c.username}: ${c.email || "no email"}, tel: ${c.phone || "N/D"}`
+              ).join("\n");
+              if (customers.length > 30) dataContext += `\n... e altri ${customers.length - 30} clienti`;
             }
           }
         } catch (custErr) {
@@ -49479,6 +49524,14 @@ export function registerRoutes(app: Express): Server {
                 `- ${c.name || c.businessName || "Centro"}: ${c.city || ""} ${c.province || ""}, tel: ${c.phone || "N/D"}, email: ${c.email || "N/D"}`
               ).join("\n");
             }
+          } else if (userRole === "admin") {
+            const centers = await storage.listRepairCenters();
+            if (centers.length > 0) {
+              dataContext += `\n\n--- TUTTI I CENTRI RIPARAZIONE (${centers.length}) ---\n`;
+              dataContext += centers.slice(0, 15).map(c =>
+                `- ${(c as any).name || (c as any).businessName || "Centro"}: ${(c as any).city || ""} ${(c as any).province || ""}, tel: ${(c as any).phone || "N/D"}, email: ${(c as any).email || "N/D"}`
+              ).join("\n");
+            }
           }
         } catch (rcErr) {
           console.error("AI context: repair centers error:", rcErr);
@@ -49486,8 +49539,10 @@ export function registerRoutes(app: Express): Server {
 
         // --- SALES ORDERS (B2B) SECTION ---
         try {
-          if (resellerId) {
-            const salesOrders = await storage.listSalesOrders({ resellerId });
+          if (resellerId || userRole === "admin") {
+            const soFiltersB2B: any = {};
+            if (resellerId) soFiltersB2B.resellerId = resellerId;
+            const salesOrders = await storage.listSalesOrders(Object.keys(soFiltersB2B).length > 0 ? soFiltersB2B : undefined);
             if (salesOrders.length > 0) {
               const activeSO = salesOrders.filter(o => o.status !== "completed" && o.status !== "cancelled");
               dataContext += `\n\n--- ORDINI B2B (${activeSO.length} attivi su ${salesOrders.length} totali) ---\n`;
@@ -49505,7 +49560,7 @@ export function registerRoutes(app: Express): Server {
           const quoteFilters: any = {};
           if (resellerId) quoteFilters.resellerId = resellerId;
           else if (repairCenterId) quoteFilters.repairCenterId = repairCenterId;
-          if (Object.keys(quoteFilters).length > 0) {
+          if (Object.keys(quoteFilters).length > 0 || userRole === "admin") {
             const quotes = await storage.listStandaloneQuotes(quoteFilters);
             if (quotes.length > 0) {
               const pending = quotes.filter(q => q.status === "pending" || q.status === "sent");
@@ -49555,13 +49610,19 @@ export function registerRoutes(app: Express): Server {
 
         // --- WARRANTIES SECTION ---
         try {
-          if (resellerId) {
-            const warranties = await storage.listRepairWarranties({ resellerId });
+          const warFilters: any = {};
+          if (resellerId) warFilters.sellerId = resellerId;
+          else if (repairCenterId) warFilters.sellerId = repairCenterId;
+          if (resellerId || repairCenterId || userRole === "admin") {
+            const warranties = await storage.listRepairWarranties(Object.keys(warFilters).length > 0 ? warFilters : {});
             if (warranties.length > 0) {
-              const active = warranties.filter(w => w.status === "active");
-              dataContext += `\n\n--- GARANZIE (${warranties.length} totali, ${active.length} attive) ---\n`;
-              dataContext += active.slice(0, 10).map(w =>
-                `- Garanzia #${w.id.slice(0, 8)}: prodotto: ${w.productName || "N/D"}, scadenza: ${w.expiryDate || "N/D"}`
+              const accepted = warranties.filter(w => w.status === "accepted");
+              const offered = warranties.filter(w => w.status === "offered");
+              const expired = accepted.filter(w => w.endsAt && new Date(w.endsAt).getTime() < Date.now());
+              const activeW = accepted.filter(w => !w.endsAt || new Date(w.endsAt).getTime() >= Date.now());
+              dataContext += `\n\n--- GARANZIE (${warranties.length} totali, ${activeW.length} attive, ${offered.length} in attesa, ${expired.length} scadute) ---\n`;
+              dataContext += activeW.slice(0, 15).map(w =>
+                `- Garanzia #${w.id.slice(0, 8)}: prodotto: ${w.productNameSnapshot || "N/D"}, scadenza: ${w.endsAt ? new Date(w.endsAt).toLocaleDateString("it-IT") : "N/D"}, venduto da: ${w.sellerId?.slice(0, 8) || "N/D"}`
               ).join("\n");
             }
           }
@@ -49574,7 +49635,7 @@ export function registerRoutes(app: Express): Server {
           const aptFilters: any = {};
           if (resellerId) aptFilters.resellerId = resellerId;
           else if (repairCenterId) aptFilters.repairCenterId = repairCenterId;
-          if (Object.keys(aptFilters).length > 0) {
+          if (Object.keys(aptFilters).length > 0 || userRole === "admin") {
             const appointments = await storage.listDeliveryAppointments(aptFilters);
             const upcoming = appointments.filter(a => a.status !== "completed" && a.status !== "cancelled");
             if (upcoming.length > 0) {
@@ -49597,6 +49658,22 @@ export function registerRoutes(app: Express): Server {
               dataContext += products.slice(0, 20).map(p =>
                 `- ${p.name}: ${p.sku || "no SKU"}, prezzo: ${p.priceCents ? (Number(p.priceCents) / 100).toFixed(2) + "€" : "N/D"}, categoria: ${p.category || "N/D"}`
               ).join("\n");
+            }
+          } else if (userRole === "admin") {
+            const allResellers = (await storage.listUsers()).filter(u => u.role === "reseller");
+            let totalProducts = 0;
+            const prodSummary: string[] = [];
+            for (const r of allResellers) {
+              const prods = await storage.listProductsByReseller(r.id);
+              totalProducts += prods.length;
+              if (prods.length > 0) {
+                prodSummary.push(`${r.fullName || r.username}: ${prods.length} prodotti`);
+              }
+            }
+            if (totalProducts > 0) {
+              dataContext += `\n\n--- PRODOTTI PIATTAFORMA (${totalProducts} totali tra ${allResellers.length} rivenditori) ---\n`;
+              dataContext += prodSummary.slice(0, 15).join("\n");
+              if (prodSummary.length > 15) dataContext += `\n... e altri ${prodSummary.length - 15} rivenditori con prodotti`;
             }
           }
         } catch (prodErr) {
