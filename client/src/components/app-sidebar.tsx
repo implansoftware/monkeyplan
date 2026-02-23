@@ -130,7 +130,7 @@ const menuItems = {
     { title: "sidebar.items.deviceCatalog", url: "/admin/device-catalog", icon: Package, group: "sidebar.groups.catalogs" },
     { title: "sidebar.items.deviceCompatibilities", url: "/admin/device-compatibilities", icon: Link2, group: "sidebar.groups.catalogs" },
     { title: "sidebar.items.priceList", url: "/admin/service-catalog", icon: Receipt, group: "sidebar.groups.catalogs" },
-    { title: "sidebar.items.interventionOrders", url: "/admin/service-orders", icon: FileText, group: "sidebar.groups.catalogs" },
+    { title: "sidebar.items.interventionOrders", url: "/admin/service-orders", icon: FileText, group: "sidebar.groups.centersAndRepairs" },
     { title: "sidebar.items.utilityCategories", url: "/admin/utility-categories", icon: FolderOpen, group: "sidebar.groups.catalogs" },
     { title: "sidebar.items.licensePlans", url: "/admin/license-plans", icon: CreditCard, group: "sidebar.groups.licenses" },
     { title: "sidebar.items.activeLicenses", url: "/admin/licenses", icon: Shield, group: "sidebar.groups.licenses" },
