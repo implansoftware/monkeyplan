@@ -177,8 +177,12 @@ export default function NewStandaloneQuote() {
     enabled: currentStep === 2 && productTab === "supplier",
   });
 
+  const customersUrl = user?.role === "repair_center" || user?.role === "repair_center_staff"
+    ? "/api/repair-center/customers"
+    : "/api/reseller/customers";
+
   const { data: customers = [] } = useQuery<any[]>({
-    queryKey: ["/api/users?role=customer&limit=100"],
+    queryKey: [customersUrl],
     enabled: currentStep === 3,
   });
 
