@@ -116,7 +116,7 @@ export default function NewStandaloneQuote() {
 
   const deviceModelsUrl = (() => {
     const params = new URLSearchParams();
-    if (deviceTypeId) params.set("deviceTypeId", deviceTypeId);
+    if (deviceTypeId) params.set("typeId", deviceTypeId);
     if (brandId) params.set("brandId", brandId);
     const qs = params.toString();
     return `/api/device-models${qs ? `?${qs}` : ""}`;
