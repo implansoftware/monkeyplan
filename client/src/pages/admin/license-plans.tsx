@@ -71,6 +71,15 @@ const MAX_STAFF_OPTIONS = [
   { value: "unlimited", labelKey: "license.unlimited" },
 ];
 
+const MAX_RC_OPTIONS = [
+  { value: "1", labelKey: "license.rc1" },
+  { value: "3", labelKey: "license.rc3" },
+  { value: "5", labelKey: "license.rc5" },
+  { value: "10", labelKey: "license.rc10" },
+  { value: "20", labelKey: "license.rc20" },
+  { value: "unlimited", labelKey: "license.unlimited" },
+];
+
 function parseExistingFeatures(features: string | null | undefined): { selected: Set<string>; custom: string[] } {
   if (!features) return { selected: new Set(), custom: [] };
   const lines = features.split("\n").map(l => l.trim()).filter(Boolean);
@@ -102,6 +111,10 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
   const [maxStaffUsers, setMaxStaffUsers] = useState<string>(() => {
     if (plan?.maxStaffUsers === null || plan?.maxStaffUsers === undefined) return "unlimited";
     return String(plan.maxStaffUsers);
+  });
+  const [maxRepairCenters, setMaxRepairCenters] = useState<string>(() => {
+    if ((plan as any)?.maxRepairCenters === null || (plan as any)?.maxRepairCenters === undefined) return "unlimited";
+    return String((plan as any).maxRepairCenters);
   });
   const [isActive, setIsActive] = useState(plan?.isActive !== false);
   const [sortOrder, setSortOrder] = useState(String(plan?.sortOrder || 0));
@@ -142,6 +155,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
       priceCents: Math.round(parseFloat(priceCents) * 100),
       features: featuresString,
       maxStaffUsers: maxStaffUsers === "unlimited" ? null : parseInt(maxStaffUsers),
+      maxRepairCenters: maxRepairCenters === "unlimited" ? null : parseInt(maxRepairCenters),
       isActive,
       sortOrder: parseInt(sortOrder) || 0,
     });
@@ -209,6 +223,19 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
                 </SelectTrigger>
                 <SelectContent>
                   {MAX_STAFF_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{t(opt.labelKey)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("license.maxRepairCenters")}</Label>
+              <Select value={maxRepairCenters} onValueChange={setMaxRepairCenters}>
+                <SelectTrigger data-testid="select-max-repair-centers">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MAX_RC_OPTIONS.map(opt => (
                     <SelectItem key={opt.value} value={opt.value}>{t(opt.labelKey)}</SelectItem>
                   ))}
                 </SelectContent>
@@ -477,6 +504,12 @@ export default function AdminLicensePlans() {
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Users className="w-3 h-3" />
                     {t("license.maxStaffLabel", { count: plan.maxStaffUsers })}
+                  </div>
+                )}
+                {(plan as any).maxRepairCenters && (
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground" data-testid={`text-max-rc-${plan.id}`}>
+                    <Wrench className="w-3 h-3" />
+                    {t("license.maxRepairCentersLabel", { count: (plan as any).maxRepairCenters })}
                   </div>
                 )}
                 {plan.features && (

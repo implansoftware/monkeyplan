@@ -308,6 +308,18 @@ export default function MyLicense() {
                 <p className="text-xs text-muted-foreground">{t("license.payment")}</p>
                 <p className="text-sm font-medium capitalize">{currentLicense.license.paymentMethod}</p>
               </div>
+              {currentLicense.plan.maxStaffUsers && (
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("license.maxStaffUsers")}</p>
+                  <p className="text-sm font-medium" data-testid="text-max-staff">{currentLicense.plan.maxStaffUsers}</p>
+                </div>
+              )}
+              {(currentLicense.plan as any).maxRepairCenters && (
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("license.maxRepairCenters")}</p>
+                  <p className="text-sm font-medium" data-testid="text-max-repair-centers">{(currentLicense.plan as any).maxRepairCenters}</p>
+                </div>
+              )}
             </div>
             {currentLicense.plan.features && (
               <div className="mt-4 pt-4 border-t">
@@ -625,6 +637,12 @@ export default function MyLicense() {
                     <div>
                       <p className="text-xs text-muted-foreground">{t("license.maxStaffUsers")}</p>
                       <p className="font-medium" data-testid="text-history-staff">{h.planMaxStaffUsers}</p>
+                    </div>
+                  )}
+                  {(h as any).planMaxRepairCenters != null && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">{t("license.maxRepairCenters")}</p>
+                      <p className="font-medium" data-testid="text-history-rc">{(h as any).planMaxRepairCenters}</p>
                     </div>
                   )}
                   <div>

@@ -48447,7 +48447,7 @@ export function registerRoutes(app: Express): Server {
 
   app.post("/api/admin/license-plans", requireRole("admin"), async (req, res) => {
     try {
-      const { name, description, targetCategory, durationMonths, priceCents, features, maxStaffUsers, isActive, sortOrder } = req.body;
+      const { name, description, targetCategory, durationMonths, priceCents, features, maxStaffUsers, maxRepairCenters, isActive, sortOrder } = req.body;
       if (!name || !durationMonths || priceCents === undefined) {
         return res.status(400).send("Nome, durata e prezzo sono obbligatori");
       }
@@ -48459,6 +48459,7 @@ export function registerRoutes(app: Express): Server {
         priceCents,
         features: features || null,
         maxStaffUsers: maxStaffUsers || null,
+        maxRepairCenters: maxRepairCenters || null,
         isActive: isActive !== undefined ? isActive : true,
         sortOrder: sortOrder || 0,
       });
@@ -48473,7 +48474,7 @@ export function registerRoutes(app: Express): Server {
       const existing = await storage.getLicensePlan(req.params.id);
       if (!existing) return res.status(404).send("Piano non trovato");
       const updates: any = {};
-      const fields = ["name", "description", "targetCategory", "durationMonths", "priceCents", "features", "maxStaffUsers", "isActive", "sortOrder"];
+      const fields = ["name", "description", "targetCategory", "durationMonths", "priceCents", "features", "maxStaffUsers", "maxRepairCenters", "isActive", "sortOrder"];
       for (const f of fields) {
         if (req.body[f] !== undefined) updates[f] = req.body[f];
       }
@@ -48633,7 +48634,7 @@ export function registerRoutes(app: Express): Server {
       const plans = await storage.listLicensePlans();
       const enriched = allLicenses.map(lic => {
         const plan = plans.find(p => p.id === lic.licensePlanId);
-        return { ...lic, planName: plan?.name || "N/A", planDuration: plan?.durationMonths || 0, planPrice: plan?.priceCents || 0, planDescription: plan?.description || null, planFeatures: plan?.features || null, planMaxStaffUsers: plan?.maxStaffUsers || null };
+        return { ...lic, planName: plan?.name || "N/A", planDuration: plan?.durationMonths || 0, planPrice: plan?.priceCents || 0, planDescription: plan?.description || null, planFeatures: plan?.features || null, planMaxStaffUsers: plan?.maxStaffUsers || null, planMaxRepairCenters: plan?.maxRepairCenters || null };
       });
       res.json(enriched);
     } catch (error: any) {

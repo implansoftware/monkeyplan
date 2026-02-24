@@ -7483,6 +7483,7 @@ export const licensePlans = pgTable("license_plans", {
   priceCents: integer("price_cents").notNull(),
   features: text("features"),
   maxStaffUsers: integer("max_staff_users"),
+  maxRepairCenters: integer("max_repair_centers"),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   stripeProductId: varchar("stripe_product_id"),
