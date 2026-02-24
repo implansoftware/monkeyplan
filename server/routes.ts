@@ -48711,31 +48711,70 @@ export function registerRoutes(app: Express): Server {
         }
         const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
         const stripe = new Stripe(stripeSecretDecrypted);
-        const session = await stripe.checkout.sessions.create({
-          payment_method_types: ['card'],
-          line_items: [{
-            price_data: {
-              currency: 'eur',
-              product_data: {
-                name: plan.name,
-                description: plan.description || 'Licenza MonkeyPlan',
-              },
-              unit_amount: plan.priceCents,
+
+        let stripeCustomerId = (req.user as any).stripeCustomerId;
+        if (!stripeCustomerId) {
+          const customer = await stripe.customers.create({
+            email: req.user.email,
+            name: (req.user as any).ragioneSociale || req.user.fullName,
+            metadata: { monkeyplanUserId: req.user.id },
+          });
+          stripeCustomerId = customer.id;
+          await storage.updateUser(req.user.id, { stripeCustomerId });
+        }
+
+        if (plan.stripePriceId) {
+          const session = await stripe.checkout.sessions.create({
+            customer: stripeCustomerId,
+            payment_method_types: ['card'],
+            line_items: [{ price: plan.stripePriceId, quantity: 1 }],
+            mode: 'subscription',
+            success_url: `${req.headers.origin}/my-license?license_id=${license.id}&stripe_session_id={CHECKOUT_SESSION_ID}&payment_success=true`,
+            cancel_url: `${req.headers.origin}/my-license?payment_cancelled=true`,
+            metadata: {
+              licenseId: license.id,
+              resellerId: req.user.id,
+              planId: plan.id,
+              type: 'license_subscription'
             },
-            quantity: 1,
-          }],
-          mode: 'payment',
-          success_url: `${req.headers.origin}/my-license?license_id=${license.id}&stripe_session_id={CHECKOUT_SESSION_ID}&payment_success=true`,
-          cancel_url: `${req.headers.origin}/my-license?payment_cancelled=true`,
-          metadata: {
-            licenseId: license.id,
-            resellerId: req.user.id,
-            planId: plan.id,
-            type: 'license_activation'
-          },
-          locale: 'it',
-        });
-        return res.status(201).json({ license, checkoutUrl: session.url, paymentMethod: 'stripe' });
+            subscription_data: {
+              metadata: {
+                licenseId: license.id,
+                resellerId: req.user.id,
+                planId: plan.id,
+              },
+            },
+            locale: 'it',
+          });
+          return res.status(201).json({ license, checkoutUrl: session.url, paymentMethod: 'stripe', subscription: true });
+        } else {
+          const session = await stripe.checkout.sessions.create({
+            customer: stripeCustomerId,
+            payment_method_types: ['card'],
+            line_items: [{
+              price_data: {
+                currency: 'eur',
+                product_data: {
+                  name: plan.name,
+                  description: plan.description || 'Licenza MonkeyPlan',
+                },
+                unit_amount: plan.priceCents,
+              },
+              quantity: 1,
+            }],
+            mode: 'payment',
+            success_url: `${req.headers.origin}/my-license?license_id=${license.id}&stripe_session_id={CHECKOUT_SESSION_ID}&payment_success=true`,
+            cancel_url: `${req.headers.origin}/my-license?payment_cancelled=true`,
+            metadata: {
+              licenseId: license.id,
+              resellerId: req.user.id,
+              planId: plan.id,
+              type: 'license_activation'
+            },
+            locale: 'it',
+          });
+          return res.status(201).json({ license, checkoutUrl: session.url, paymentMethod: 'stripe' });
+        }
       }
 
       if (paymentMethod === 'paypal') {
@@ -48824,7 +48863,26 @@ export function registerRoutes(app: Express): Server {
       const stripe = new Stripe(stripeSecretDecrypted);
       const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-      if (session.payment_status === 'paid') {
+      const isSubscription = session.mode === 'subscription';
+
+      if (isSubscription && session.subscription) {
+        const existingActive = await storage.getActiveLicenseForReseller(req.user.id);
+        if (existingActive && existingActive.id !== license.id) {
+          await storage.updateLicense(existingActive.id, { status: "cancelled" });
+        }
+        const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        const periodEnd = new Date(subscription.current_period_end * 1000);
+        await storage.updateLicense(license.id, {
+          status: "active",
+          stripeSubscriptionId: subscriptionId,
+          paymentId: subscriptionId,
+          autoRenew: true,
+          endDate: periodEnd,
+        });
+        const updated = await storage.getLicense(license.id);
+        return res.json({ license: updated, confirmed: true, subscription: true });
+      } else if (session.payment_status === 'paid') {
         const existingActive = await storage.getActiveLicenseForReseller(req.user.id);
         if (existingActive && existingActive.id !== license.id) {
           await storage.updateLicense(existingActive.id, { status: "cancelled" });
@@ -48922,6 +48980,250 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // ==========================================
+  // STRIPE SUBSCRIPTION MANAGEMENT
+  // ==========================================
+
+  // POST /api/admin/license-plans/:id/sync-stripe - Sync plan with Stripe (create Product + recurring Price)
+  app.post("/api/admin/license-plans/:id/sync-stripe", requireRole("admin"), async (req, res) => {
+    try {
+      const plan = await storage.getLicensePlan(req.params.id);
+      if (!plan) return res.status(404).send("Piano non trovato");
+      if (plan.priceCents === 0) return res.status(400).send("I piani gratuiti non necessitano di sincronizzazione Stripe");
+
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.stripeEnabled || !adminConfig?.stripeSecretKey) {
+        return res.status(400).json({ error: "Stripe non configurato. Configura Stripe nelle impostazioni." });
+      }
+
+      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+
+      let productId = plan.stripeProductId;
+      if (!productId) {
+        const product = await stripe.products.create({
+          name: plan.name,
+          description: plan.description || `Licenza MonkeyPlan - ${plan.name}`,
+          metadata: { monkeyplanPlanId: plan.id },
+        });
+        productId = product.id;
+      } else {
+        await stripe.products.update(productId, {
+          name: plan.name,
+          description: plan.description || `Licenza MonkeyPlan - ${plan.name}`,
+        });
+      }
+
+      let intervalCount = plan.durationMonths;
+      let interval: 'month' | 'year' = 'month';
+      if (plan.durationMonths === 12) {
+        interval = 'year';
+        intervalCount = 1;
+      }
+
+      if (plan.stripePriceId) {
+        await stripe.prices.update(plan.stripePriceId, { active: false });
+      }
+
+      const price = await stripe.prices.create({
+        product: productId,
+        unit_amount: plan.priceCents,
+        currency: 'eur',
+        recurring: { interval, interval_count: intervalCount },
+        metadata: { monkeyplanPlanId: plan.id },
+      });
+
+      await storage.updateLicensePlan(plan.id, {
+        stripeProductId: productId,
+        stripePriceId: price.id,
+      });
+
+      const updated = await storage.getLicensePlan(plan.id);
+      res.json({ success: true, plan: updated, stripeProductId: productId, stripePriceId: price.id });
+    } catch (error: any) {
+      console.error("Stripe sync error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/stripe/license-webhook - Handle Stripe subscription events
+  app.post("/api/stripe/license-webhook", async (req, res) => {
+    try {
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) return res.status(500).send("Admin not found");
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.stripeSecretKey) return res.status(500).send("Stripe not configured");
+
+      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+
+      const sig = req.headers['stripe-signature'] as string;
+      const webhookSecret = adminConfig.stripeWebhookSecret ? decryptSecret(adminConfig.stripeWebhookSecret) : null;
+
+      if (!webhookSecret) {
+        console.error("[Stripe Webhook] Webhook secret not configured - rejecting request for security");
+        return res.status(500).send("Webhook secret not configured");
+      }
+      if (!sig) {
+        console.error("[Stripe Webhook] Missing stripe-signature header");
+        return res.status(400).send("Missing stripe-signature header");
+      }
+
+      let event: any;
+      try {
+        event = stripe.webhooks.constructEvent(req.rawBody as Buffer, sig, webhookSecret);
+      } catch (err: any) {
+        console.error("[Stripe Webhook] Signature verification failed:", err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      console.log(`[Stripe Webhook] Event: ${event.type}`);
+
+      switch (event.type) {
+        case 'invoice.paid': {
+          const invoice = event.data.object;
+          const subscriptionId = invoice.subscription;
+          if (!subscriptionId) break;
+
+          const license = await storage.getLicenseByStripeSubscriptionId(subscriptionId);
+          if (!license) {
+            console.log(`[Stripe Webhook] No license found for subscription ${subscriptionId}`);
+            break;
+          }
+
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const periodEnd = new Date(subscription.current_period_end * 1000);
+
+          await storage.updateLicense(license.id, {
+            status: "active",
+            endDate: periodEnd,
+            autoRenew: !subscription.cancel_at_period_end,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          });
+          console.log(`[Stripe Webhook] License ${license.id} renewed until ${periodEnd.toISOString()}`);
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object;
+          const license = await storage.getLicenseByStripeSubscriptionId(subscription.id);
+          if (!license) break;
+
+          await storage.updateLicense(license.id, {
+            status: "expired",
+            autoRenew: false,
+            cancelAtPeriodEnd: false,
+          });
+          console.log(`[Stripe Webhook] License ${license.id} expired (subscription deleted)`);
+          break;
+        }
+
+        case 'customer.subscription.updated': {
+          const subscription = event.data.object;
+          const license = await storage.getLicenseByStripeSubscriptionId(subscription.id);
+          if (!license) break;
+
+          const periodEnd = new Date(subscription.current_period_end * 1000);
+          await storage.updateLicense(license.id, {
+            endDate: periodEnd,
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+            autoRenew: !subscription.cancel_at_period_end,
+          });
+          console.log(`[Stripe Webhook] License ${license.id} updated, cancel_at_period_end: ${subscription.cancel_at_period_end}`);
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object;
+          const subscriptionId = invoice.subscription;
+          if (!subscriptionId) break;
+          const license = await storage.getLicenseByStripeSubscriptionId(subscriptionId);
+          if (!license) break;
+          console.log(`[Stripe Webhook] Payment failed for license ${license.id}`);
+          break;
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("[Stripe Webhook] Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/licenses/cancel-subscription - Cancel recurring subscription
+  app.post("/api/licenses/cancel-subscription", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const license = await storage.getActiveLicenseForReseller(req.user.id);
+      if (!license) return res.status(404).send("Nessuna licenza attiva trovata");
+      if (!license.stripeSubscriptionId) return res.status(400).send("Questa licenza non è un abbonamento ricorrente");
+
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.stripeSecretKey) return res.status(500).json({ error: "Stripe non configurato" });
+
+      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+
+      await stripe.subscriptions.update(license.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+      });
+
+      await storage.updateLicense(license.id, {
+        cancelAtPeriodEnd: true,
+        autoRenew: false,
+      });
+
+      const updated = await storage.getLicense(license.id);
+      res.json({ license: updated, message: "Abbonamento cancellato. La licenza resterà attiva fino alla scadenza del periodo corrente." });
+    } catch (error: any) {
+      console.error("Cancel subscription error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/licenses/reactivate-subscription - Reactivate a cancelled subscription before period end
+  app.post("/api/licenses/reactivate-subscription", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const license = await storage.getActiveLicenseForReseller(req.user.id);
+      if (!license) return res.status(404).send("Nessuna licenza attiva trovata");
+      if (!license.stripeSubscriptionId) return res.status(400).send("Questa licenza non è un abbonamento ricorrente");
+      if (!license.cancelAtPeriodEnd) return res.status(400).send("L'abbonamento non è in fase di cancellazione");
+
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.stripeSecretKey) return res.status(500).json({ error: "Stripe non configurato" });
+
+      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+      const stripe = new Stripe(stripeSecretDecrypted);
+
+      await stripe.subscriptions.update(license.stripeSubscriptionId, {
+        cancel_at_period_end: false,
+      });
+
+      await storage.updateLicense(license.id, {
+        cancelAtPeriodEnd: false,
+        autoRenew: true,
+      });
+
+      const updated = await storage.getLicense(license.id);
+      res.json({ license: updated, message: "Abbonamento riattivato. Il rinnovo automatico è stato ripristinato." });
+    } catch (error: any) {
+      console.error("Reactivate subscription error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // ==========================================
   // STANDALONE QUOTES (Preventivi standalone)

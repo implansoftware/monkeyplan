@@ -536,6 +536,7 @@ export const users = pgTable("users", {
   pec: text("pec"),
   hasAutonomousInvoicing: boolean("has_autonomous_invoicing").notNull().default(false), // Per sub-reseller: se true, emette fatture proprie
   logoUrl: text("logo_url"), // URL del logo per reseller
+  stripeCustomerId: varchar("stripe_customer_id"), // Stripe Customer ID for subscription billing
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -7484,6 +7485,8 @@ export const licensePlans = pgTable("license_plans", {
   maxStaffUsers: integer("max_staff_users"),
   isActive: boolean("is_active").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
+  stripeProductId: varchar("stripe_product_id"),
+  stripePriceId: varchar("stripe_price_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -7506,7 +7509,9 @@ export const licenses = pgTable("licenses", {
   endDate: timestamp("end_date").notNull(),
   paymentMethod: licensePaymentMethodEnum("payment_method").notNull().default("manual"),
   paymentId: varchar("payment_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
   autoRenew: boolean("auto_renew").notNull().default(false),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

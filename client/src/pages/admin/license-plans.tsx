@@ -14,7 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, FileText, ShoppingCart, Store, BarChart3, Headphones, Shield, Smartphone, Receipt } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, FileText, ShoppingCart, Store, BarChart3, Headphones, Shield, Smartphone, Receipt, RefreshCw, Loader2 } from "lucide-react";
+import { SiStripe } from "react-icons/si";
 import type { LicensePlan } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
@@ -323,6 +324,24 @@ export default function AdminLicensePlans() {
     },
   });
 
+  const [syncingPlanId, setSyncingPlanId] = useState<string | null>(null);
+  const syncStripeMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      setSyncingPlanId(planId);
+      const res = await apiRequest("POST", `/api/admin/license-plans/${planId}/sync-stripe`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/license-plans"] });
+      toast({ title: t("license.syncSuccess"), description: t("license.syncSuccessDesc") });
+      setSyncingPlanId(null);
+    },
+    onError: (err: any) => {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+      setSyncingPlanId(null);
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
@@ -378,9 +397,31 @@ export default function AdminLicensePlans() {
                       {t(TARGET_LABEL_KEYS[plan.targetCategory] || "common.allMasc")}
                     </Badge>
                     {!plan.isActive && <Badge variant="secondary" className="text-xs">{t("license.inactive")}</Badge>}
+                    {(plan as any).stripePriceId && (
+                      <Badge variant="default" className="text-xs" data-testid={`badge-stripe-synced-${plan.id}`}>
+                        <SiStripe className="w-3 h-3 mr-1" />
+                        {t("license.stripeSynced")}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
+                  {plan.priceCents > 0 && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => syncStripeMutation.mutate(plan.id)}
+                      disabled={syncingPlanId === plan.id}
+                      title={t("license.syncWithStripe")}
+                      data-testid={`button-sync-stripe-${plan.id}`}
+                    >
+                      {syncingPlanId === plan.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <SiStripe className="w-4 h-4" />
+                      )}
+                    </Button>
+                  )}
                   <Dialog open={editingPlan?.id === plan.id} onOpenChange={(open) => !open && setEditingPlan(null)}>
                     <DialogTrigger asChild>
                       <Button size="icon" variant="ghost" onClick={() => setEditingPlan(plan)} data-testid={`button-edit-plan-${plan.id}`}>

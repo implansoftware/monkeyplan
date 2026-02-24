@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Shield, Clock, Calendar, CheckCircle2, AlertTriangle, CreditCard, History, Loader2 } from "lucide-react";
+import { Shield, Clock, Calendar, CheckCircle2, AlertTriangle, CreditCard, History, Loader2, XCircle, RefreshCw } from "lucide-react";
 import { SiStripe, SiPaypal } from "react-icons/si";
 import type { LicensePlan, License } from "@shared/schema";
 import { format } from "date-fns";
@@ -122,6 +122,36 @@ export default function MyLicense() {
       } else {
         toast({ title: t("license.paymentProcessing"), description: t("license.paypalPaymentNotConfirmed"), variant: "destructive" });
       }
+    },
+    onError: (err: any) => {
+      toast({ title: t("license.error"), description: err.message, variant: "destructive" });
+    },
+  });
+
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/licenses/cancel-subscription");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
+      toast({ title: t("license.subscriptionCancelled"), description: t("license.subscriptionCancelledDesc") });
+    },
+    onError: (err: any) => {
+      toast({ title: t("license.error"), description: err.message, variant: "destructive" });
+    },
+  });
+
+  const reactivateSubscriptionMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/licenses/reactivate-subscription");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
+      toast({ title: t("license.subscriptionReactivated"), description: t("license.subscriptionReactivatedDesc") });
     },
     onError: (err: any) => {
       toast({ title: t("license.error"), description: err.message, variant: "destructive" });
@@ -292,6 +322,55 @@ export default function MyLicense() {
                 </div>
               </div>
             )}
+            {currentLicense.license.stripeSubscriptionId && (
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">{t("license.subscriptionStatus")}</p>
+                    {currentLicense.license.cancelAtPeriodEnd ? (
+                      <Badge variant="secondary" data-testid="badge-subscription-cancelling">
+                        <XCircle className="w-3 h-3 mr-1" />
+                        {t("license.cancellingAtPeriodEnd")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="default" data-testid="badge-subscription-active">
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        {t("license.autoRenewActive")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div>
+                    {currentLicense.license.cancelAtPeriodEnd ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => reactivateSubscriptionMutation.mutate()}
+                        disabled={reactivateSubscriptionMutation.isPending}
+                        data-testid="button-reactivate-subscription"
+                      >
+                        {reactivateSubscriptionMutation.isPending ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("license.processing")}</>
+                        ) : (
+                          <><RefreshCw className="w-4 h-4 mr-2" />{t("license.reactivateSubscription")}</>
+                        )}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="destructive"
+                        onClick={() => cancelSubscriptionMutation.mutate()}
+                        disabled={cancelSubscriptionMutation.isPending}
+                        data-testid="button-cancel-subscription"
+                      >
+                        {cancelSubscriptionMutation.isPending ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("license.processing")}</>
+                        ) : (
+                          <><XCircle className="w-4 h-4 mr-2" />{t("license.cancelSubscription")}</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -342,6 +421,11 @@ export default function MyLicense() {
                         <>
                           <span className="text-3xl font-bold">{(plan.priceCents / 100).toFixed(2)}</span>
                           <span className="text-sm text-muted-foreground ml-1">EUR</span>
+                          {(plan as any).stripePriceId && (
+                            <span className="text-xs text-muted-foreground ml-1">
+                              /{plan.durationMonths === 12 ? t("license.year") : t("license.month")}
+                            </span>
+                          )}
                         </>
                       )}
                     </div>
