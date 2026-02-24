@@ -6,10 +6,10 @@ import { scrypt, randomBytes, timingSafeEqual, createHash } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import type { User as DbUser } from "@shared/schema";
-import { passwordResetTokens } from "@shared/schema";
+import { passwordResetTokens, users } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, isNull, gt } from "drizzle-orm";
-import { sendEmail, emailPasswordReset } from "./services/email";
+import { sendEmail, emailPasswordReset, emailNewResellerRegistration } from "./services/email";
 
 declare global {
   namespace Express {
@@ -150,6 +150,44 @@ export function setupAuth(app: Express) {
         message: "Registrazione completata. Il tuo account rivenditore è in attesa di approvazione.",
         pending: true 
       });
+
+      // Notify all admins about new reseller registration (fire-and-forget)
+      (async () => {
+        try {
+          const admins = await db.select({ id: users.id, email: users.email })
+            .from(users)
+            .where(and(eq(users.role, "admin"), eq(users.isActive, true)));
+
+          const resellerData = {
+            fullName: user.fullName,
+            email: user.email,
+            username: user.username,
+            phone: user.phone || undefined,
+            ragioneSociale: user.ragioneSociale || undefined,
+            partitaIva: user.partitaIva || undefined,
+            citta: user.citta || undefined,
+            provincia: user.provincia || undefined,
+          };
+
+          for (const admin of admins) {
+            await storage.createNotification({
+              userId: admin.id,
+              type: "system",
+              title: "Nuova registrazione rivenditore",
+              message: `${resellerData.ragioneSociale || resellerData.fullName} ha richiesto la registrazione come rivenditore e attende approvazione.`,
+            });
+
+            const emailContent = emailNewResellerRegistration(resellerData);
+            sendEmail({
+              to: admin.email,
+              subject: emailContent.subject,
+              html: emailContent.html,
+            }).catch(err => console.error("[Email] Failed to notify admin about new reseller:", err.message));
+          }
+        } catch (err: any) {
+          console.error("[Register] Failed to notify admins:", err.message);
+        }
+      })();
     }
   });
 

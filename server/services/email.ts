@@ -613,6 +613,36 @@ export function emailPasswordReset(resetLink: string, userName: string): { subje
   return { subject: "Reimposta la tua password - MonkeyPlan", html: baseTemplate("Reimposta Password", body) };
 }
 
+export interface NewResellerData {
+  fullName: string;
+  email: string;
+  username: string;
+  phone?: string;
+  ragioneSociale?: string;
+  partitaIva?: string;
+  citta?: string;
+  provincia?: string;
+}
+
+export function emailNewResellerRegistration(data: NewResellerData): { subject: string; html: string } {
+  const body = `
+    <p>Un nuovo rivenditore si è registrato sulla piattaforma e richiede l'approvazione.</p>
+    ${detailCard([
+      { label: "Nome completo", value: `<strong>${data.fullName}</strong>` },
+      { label: "Username", value: data.username },
+      { label: "Email", value: data.email },
+      ...(data.phone ? [{ label: "Telefono", value: data.phone }] : []),
+      ...(data.ragioneSociale ? [{ label: "Ragione Sociale", value: `<strong>${data.ragioneSociale}</strong>` }] : []),
+      ...(data.partitaIva ? [{ label: "Partita IVA", value: data.partitaIva }] : []),
+      ...(data.citta ? [{ label: "Città", value: `${data.citta}${data.provincia ? ` (${data.provincia})` : ""}` }] : []),
+    ])}
+    <div class="tip-box">
+      <strong>Azione richiesta:</strong> Accedi al pannello di amministrazione per approvare o rifiutare la registrazione.
+    </div>
+  `;
+  return { subject: `Nuova registrazione rivenditore: ${data.ragioneSociale || data.fullName} - MonkeyPlan`, html: baseTemplate("Nuovo Rivenditore", body, "#f59e0b") };
+}
+
 export interface StandaloneQuoteEmailData {
   quoteNumber: string;
   customerName: string;
