@@ -345,13 +345,6 @@ export default function AuthPage() {
                 {t("auth.loginButton")}
               </TabsTrigger>
               <TabsTrigger 
-                value="customer" 
-                data-testid="tab-customer" 
-                className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
-              >
-                {t("auth.customerTab")}
-              </TabsTrigger>
-              <TabsTrigger 
                 value="reseller" 
                 data-testid="tab-reseller" 
                 className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
@@ -437,98 +430,6 @@ export default function AuthPage() {
               </div>
             </TabsContent>
 
-            <TabsContent value="customer" className="mt-0">
-              <div className="space-y-6">
-                <div className="text-center space-y-2">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 mb-2">
-                    <User className="h-8 w-8 text-white" />
-                  </div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.createAccount")}</h1>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {t("auth.trackRepairs")}
-                  </p>
-                </div>
-
-                <form onSubmit={handleCustomerRegister} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="customer-fullname" className="text-slate-700 dark:text-slate-300">{t("auth.fullName")}</Label>
-                    <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      <Input
-                        id="customer-fullname"
-                        data-testid="input-customer-fullname"
-                        placeholder="Mario Rossi"
-                        value={customerData.fullName}
-                        onChange={(e) => setCustomerData({ ...customerData, fullName: e.target.value })}
-                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="customer-email" className="text-slate-700 dark:text-slate-300">{t("auth.email")}</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      <Input
-                        id="customer-email"
-                        type="email"
-                        data-testid="input-customer-email"
-                        placeholder="mario@esempio.it"
-                        value={customerData.email}
-                        onChange={(e) => setCustomerData({ ...customerData, email: e.target.value })}
-                        className="pl-12 h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="customer-username" className="text-slate-700 dark:text-slate-300">{t("auth.username")}</Label>
-                      <Input
-                        id="customer-username"
-                        data-testid="input-customer-username"
-                        placeholder="mariorossi"
-                        value={customerData.username}
-                        onChange={(e) => setCustomerData({ ...customerData, username: e.target.value })}
-                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="customer-password" className="text-slate-700 dark:text-slate-300">{t("auth.password")}</Label>
-                      <Input
-                        id="customer-password"
-                        type="password"
-                        data-testid="input-customer-password"
-                        placeholder={t("auth.minChars")}
-                        value={customerData.password}
-                        onChange={(e) => setCustomerData({ ...customerData, password: e.target.value })}
-                        className="h-12 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 transition-colors"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    type="submit"
-                    className="w-full h-12 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold shadow-lg shadow-cyan-500/25 transition-all duration-300"
-                    disabled={registerMutation.isPending}
-                    data-testid="button-customer-register"
-                  >
-                    {registerMutation.isPending ? (
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        {t("auth.registering")}
-                      </span>
-                    ) : (
-                      <span className="flex flex-wrap items-center gap-2">
-                        {t("auth.createAccount")}
-                        <ArrowRight className="h-5 w-5" />
-                      </span>
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </TabsContent>
 
             <TabsContent value="reseller" className="mt-0">
               <div className="space-y-5">
