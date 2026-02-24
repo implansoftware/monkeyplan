@@ -2,10 +2,14 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual, createHash } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import type { User as DbUser } from "@shared/schema";
+import { passwordResetTokens } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, isNull, gt } from "drizzle-orm";
+import { sendEmail, emailPasswordReset } from "./services/email";
 
 declare global {
   namespace Express {
@@ -172,5 +176,97 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
+  });
+
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== "string" || !email.includes("@")) {
+        return res.status(400).send("Email non valida");
+      }
+
+      const user = await storage.getUserByEmail(email.trim().toLowerCase());
+      if (user) {
+        await db
+          .update(passwordResetTokens)
+          .set({ usedAt: new Date() })
+          .where(
+            and(
+              eq(passwordResetTokens.userId, user.id),
+              isNull(passwordResetTokens.usedAt)
+            )
+          );
+
+        const rawToken = randomBytes(32).toString("hex");
+        const hashedToken = createHash("sha256").update(rawToken).digest("hex");
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+        await db.insert(passwordResetTokens).values({
+          userId: user.id,
+          token: hashedToken,
+          expiresAt,
+        });
+
+        const protocol = req.headers["x-forwarded-proto"] || "https";
+        const host = req.headers.host;
+        const resetLink = `${protocol}://${host}/reset-password?token=${rawToken}`;
+
+        const emailContent = emailPasswordReset(resetLink, user.fullName || user.username);
+        await sendEmail({
+          to: user.email,
+          subject: emailContent.subject,
+          html: emailContent.html,
+        });
+      }
+
+      res.json({ message: "Se l'email esiste nel sistema, riceverai un link per reimpostare la password." });
+    } catch (error) {
+      console.error("Error in forgot-password:", error);
+      res.status(500).send("Errore interno del server");
+    }
+  });
+
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || typeof token !== "string" || !password || typeof password !== "string") {
+        return res.status(400).send("Token e password sono obbligatori");
+      }
+
+      if (password.length < 6) {
+        return res.status(400).send("La password deve essere di almeno 6 caratteri");
+      }
+
+      const hashedToken = createHash("sha256").update(token).digest("hex");
+
+      const [resetToken] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.token, hashedToken),
+            isNull(passwordResetTokens.usedAt),
+            gt(passwordResetTokens.expiresAt, new Date())
+          )
+        )
+        .limit(1);
+
+      if (!resetToken) {
+        return res.status(400).send("Link non valido o scaduto. Richiedi un nuovo reset.");
+      }
+
+      const hashedPassword = await hashPassword(password);
+      await storage.updateUser(resetToken.userId, { password: hashedPassword });
+
+      await db
+        .update(passwordResetTokens)
+        .set({ usedAt: new Date() })
+        .where(eq(passwordResetTokens.id, resetToken.id));
+
+      res.json({ message: "Password reimpostata con successo." });
+    } catch (error) {
+      console.error("Error in reset-password:", error);
+      res.status(500).send("Errore interno del server");
+    }
   });
 }

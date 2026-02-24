@@ -337,6 +337,14 @@ export default function AuthPage() {
                   </Button>
                 </form>
 
+                <div className="flex justify-end -mt-2">
+                  <Link href="/forgot-password">
+                    <span className="text-sm text-emerald-600 dark:text-emerald-400 cursor-pointer hover:underline" data-testid="link-forgot-password">
+                      {t("auth.forgotPassword", { defaultValue: "Password dimenticata?" })}
+                    </span>
+                  </Link>
+                </div>
+
                 <div className="flex items-center justify-center gap-8 pt-4 text-sm text-slate-500 dark:text-slate-400">
                   <span className="flex flex-wrap items-center gap-2">
                     <Shield className="h-4 w-4 text-emerald-500" />

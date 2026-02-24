@@ -29,6 +29,8 @@ import PrivacyPage from "@/pages/public/privacy";
 import TermsPage from "@/pages/public/terms";
 import SelfDiagnosis from "@/pages/public/self-diagnosis";
 import RegisterResellerPage from "@/pages/public/register-reseller";
+import ForgotPasswordPage from "@/pages/public/forgot-password";
+import ResetPasswordPage from "@/pages/public/reset-password";
 
 function getRoleHomePath(role: string): string {
   switch (role) {
@@ -788,6 +790,8 @@ function AppContent() {
     "/privacy": () => <PrivacyPage />,
     "/terms": () => <TermsPage />,
     "/register": () => <RegisterResellerPage />,
+    "/forgot-password": () => <ForgotPasswordPage />,
+    "/reset-password": () => <ResetPasswordPage />,
   };
   if (publicPageMap[location]) {
     return publicPageMap[location]();
