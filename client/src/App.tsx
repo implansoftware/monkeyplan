@@ -21,6 +21,12 @@ import { TicketNotificationsProvider } from "@/contexts/TicketNotificationsConte
 import { Loader2 } from "lucide-react";
 import AiAssistantWidget from "@/components/AiAssistantWidget";
 import { Navbar as PublicNavbar } from "@/pages/public/landing";
+import LandingPage from "@/pages/public/landing";
+import AboutPage from "@/pages/public/about";
+import FaqPage from "@/pages/public/faq";
+import ContactPage from "@/pages/public/contact";
+import PrivacyPage from "@/pages/public/privacy";
+import TermsPage from "@/pages/public/terms";
 import SelfDiagnosis from "@/pages/public/self-diagnosis";
 
 function getRoleHomePath(role: string): string {
@@ -754,7 +760,7 @@ function AppContent() {
     return <AuthPage />;
   }
   
-  // Root path handling — redirect BEFORE loading AppLayout
+  // Root path handling
   if (location === "/") {
     if (isLoading) {
       return (
@@ -764,13 +770,25 @@ function AppContent() {
       );
     }
     if (!user) {
-      return <Redirect to="/auth" />;
+      return <LandingPage />;
     }
     return <Redirect to={getRoleHomePath(user.role)} />;
   }
   
   if (location === "/landing") {
-    return <Redirect to="/auth" />;
+    return <LandingPage />;
+  }
+  
+  // Public informational pages (no auth required)
+  const publicPageMap: Record<string, () => JSX.Element> = {
+    "/about": () => <AboutPage />,
+    "/faq": () => <FaqPage />,
+    "/contact": () => <ContactPage />,
+    "/privacy": () => <PrivacyPage />,
+    "/terms": () => <TermsPage />,
+  };
+  if (publicPageMap[location]) {
+    return publicPageMap[location]();
   }
   
   // Public pages render without sidebar/header
