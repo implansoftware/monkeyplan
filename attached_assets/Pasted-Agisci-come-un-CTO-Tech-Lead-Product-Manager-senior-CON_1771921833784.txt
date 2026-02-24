@@ -1,0 +1,73 @@
+Agisci come un CTO/Tech Lead + Product Manager senior.
+
+CONTESTO
+Ho già realizzato un MVP/mock del progetto dentro questo Replit (o comunque ho già descritto l’MVP in messaggi e file). Il tuo compito è:
+1) recuperare e usare TUTTE le informazioni già presenti sull’MVP (descrizioni, ruoli, moduli, flussi, regole, schermate, eventuali dati di esempio, API, strutture DB, ecc.)
+2) spiegarmi chiaramente che progetto è (in modo strutturato)
+3) costruire una task list di sviluppo completa, ordinata e stimata, dal setup ambientale fino all’ultimo modulo e all’ultima funzione.
+
+REGOLE IMPORTANTI
+- Prima di scrivere la task list, fai una fase di “estrazione requisiti”: leggi e sintetizza ciò che trovi nel codice/file e/o descrizioni presenti nel progetto.
+- Se trovi ambiguità o mancanze, NON bloccarti: fai assunzioni ragionevoli, ma segnala una sezione “Assunzioni e Domande Aperte” (max 15 domande, solo quelle davvero critiche).
+- Output pratico, operativo, pronto da usare su Asana/Jira: ogni task deve avere titolo, descrizione, dipendenze, criteri di accettazione (DoD), e priorità (P0/P1/P2).
+- Organizza tutto per team di sviluppo:
+  A) Frontend
+  B) Backend (Logica & Business Rules)
+  C) Database & Data Layer
+  D) Infrastructure & DevOps
+- Oltre alle task per moduli, includi task trasversali: sicurezza, ruoli/permessi, logging, error handling, performance, test, CI/CD, backup, monitoring.
+- Considera 3 ambienti: dev, staging, production.
+
+FASE 1 — SPIEGAZIONE PROGETTO (OUTPUT RICHIESTO)
+1) Elevator pitch (5 righe)
+2) Obiettivi e KPI (anche proposti se non presenti)
+3) Utenti/ruoli (con permessi principali)
+4) Moduli principali (mappa ad alto livello)
+5) Flussi core (es: onboarding, creazione record, pagamento, notifiche, ecc.)
+6) Vincoli e requisiti non funzionali (sicurezza, privacy, performance, scalabilità)
+
+FASE 2 — ARCHITETTURA PROPOSTA (OUTPUT RICHIESTO)
+Proponi un’architettura coerente con l’MVP:
+- Stack (frontend, backend, db)
+- Pattern (API REST o GraphQL, auth, RBAC)
+- Struttura repository e cartelle
+- Convenzioni di naming
+- Strategie di validazione dati e gestione errori
+- Versionamento API
+- Strategia di migrazioni DB e seed
+
+FASE 3 — TASK LIST COMPLETA (OUTPUT RICHIESTO)
+Crea una task list completa, divisa in Epic → Feature → Task.
+Per ogni task includi:
+- Titolo
+- Team assegnato (Frontend / Backend / Database / DevOps)
+- Priorità (P0/P1/P2)
+- Dipendenze (se presenti)
+- Descrizione dettagliata
+- Definition of Done (criteri di accettazione)
+- Stima (S/M/L o ore/giorni)
+
+ORDINE OBBLIGATORIO DELLA TASK LIST
+1) Setup ambientale e repo (linting, formatting, env vars, secrets, config, mono-repo se serve)
+2) Autenticazione + Autorizzazione (RBAC/permessi)
+3) Database schema + migrazioni + seed
+4) API fondamentali (CRUD + business rules)
+5) UI base + design system + routing
+6) Moduli uno per uno (in ordine logico di dipendenze)
+7) Notifiche / email / push (se previste)
+8) Logging, audit trail, error monitoring
+9) Testing (unit, integration, e2e) + QA checklist
+10) Deploy staging + production + CI/CD
+11) Monitoraggio, backup, sicurezza (rate limit, OWASP basics), hardening
+12) Documentazione finale (README, runbook, manuale admin)
+
+OUTPUT FINALE EXTRA
+- Una “Roadmap” in 3 milestone: MVP2, Beta, Production (con cosa entra in ciascuna)
+- Una tabella “Rischi e Mitigazioni”
+- Una checklist di go-live
+
+INIZIA ORA
+1) Scansiona il progetto (file, cartelle, README, package.json, schema DB se presente, rotte, componenti).
+2) Scrivi la FASE 1 (Spiegazione progetto) usando ciò che trovi.
+3) Poi FASE 2 (Architettura proposta).
+4) Poi FASE 3 (Task list completa).
