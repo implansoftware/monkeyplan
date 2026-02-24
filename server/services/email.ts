@@ -597,6 +597,22 @@ export function emailDeliveryAppointment(data: DeliveryAppointmentEmailData): { 
   return { subject: `Appuntamento Ritiro Confermato${data.repairCode ? ` - ${data.repairCode}` : ""}`, html: baseTemplate("Appuntamento Confermato", body) };
 }
 
+export function emailPasswordReset(resetLink: string, userName: string): { subject: string; html: string } {
+  const body = `
+    <p>Gentile <strong>${userName}</strong>,</p>
+    <p>Abbiamo ricevuto una richiesta per reimpostare la password del suo account MonkeyPlan.</p>
+    <p>Clicchi il pulsante qui sotto per impostare una nuova password:</p>
+    <div style="text-align:center;margin:24px 0;">
+      <a href="${resetLink}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#10b981,#14b8a6);color:#fff;text-decoration:none;border-radius:12px;font-weight:600;font-size:16px;">Reimposta Password</a>
+    </div>
+    <div class="tip-box">
+      <strong>Nota:</strong> Questo link scade tra <strong>1 ora</strong>. Se non ha richiesto il reset della password, ignori questa email.
+    </div>
+    <p style="color:#94a3b8;font-size:13px;margin-top:16px;">Se il pulsante non funziona, copi e incolli questo link nel browser:<br/><a href="${resetLink}" style="color:#10b981;word-break:break-all;">${resetLink}</a></p>
+  `;
+  return { subject: "Reimposta la tua password - MonkeyPlan", html: baseTemplate("Reimposta Password", body) };
+}
+
 export interface StandaloneQuoteEmailData {
   quoteNumber: string;
   customerName: string;
