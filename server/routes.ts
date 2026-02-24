@@ -48557,6 +48557,10 @@ export function registerRoutes(app: Express): Server {
       if (!resellerId || !licensePlanId) {
         return res.status(400).send("Reseller e piano sono obbligatori");
       }
+      const allowedMethods = ["free", "manual"];
+      if (paymentMethod && !allowedMethods.includes(paymentMethod)) {
+        return res.status(400).send("L'assegnazione manuale supporta solo metodi 'free' o 'manual'");
+      }
       const plan = await storage.getLicensePlan(licensePlanId);
       if (!plan) return res.status(404).send("Piano non trovato");
       const existingActive = await storage.getActiveLicenseForReseller(resellerId);

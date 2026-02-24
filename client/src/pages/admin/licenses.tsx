@@ -58,7 +58,7 @@ export default function AdminLicenses() {
   const [grantResellerId, setGrantResellerId] = useState("");
   const [grantPlanId, setGrantPlanId] = useState("");
   const [grantNotes, setGrantNotes] = useState("");
-  const [grantPaymentMethod, setGrantPaymentMethod] = useState("manual");
+  const [grantPaymentMethod, setGrantPaymentMethod] = useState("free");
 
   const { data: licenses, isLoading } = useQuery<EnrichedLicense[]>({
     queryKey: ["/api/admin/licenses", { status: statusFilter !== "all" ? statusFilter : undefined }],
@@ -195,10 +195,8 @@ export default function AdminLicenses() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="manual">{t("license.manual")}</SelectItem>
                     <SelectItem value="free">{t("license.free")}</SelectItem>
-                    <SelectItem value="stripe">Stripe</SelectItem>
-                    <SelectItem value="paypal">PayPal</SelectItem>
+                    <SelectItem value="manual">{t("license.manual")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
