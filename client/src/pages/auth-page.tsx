@@ -165,7 +165,7 @@ export default function AuthPage() {
         ...data,
         role: "reseller",
       });
-      return res;
+      return await res.json();
     },
     onSuccess: (data: any) => {
       if (data.pending) {
