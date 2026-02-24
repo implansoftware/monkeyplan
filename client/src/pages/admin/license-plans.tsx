@@ -20,10 +20,10 @@ import type { LicensePlan } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
 const TARGET_LABEL_KEYS: Record<string, string> = {
-  all: "license.targetAll",
-  standard: "admin.resellers.standard",
-  franchising: "admin.resellers.franchising",
-  gdo: "admin.resellers.gdo",
+  all: "license.targetAllDesc",
+  standard: "license.targetStandardShort",
+  franchising: "license.targetFranchisingShort",
+  gdo: "license.targetGdoShort",
 };
 
 const DURATION_LABEL_KEYS: Record<number, string> = {
@@ -176,16 +176,16 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>{t("license.targetCategory")}</Label>
+              <Label>{t("license.targetResellerType")}</Label>
               <Select value={targetCategory} onValueChange={setTargetCategory}>
                 <SelectTrigger data-testid="select-target-category">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t("common.allMasc")}</SelectItem>
-                  <SelectItem value="standard">{t("admin.resellers.standard")}</SelectItem>
-                  <SelectItem value="franchising">{t("admin.resellers.franchising")}</SelectItem>
-                  <SelectItem value="gdo">{t("admin.resellers.gdo")}</SelectItem>
+                  <SelectItem value="all">{t("license.targetAllDesc")}</SelectItem>
+                  <SelectItem value="standard">{t("license.targetStandardDesc")}</SelectItem>
+                  <SelectItem value="franchising">{t("license.targetFranchisingDesc")}</SelectItem>
+                  <SelectItem value="gdo">{t("license.targetGdoDesc")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
