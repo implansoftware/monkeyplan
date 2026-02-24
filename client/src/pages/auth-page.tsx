@@ -4,16 +4,10 @@ import { Redirect, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Store, 
-  CheckCircle, 
+import {
+  Store,
   Lock,
   Mail,
-  User,
-  Phone,
-  Building,
-  FileText,
   ArrowRight,
   ArrowLeft,
   Zap,
@@ -22,11 +16,8 @@ import {
   Smartphone,
   Tablet,
   Headphones,
-  Wrench
+  Wrench,
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
@@ -139,51 +130,8 @@ function AnimatedMonkeyMascot({ t }: { t: (key: string) => string }) {
 export default function AuthPage() {
   const { t } = useTranslation();
   usePageTitle(t("auth.pageTitle"));
-  const { user, loginMutation, registerMutation } = useAuth();
-  const { toast } = useToast();
+  const { user, loginMutation } = useAuth();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
-  const [customerData, setCustomerData] = useState({
-    username: "",
-    password: "",
-    email: "",
-    fullName: "",
-  });
-  const [resellerData, setResellerData] = useState({
-    username: "",
-    password: "",
-    email: "",
-    fullName: "",
-    phone: "",
-    ragioneSociale: "",
-    partitaIva: "",
-  });
-  const [resellerPending, setResellerPending] = useState(false);
-
-  const resellerRegisterMutation = useMutation({
-    mutationFn: async (data: typeof resellerData) => {
-      const res = await apiRequest("POST", "/api/register", {
-        ...data,
-        role: "reseller",
-      });
-      return await res.json();
-    },
-    onSuccess: (data: any) => {
-      if (data.pending) {
-        setResellerPending(true);
-        toast({
-          title: t("auth.registrationComplete"),
-          description: t("auth.pendingApproval"),
-        });
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: t("auth.error"),
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   if (user) {
     const redirectPath = user.role === "admin" || user.role === "admin_staff" ? "/" :
@@ -196,16 +144,6 @@ export default function AuthPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate(loginData);
-  };
-
-  const handleCustomerRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    registerMutation.mutate({ ...customerData, role: "customer" });
-  };
-
-  const handleResellerRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    resellerRegisterMutation.mutate(resellerData);
   };
 
   return (
@@ -335,25 +273,7 @@ export default function AuthPage() {
             </Link>
           </div>
           
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-12 mb-8 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-2xl">
-              <TabsTrigger 
-                value="login" 
-                data-testid="tab-login" 
-                className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
-              >
-                {t("auth.loginButton")}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reseller" 
-                data-testid="tab-reseller" 
-                className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm text-sm font-medium transition-all"
-              >
-                {t("auth.businessTab")}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="login" className="mt-0">
+          <div className="w-full">
               <div className="space-y-6">
                 <div className="text-center space-y-2">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 mb-2">
@@ -427,186 +347,29 @@ export default function AuthPage() {
                     {t("auth.support247")}
                   </span>
                 </div>
-              </div>
-            </TabsContent>
 
-
-            <TabsContent value="reseller" className="mt-0">
-              <div className="space-y-5">
-                {resellerPending ? (
-                  <div className="text-center py-12 space-y-4">
-                    <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-green-600">
-                      <CheckCircle className="h-10 w-10 text-white" />
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.requestSent")}</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-                        {t("auth.requestSentDesc")}
-                      </p>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setResellerPending(false)}
-                      className="rounded-xl"
-                      data-testid="button-reseller-new-request"
-                    >
-                      {t("auth.newRequest")}
-                    </Button>
+                <div className="relative py-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-slate-700" />
                   </div>
-                ) : (
-                  <>
-                    <div className="text-center space-y-2">
-                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 mb-2">
-                        <Store className="h-8 w-8 text-white" />
-                      </div>
-                      <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("auth.businessAccount")}</h1>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t("auth.businessDesc")}
-                      </p>
-                    </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white dark:bg-slate-950 px-2 text-slate-400">{t("auth.or", { defaultValue: "oppure" })}</span>
+                  </div>
+                </div>
 
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50">
-                        <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <p className="text-sm text-amber-800 dark:text-amber-200">
-                        {t("auth.businessVerification")}
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleResellerRegister} className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="reseller-fullname" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.referent")}</Label>
-                          <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                              id="reseller-fullname"
-                              data-testid="input-reseller-fullname"
-                              placeholder="Nome Cognome"
-                              value={resellerData.fullName}
-                              onChange={(e) => setResellerData({ ...resellerData, fullName: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="reseller-phone" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.phone")}</Label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                              id="reseller-phone"
-                              data-testid="input-reseller-phone"
-                              placeholder="+39 333..."
-                              value={resellerData.phone}
-                              onChange={(e) => setResellerData({ ...resellerData, phone: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <Label htmlFor="reseller-ragione-sociale" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.companyName")}</Label>
-                        <div className="relative">
-                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input
-                            id="reseller-ragione-sociale"
-                            data-testid="input-reseller-ragione-sociale"
-                            placeholder="Nome Azienda S.r.l."
-                            value={resellerData.ragioneSociale}
-                            onChange={(e) => setResellerData({ ...resellerData, ragioneSociale: e.target.value })}
-                            className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="reseller-partita-iva" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.vatNumber")}</Label>
-                          <div className="relative">
-                            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                              id="reseller-partita-iva"
-                              data-testid="input-reseller-partita-iva"
-                              placeholder="IT12345678901"
-                              value={resellerData.partitaIva}
-                              onChange={(e) => setResellerData({ ...resellerData, partitaIva: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="reseller-email" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.businessEmail")}</Label>
-                          <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                              id="reseller-email"
-                              type="email"
-                              data-testid="input-reseller-email"
-                              placeholder="info@azienda.it"
-                              value={resellerData.email}
-                              onChange={(e) => setResellerData({ ...resellerData, email: e.target.value })}
-                              className="pl-10 h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="reseller-username" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.username")}</Label>
-                          <Input
-                            id="reseller-username"
-                            data-testid="input-reseller-username"
-                            placeholder="username"
-                            value={resellerData.username}
-                            onChange={(e) => setResellerData({ ...resellerData, username: e.target.value })}
-                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                            required
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="reseller-password" className="text-xs text-slate-600 dark:text-slate-400">{t("auth.password")}</Label>
-                          <Input
-                            id="reseller-password"
-                            type="password"
-                            data-testid="input-reseller-password"
-                            placeholder={t("auth.minChars")}
-                            value={resellerData.password}
-                            onChange={(e) => setResellerData({ ...resellerData, password: e.target.value })}
-                            className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm focus:border-orange-500"
-                            required
-                          />
-                        </div>
-                      </div>
-                      
-                      <Button
-                        type="submit"
-                        className="w-full h-12 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg shadow-orange-500/25 transition-all duration-300"
-                        disabled={resellerRegisterMutation.isPending}
-                        data-testid="button-reseller-register"
-                      >
-                        {resellerRegisterMutation.isPending ? (
-                          <span className="flex flex-wrap items-center gap-2">
-                            <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            {t("auth.sendingRequest")}
-                          </span>
-                        ) : (
-                          <span className="flex flex-wrap items-center gap-2">
-                            {t("auth.requestAccess")}
-                            <ArrowRight className="h-5 w-5" />
-                          </span>
-                        )}
-                      </Button>
-                    </form>
-                  </>
-                )}
+                <Link href="/register">
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 rounded-xl border-orange-200 dark:border-orange-800 text-orange-600 dark:text-orange-400 font-semibold transition-all duration-300"
+                    data-testid="button-go-register"
+                  >
+                    <Store className="w-5 h-5 mr-2" />
+                    {t("auth.registerBusiness", { defaultValue: "Registra la tua azienda" })}
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
-            </TabsContent>
-          </Tabs>
+          </div>
           
           <div className="mt-8 text-center">
             <p className="text-xs text-slate-400 dark:text-slate-500">

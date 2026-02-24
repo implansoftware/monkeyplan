@@ -28,6 +28,7 @@ import ContactPage from "@/pages/public/contact";
 import PrivacyPage from "@/pages/public/privacy";
 import TermsPage from "@/pages/public/terms";
 import SelfDiagnosis from "@/pages/public/self-diagnosis";
+import RegisterResellerPage from "@/pages/public/register-reseller";
 
 function getRoleHomePath(role: string): string {
   switch (role) {
@@ -786,6 +787,7 @@ function AppContent() {
     "/contact": () => <ContactPage />,
     "/privacy": () => <PrivacyPage />,
     "/terms": () => <TermsPage />,
+    "/register": () => <RegisterResellerPage />,
   };
   if (publicPageMap[location]) {
     return publicPageMap[location]();
