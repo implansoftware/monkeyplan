@@ -20,10 +20,10 @@ import type { LicensePlan } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
 const TARGET_LABEL_KEYS: Record<string, string> = {
-  all: "license.targetAllDesc",
+  all: "license.targetStandardShort",
   standard: "license.targetStandardShort",
   franchising: "license.targetFranchisingShort",
-  gdo: "license.targetGdoShort",
+  gdo: "license.targetFranchisingShort",
 };
 
 const DURATION_LABEL_KEYS: Record<number, string> = {
@@ -102,7 +102,7 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
   const { t } = useTranslation();
   const [name, setName] = useState(plan?.name || "");
   const [description, setDescription] = useState(plan?.description || "");
-  const [targetCategory, setTargetCategory] = useState<string>(plan?.targetCategory || "all");
+  const [targetCategory, setTargetCategory] = useState<string>(plan?.targetCategory === "all" ? "standard" : (plan?.targetCategory || "standard"));
   const [durationMonths, setDurationMonths] = useState(String(plan?.durationMonths || "1"));
   const [priceCents, setPriceCents] = useState(String(plan ? (plan.priceCents / 100).toFixed(2) : ""));
   const [parsedData] = useState(() => parseExistingFeatures(plan?.features));
@@ -182,10 +182,8 @@ function PlanForm({ plan, onSave, onCancel }: { plan?: LicensePlan; onSave: (dat
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t("license.targetAllDesc")}</SelectItem>
                   <SelectItem value="standard">{t("license.targetStandardDesc")}</SelectItem>
                   <SelectItem value="franchising">{t("license.targetFranchisingDesc")}</SelectItem>
-                  <SelectItem value="gdo">{t("license.targetGdoDesc")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
