@@ -14,7 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, FileText, ShoppingCart, Store, BarChart3, Headphones, Shield, Smartphone, Receipt, RefreshCw, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, Clock, Users, Tag, Wrench, Package, FileText, ShoppingCart, Store, BarChart3, Headphones, Shield, Smartphone, Receipt, RefreshCw, Loader2, Bot, Truck, Factory, CalendarClock, FileSpreadsheet, Monitor, Phone, Mail, Network, ClipboardList, Hammer, BookOpen } from "lucide-react";
 import { SiStripe } from "react-icons/si";
 import type { LicensePlan } from "@shared/schema";
 import { useTranslation } from "react-i18next";
@@ -47,6 +47,18 @@ const AVAILABLE_FEATURES = [
   { id: "push_notifications", label: "Push Notifications", labelKey: "license.featurePushNotifications", icon: Smartphone },
   { id: "crm", label: "Customer Management", labelKey: "license.featureCrm", icon: Users },
   { id: "payments", label: "Online Payments", labelKey: "license.featurePayments", icon: CreditCard },
+  { id: "ai_assistant", label: "AI Assistant", labelKey: "license.featureAiAssistant", icon: Bot },
+  { id: "shipping", label: "Shipping & Logistics", labelKey: "license.featureShipping", icon: Truck },
+  { id: "suppliers", label: "Suppliers & Procurement", labelKey: "license.featureSuppliers", icon: Factory },
+  { id: "hr", label: "HR & Staff Management", labelKey: "license.featureHr", icon: CalendarClock },
+  { id: "quotes", label: "Standalone Quotes", labelKey: "license.featureQuotes", icon: ClipboardList },
+  { id: "remote_requests", label: "Remote Repair Requests", labelKey: "license.featureRemoteRequests", icon: Monitor },
+  { id: "device_catalog", label: "Device & Parts Catalog", labelKey: "license.featureDeviceCatalog", icon: Hammer },
+  { id: "courtesy_phones", label: "Courtesy Phones", labelKey: "license.featureCourtesyPhones", icon: Phone },
+  { id: "email_notifications", label: "Email Notifications", labelKey: "license.featureEmailNotifications", icon: Mail },
+  { id: "sub_resellers", label: "Sub-Reseller Network", labelKey: "license.featureSubResellers", icon: Network },
+  { id: "price_lists", label: "Price Lists", labelKey: "license.featurePriceLists", icon: BookOpen },
+  { id: "csv_import", label: "CSV Import", labelKey: "license.featureCsvImport", icon: FileSpreadsheet },
 ];
 
 const MAX_STAFF_OPTIONS = [
