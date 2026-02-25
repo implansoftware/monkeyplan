@@ -56,11 +56,11 @@ interface ReturnDocumentData {
 }
 
 function getPrivateObjectDir(): string {
-  const dir = process.env.PRIVATE_OBJECT_DIR || "";
-  if (!dir) {
-    throw new Error("PRIVATE_OBJECT_DIR not set");
+  const bucket = process.env.R2_BUCKET_NAME || "";
+  if (!bucket) {
+    throw new Error("R2_BUCKET_NAME not set");
   }
-  return dir;
+  return `/${bucket}`;
 }
 
 async function uploadPdfToStorage(
