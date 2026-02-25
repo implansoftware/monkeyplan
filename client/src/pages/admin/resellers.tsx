@@ -43,6 +43,8 @@ export default function AdminResellers() {
   const [addressData, setAddressData] = useState({ indirizzo: "", citta: "", cap: "", provincia: "" });
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resellerToDelete, setResellerToDelete] = useState<Omit<User, 'password'> | null>(null);
+  const [forceDelete, setForceDelete] = useState(false);
+  const [unpaidInvoiceCount, setUnpaidInvoiceCount] = useState(0);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [resellerToResetPassword, setResellerToResetPassword] = useState<Omit<User, 'password'> | null>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -155,8 +157,8 @@ export default function AdminResellers() {
   });
 
   const deleteResellerMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/resellers/${id}`);
+    mutationFn: async ({ id, force }: { id: string; force?: boolean }) => {
+      await apiRequest("DELETE", `/api/admin/resellers/${id}${force ? "?force=true" : ""}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
@@ -164,6 +166,8 @@ export default function AdminResellers() {
       toast({ title: t("admin.resellers.resellerDeleted") });
       setDeleteDialogOpen(false);
       setResellerToDelete(null);
+      setForceDelete(false);
+      setUnpaidInvoiceCount(0);
     },
     onError: async (error: any) => {
       const errorMsg = error.message || "";
@@ -171,7 +175,11 @@ export default function AdminResellers() {
       if (jsonMatch) {
         try {
           const errorData = JSON.parse(jsonMatch[1]);
-          if (["ACTIVE_REPAIRS", "UNPAID_INVOICES", "OPEN_TICKETS", "HAS_CUSTOMERS", "HAS_REPAIR_CENTERS"].includes(errorData.error)) {
+          if (errorData.error === "UNPAID_INVOICES") {
+            setUnpaidInvoiceCount(errorData.count || 0);
+            return;
+          }
+          if (["ACTIVE_REPAIRS", "OPEN_TICKETS", "HAS_CUSTOMERS", "HAS_REPAIR_CENTERS"].includes(errorData.error)) {
             toast({ 
               title: t("admin.resellers.cannotDelete"), 
               description: errorData.message,
@@ -205,6 +213,8 @@ export default function AdminResellers() {
 
   const handleDeleteClick = (reseller: Omit<User, 'password'>) => {
     setResellerToDelete(reseller);
+    setForceDelete(false);
+    setUnpaidInvoiceCount(0);
     setDeleteDialogOpen(true);
   };
 
@@ -222,7 +232,7 @@ export default function AdminResellers() {
 
   const confirmDelete = () => {
     if (resellerToDelete) {
-      deleteResellerMutation.mutate(resellerToDelete.id);
+      deleteResellerMutation.mutate({ id: resellerToDelete.id, force: forceDelete });
     }
   };
 
@@ -1106,32 +1116,56 @@ export default function AdminResellers() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) { setForceDelete(false); setUnpaidInvoiceCount(0); }
+      }}>
         <AlertDialogContent data-testid="dialog-delete-reseller">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("admin.resellers.deleteReseller")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Stai per eliminare definitivamente il rivenditore <strong>{resellerToDelete?.fullName}</strong>.
-              <br /><br />
-              Per poter eliminare un rivenditore, assicurati che:
-              <ul className="list-disc list-inside mt-2 text-sm">
-                <li>{t("admin.resellers.noActiveRepairs")}</li>
-                <li>{t("admin.resellers.noUnpaidInvoices")}</li>
-                <li>{t("admin.resellers.noOpenTickets")}</li>
-                <li>{t("admin.resellers.noAssociatedCustomers")}</li>
-                <li>{t("admin.resellers.noRepairCentersAssociated")}</li>
-              </ul>
-              <br />
-              Verranno eliminati automaticamente: collaboratori e credenziali API.
-              <br />
-              Questa azione non può essere annullata.
+            <AlertDialogDescription asChild>
+              <div>
+                <span>Stai per eliminare definitivamente il rivenditore <strong>{resellerToDelete?.fullName}</strong>.</span>
+
+                {unpaidInvoiceCount > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                      Questo rivenditore ha <strong>{unpaidInvoiceCount} fattura/e non pagata/e</strong>. L'eliminazione le lascerà orfane nel sistema.
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="force-delete"
+                        checked={forceDelete}
+                        onCheckedChange={(v) => setForceDelete(v === true)}
+                        data-testid="checkbox-force-delete"
+                      />
+                      <label htmlFor="force-delete" className="text-sm cursor-pointer">
+                        Confermo: voglio eliminare il rivenditore ignorando le fatture non pagate
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <span className="block">Per poter eliminare un rivenditore, assicurati che:</span>
+                    <ul className="list-disc list-inside mt-2 text-sm">
+                      <li>{t("admin.resellers.noActiveRepairs")}</li>
+                      <li>{t("admin.resellers.noUnpaidInvoices")}</li>
+                      <li>{t("admin.resellers.noOpenTickets")}</li>
+                      <li>{t("admin.resellers.noAssociatedCustomers")}</li>
+                      <li>{t("admin.resellers.noRepairCentersAssociated")}</li>
+                    </ul>
+                    <span className="block mt-3">Verranno eliminati automaticamente: collaboratori e credenziali API.</span>
+                    <span className="block mt-1">Questa azione non può essere annullata.</span>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel data-testid="button-cancel-delete">{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              disabled={deleteResellerMutation.isPending}
+              disabled={deleteResellerMutation.isPending || (unpaidInvoiceCount > 0 && !forceDelete)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               data-testid="button-confirm-delete"
             >

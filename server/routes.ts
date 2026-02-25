@@ -2033,6 +2033,7 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Non autorizzato");
       
+      const force = req.query.force === "true";
       const resellerId = req.params.id;
       const reseller = await storage.getUser(resellerId);
       
@@ -2069,7 +2070,7 @@ export function registerRoutes(app: Express): Server {
         i.paymentStatus !== "paid" && i.paymentStatus !== "cancelled"
       );
       
-      if (unpaidInvoices.length > 0) {
+      if (unpaidInvoices.length > 0 && !force) {
         return res.status(409).json({
           error: "UNPAID_INVOICES",
           message: `Impossibile eliminare: ci sono ${unpaidInvoices.length} fattura/e non pagata/e`,
