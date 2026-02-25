@@ -2526,7 +2526,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Hash password before storing
-      const hashedPassword = await hashPassword(password);
+      const hashedPassword = await hashPassword(validatedData.password);
       
       // Only set resellerCategory for reseller role
       const resellerCategory = validatedData.role === 'reseller' 
@@ -2551,7 +2551,7 @@ export function registerRoutes(app: Express): Server {
       
       setActivityEntity(res, { type: 'users', id: user.id });
       const { password: _, ...safeUser } = user;
-      res.status(201).json({ customer: safeUser, tempPassword: password });
+      res.status(201).json({ customer: safeUser, tempPassword: validatedData.password });
     } catch (error: any) {
       console.error("Service order creation error:", error);
       res.status(400).send(error.message);
