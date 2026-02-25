@@ -2550,6 +2550,7 @@ export function registerRoutes(app: Express): Server {
       }
       
       setActivityEntity(res, { type: 'users', id: user.id });
+      notifyUserCreated(user, validatedData.password).catch(e => console.error("[Email]", e));
       const { password: _, ...safeUser } = user;
       res.status(201).json({ customer: safeUser, tempPassword: validatedData.password });
     } catch (error: any) {
