@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings, Upload, Loader2, X, Wrench } from "lucide-react";
+import { Plus, Search, Pencil, Store, Users, UsersRound, Trash2, Building2, Eye, EyeOff, ChevronLeft, ChevronRight, Check, User as UserIcon, KeyRound, FileText, Settings, Upload, Loader2, X, Wrench, RefreshCw, Copy } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -33,6 +33,24 @@ const WIZARD_STEPS = [
 
 type ResellerWithCount = Omit<User, 'password'> & { customerCount: number; staffCount: number; repairCenterCount: number; subResellerCount: number };
 
+function generateRandomPassword(): string {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghjkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const symbols = "@#!?";
+  const all = upper + lower + digits + symbols;
+  let pwd = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    symbols[Math.floor(Math.random() * symbols.length)],
+  ];
+  for (let i = 4; i < 12; i++) {
+    pwd.push(all[Math.floor(Math.random() * all.length)]);
+  }
+  return pwd.sort(() => Math.random() - 0.5).join("");
+}
+
 export default function AdminResellers() {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,6 +59,8 @@ export default function AdminResellers() {
   const [selectedCategory, setSelectedCategory] = useState<string>("standard");
   const [selectedParentResellerId, setSelectedParentResellerId] = useState<string>("");
   const [addressData, setAddressData] = useState({ indirizzo: "", citta: "", cap: "", provincia: "" });
+  const [autoGeneratePassword, setAutoGeneratePassword] = useState(true);
+  const [showGeneratedPassword, setShowGeneratedPassword] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resellerToDelete, setResellerToDelete] = useState<Omit<User, 'password'> | null>(null);
   const [forceDelete, setForceDelete] = useState(false);
@@ -300,9 +320,11 @@ export default function AdminResellers() {
 
   const resetWizard = () => {
     setWizardStep(1);
+    setAutoGeneratePassword(true);
+    setShowGeneratedPassword(false);
     setFormData({
       username: "",
-      password: "",
+      password: generateRandomPassword(),
       fullName: "",
       email: "",
       phone: "",
@@ -342,7 +364,7 @@ export default function AdminResellers() {
       }
     }
     switch (wizardStep) {
-      case 1: return formData.username && formData.password;
+      case 1: return formData.username && (autoGeneratePassword ? !!formData.password : formData.password.length >= 6);
       case 2: return formData.fullName && formData.email;
       case 3: return true;
       case 4: return true;
@@ -522,16 +544,82 @@ export default function AdminResellers() {
                         data-testid="input-username" 
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password" className="text-slate-700 dark:text-slate-300">{t("auth.password")}</Label>
-                      <Input 
-                        id="password" 
-                        type="password"
-                        className="h-11 rounded-xl"
-                        value={formData.password}
-                        onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                        data-testid="input-password" 
-                      />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-slate-700 dark:text-slate-300">{t("auth.password")}</Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">Autogenera</span>
+                          <Switch
+                            checked={autoGeneratePassword}
+                            onCheckedChange={(val) => {
+                              setAutoGeneratePassword(val);
+                              setShowGeneratedPassword(false);
+                              if (val) {
+                                setFormData(prev => ({ ...prev, password: generateRandomPassword() }));
+                              } else {
+                                setFormData(prev => ({ ...prev, password: "" }));
+                              }
+                            }}
+                            data-testid="switch-auto-password"
+                          />
+                        </div>
+                      </div>
+                      {autoGeneratePassword ? (
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              readOnly
+                              type={showGeneratedPassword ? "text" : "password"}
+                              className="h-11 rounded-xl pr-10 font-mono bg-muted/40"
+                              value={formData.password}
+                              data-testid="input-password-generated"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowGeneratedPassword(v => !v)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                              data-testid="button-toggle-password-visibility"
+                            >
+                              {showGeneratedPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            onClick={() => setFormData(prev => ({ ...prev, password: generateRandomPassword() }))}
+                            title="Rigenera password"
+                            data-testid="button-regenerate-password"
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            onClick={() => { navigator.clipboard.writeText(formData.password); toast({ title: "Password copiata" }); }}
+                            title="Copia password"
+                            data-testid="button-copy-password"
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <Input
+                          id="password"
+                          type="password"
+                          className="h-11 rounded-xl"
+                          placeholder="Minimo 6 caratteri"
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          data-testid="input-password"
+                        />
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {autoGeneratePassword
+                          ? "La password verrà inviata al rivenditore via email insieme alle credenziali."
+                          : "Imposta manualmente la password. Il rivenditore la riceverà via email."}
+                      </p>
                     </div>
                   </div>
                 )}
