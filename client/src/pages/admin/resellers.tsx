@@ -74,6 +74,9 @@ export default function AdminResellers() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoDeleting, setLogoDeleting] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const newLogoInputRef = useRef<HTMLInputElement>(null);
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
+  const [pendingLogoPreview, setPendingLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -116,7 +119,16 @@ export default function AdminResellers() {
       const res = await apiRequest("POST", "/api/admin/users", data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: async (newReseller) => {
+      if (pendingLogoFile && newReseller?.id) {
+        try {
+          const fd = new FormData();
+          fd.append("logo", pendingLogoFile);
+          await fetch(`/api/resellers/${newReseller.id}/logo`, { method: "POST", body: fd });
+        } catch {
+          toast({ title: t("admin.resellers.logoUploadError", "Logo non caricato"), description: t("admin.resellers.logoUploadErrorDesc", "Il rivenditore è stato creato ma il logo non è stato salvato. Puoi caricarlo in seguito."), variant: "destructive" });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/resellers"] });
       setDialogOpen(false);
@@ -339,6 +351,9 @@ export default function AdminResellers() {
     setSelectedCategory("standard");
     setSelectedParentResellerId("");
     setSelectedRepairCenterIds([]);
+    setPendingLogoFile(null);
+    setPendingLogoPreview(null);
+    if (newLogoInputRef.current) newLogoInputRef.current.value = "";
   };
 
   const getStepsForMode = () => {
@@ -659,9 +674,9 @@ export default function AdminResellers() {
                       />
                     </div>
                     
-                    {editingReseller && (
-                      <div className="space-y-2 pt-2 border-t">
-                        <Label>{t("admin.resellers.companyLogo")}</Label>
+                    <div className="space-y-2 pt-2 border-t">
+                      <Label>{t("admin.resellers.companyLogo")}</Label>
+                      {editingReseller ? (
                         <div className="flex flex-wrap items-center gap-4">
                           <Avatar className="h-16 w-16 border">
                             {resellers.find(r => r.id === editingReseller.id)?.logoUrl ? (
@@ -722,9 +737,63 @@ export default function AdminResellers() {
                             )}
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{t("admin.resellers.logoFormats")}</p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-4">
+                          <Avatar className="h-16 w-16 border">
+                            {pendingLogoPreview ? (
+                              <AvatarImage src={pendingLogoPreview} alt="logo" className="object-contain" />
+                            ) : null}
+                            <AvatarFallback className="text-lg">
+                              {formData.fullName ? formData.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col gap-2">
+                            <input
+                              ref={newLogoInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setPendingLogoFile(file);
+                                  setPendingLogoPreview(URL.createObjectURL(file));
+                                }
+                              }}
+                              data-testid="input-new-logo-file"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => newLogoInputRef.current?.click()}
+                              data-testid="button-upload-new-logo"
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              {pendingLogoFile ? t("admin.resellers.changeLogo") : t("admin.resellers.uploadLogo")}
+                            </Button>
+                            {pendingLogoFile && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setPendingLogoFile(null);
+                                  setPendingLogoPreview(null);
+                                  if (newLogoInputRef.current) newLogoInputRef.current.value = "";
+                                }}
+                                className="text-destructive hover:text-destructive"
+                                data-testid="button-remove-new-logo"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                {t("admin.resellers.removeLogo")}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">{t("admin.resellers.logoFormats")}</p>
+                    </div>
                   </div>
                 )}
 
