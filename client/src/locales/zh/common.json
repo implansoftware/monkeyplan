@@ -7413,7 +7413,8 @@
     "courtesyPhoneRepairCenter": "维修中心",
     "issueDescription": "问题描述",
     "problemDescription": "描述客户报告的问题...",
-    "notesPlaceholder": "可选内部备注..."
+    "notesPlaceholder": "可选内部备注...",
+    "aestheticNotesPlaceholder": "例如：外壳有划痕，屏幕完好等"
   },
   "integrations": {
     "bearerToken": "Bearer Token",

@@ -7038,7 +7038,8 @@
     "courtesyPhoneRepairCenter": "Reparatiecentrum",
     "issueDescription": "Probleembeschrijving",
     "problemDescription": "Beschrijf het door de klant gemelde probleem...",
-    "notesPlaceholder": "Optionele interne notities..."
+    "notesPlaceholder": "Optionele interne notities...",
+    "aestheticNotesPlaceholder": "Bijv. krassen op behuizing, scherm intact, etc."
   },
   "integrations": {
     "bearerToken": "Dragertoken",

@@ -9839,7 +9839,8 @@
     "courtesyPhoneRepairCenter": "Centro Riparazione",
     "issueDescription": "Descrizione problema",
     "problemDescription": "Descrivi il problema riscontrato dal cliente...",
-    "notesPlaceholder": "Note interne opzionali..."
+    "notesPlaceholder": "Note interne opzionali...",
+    "aestheticNotesPlaceholder": "Es. graffi sulla scocca, schermo integro, ecc."
   },
   "staff": {
     "permissions": "Permessi",

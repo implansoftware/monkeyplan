@@ -6474,7 +6474,8 @@
     "courtesyPhoneRepairCenter": "مركز الإصلاح",
     "issueDescription": "وصف المشكلة",
     "problemDescription": "صف المشكلة التي أبلغ عنها العميل...",
-    "notesPlaceholder": "ملاحظات داخلية اختيارية..."
+    "notesPlaceholder": "ملاحظات داخلية اختيارية...",
+    "aestheticNotesPlaceholder": "مثل: خدوش على الهيكل، الشاشة سليمة، إلخ."
   },
   "integrations": {
     "bearerToken": "Bearer Token",

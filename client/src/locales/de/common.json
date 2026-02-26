@@ -7142,7 +7142,8 @@
     "courtesyPhoneRepairCenter": "Reparaturzentrum",
     "issueDescription": "Problembeschreibung",
     "problemDescription": "Beschreiben Sie das vom Kunden gemeldete Problem...",
-    "notesPlaceholder": "Optionale interne Notizen..."
+    "notesPlaceholder": "Optionale interne Notizen...",
+    "aestheticNotesPlaceholder": "Z.B. Kratzer am Gehäuse, Bildschirm intakt, usw."
   },
   "integrations": {
     "bearerToken": "Bearer Token",

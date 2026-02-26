@@ -9788,7 +9788,8 @@
     "courtesyPhoneRepairCenter": "Centro de Reparación",
     "issueDescription": "Descripción del problema",
     "problemDescription": "Describa el problema reportado por el cliente...",
-    "notesPlaceholder": "Notas internas opcionales..."
+    "notesPlaceholder": "Notas internas opcionales...",
+    "aestheticNotesPlaceholder": "Ej. arañazos en la carcasa, pantalla intacta, etc."
   },
   "staff": {
     "permissions": "Permisos",

@@ -9831,7 +9831,8 @@
     "courtesyPhoneRepairCenter": "Repair Center",
     "issueDescription": "Problem description",
     "problemDescription": "Describe the issue reported by the customer...",
-    "notesPlaceholder": "Optional internal notes..."
+    "notesPlaceholder": "Optional internal notes...",
+    "aestheticNotesPlaceholder": "E.g. scratches on the casing, screen intact, etc."
   },
   "staff": {
     "permissions": "Permissions",
