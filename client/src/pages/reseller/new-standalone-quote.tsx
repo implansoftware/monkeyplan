@@ -139,6 +139,8 @@ export default function NewStandaloneQuote() {
   const [brandId, setBrandId] = useState("");
   const [modelId, setModelId] = useState("");
   const [deviceDescription, setDeviceDescription] = useState("");
+  const [marketCodeInput, setMarketCodeInput] = useState("");
+  const [marketCodeLoading, setMarketCodeLoading] = useState(false);
 
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([]);
 
@@ -356,6 +358,29 @@ export default function NewStandaloneQuote() {
     },
   });
 
+  const lookupMarketCode = async () => {
+    const code = marketCodeInput.trim();
+    if (!code) return;
+    setMarketCodeLoading(true);
+    try {
+      const res = await fetch(`/api/device-models/by-market-code?code=${encodeURIComponent(code)}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (!data) {
+        toast({ variant: "destructive", title: t("repair.codeNotFound"), description: t("repair.noDeviceWithCode", { code }) });
+        return;
+      }
+      if (data.typeId) setDeviceTypeId(data.typeId);
+      if (data.brandId) setBrandId(data.brandId);
+      if (data.modelId) setModelId(data.modelId);
+      toast({ title: t("repair.deviceFound"), description: `${data.typeName || ""} ${data.brandName || ""} ${data.modelName || ""}`.trim() });
+    } catch {
+      toast({ variant: "destructive", title: t("common.error"), description: t("repair.cannotSearchMarketCode") });
+    } finally {
+      setMarketCodeLoading(false);
+    }
+  };
+
   const canGoNext = () => {
     switch (currentStep) {
       case 0: return true;
@@ -428,6 +453,29 @@ export default function NewStandaloneQuote() {
             <p className="text-sm text-muted-foreground">
               {t("standalone.selectDeviceDesc")}
             </p>
+
+            <div className="space-y-2">
+              <Label>{t("repair.marketCodeOptional")}</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder={t("repair.marketCodePlaceholder")}
+                  value={marketCodeInput}
+                  onChange={(e) => setMarketCodeInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), lookupMarketCode())}
+                  data-testid="input-market-code-quote"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={lookupMarketCode}
+                  disabled={marketCodeLoading || !marketCodeInput.trim()}
+                  data-testid="button-lookup-market-code-quote"
+                >
+                  {marketCodeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">{t("repair.enterMarketCodeToAutofill")}</p>
+            </div>
 
             <div className="space-y-2">
               <Label>{t("repairs.deviceType")} *</Label>

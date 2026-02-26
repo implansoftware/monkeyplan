@@ -106,15 +106,15 @@ export default function AdminStandaloneQuotes() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t("standalone.quotes")}</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
+              <div className="text-sm text-muted-foreground mt-0.5">
                 {isLoading ? (
-                  <Skeleton className="h-4 w-32 inline-block" />
+                  <Skeleton className="h-4 w-32" />
                 ) : (
                   <>
                     {quotes.length} {t("quotes.quotesFound")}
                   </>
                 )}
-              </p>
+              </div>
             </div>
           </div>
         </div>
