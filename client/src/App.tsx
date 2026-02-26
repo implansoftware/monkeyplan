@@ -378,6 +378,8 @@ function Router() {
       <ProtectedRoute path="/admin/analytics" component={AdminAnalytics} />
       <ProtectedRoute path="/admin/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/admin/quotes" component={QuotesList} />
+      <ProtectedRoute path="/admin/standalone-quotes/:id" component={StandaloneQuoteDetail} allowedRoles={["admin", "admin_staff"]} />
+      <ProtectedRoute path="/admin/standalone-quotes" component={StandaloneQuotesList} allowedRoles={["admin", "admin_staff"]} />
       <ProtectedRoute path="/admin/suppliers" component={AdminSuppliers} />
       <ProtectedRoute path="/admin/supplier-orders" component={AdminSupplierOrders} />
       <ProtectedRoute path="/admin/supplier-returns" component={AdminSupplierReturns} />
