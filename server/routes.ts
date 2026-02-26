@@ -49264,6 +49264,20 @@ export function registerRoutes(app: Express): Server {
   // STANDALONE QUOTES (Preventivi standalone)
   // ==========================================
 
+  // Admin enriched view — includes reseller/repair center names
+  app.get("/api/admin/standalone-quotes", requireRole("admin", "admin_staff"), async (req, res) => {
+    try {
+      const { status, search } = req.query;
+      const filters: any = {};
+      if (status && status !== "all") filters.status = status as string;
+      if (search) filters.search = search as string;
+      const quotes = await storage.listStandaloneQuotesEnriched(filters);
+      res.json(quotes);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/standalone-quotes", requireAuth, async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");

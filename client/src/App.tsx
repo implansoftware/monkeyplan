@@ -96,6 +96,7 @@ import AdminShipments from "@/pages/admin/shipments";
 import AdminPayments from "@/pages/admin/payments";
 import DiagnosisList from "@/pages/DiagnosisList";
 import QuotesList from "@/pages/QuotesList";
+import AdminStandaloneQuotes from "@/pages/admin/standalone-quotes";
 import StandaloneQuotesList from "@/pages/reseller/standalone-quotes";
 import NewStandaloneQuote from "@/pages/reseller/new-standalone-quote";
 import StandaloneQuoteDetail from "@/pages/reseller/standalone-quote-detail";
@@ -379,7 +380,7 @@ function Router() {
       <ProtectedRoute path="/admin/diagnostics" component={DiagnosisList} />
       <ProtectedRoute path="/admin/quotes" component={QuotesList} />
       <ProtectedRoute path="/admin/standalone-quotes/:id" component={StandaloneQuoteDetail} allowedRoles={["admin", "admin_staff"]} />
-      <ProtectedRoute path="/admin/standalone-quotes" component={StandaloneQuotesList} allowedRoles={["admin", "admin_staff"]} />
+      <ProtectedRoute path="/admin/standalone-quotes" component={AdminStandaloneQuotes} allowedRoles={["admin", "admin_staff"]} />
       <ProtectedRoute path="/admin/suppliers" component={AdminSuppliers} />
       <ProtectedRoute path="/admin/supplier-orders" component={AdminSupplierOrders} />
       <ProtectedRoute path="/admin/supplier-returns" component={AdminSupplierReturns} />

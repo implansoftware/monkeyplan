@@ -1265,6 +1265,7 @@ export interface IStorage {
 
   // Standalone Quotes (Preventivi standalone)
   listStandaloneQuotes(filters?: { createdBy?: string; resellerId?: string; repairCenterId?: string; status?: string; search?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] })[]>;
+  listStandaloneQuotesEnriched(filters?: { status?: string; search?: string; resellerId?: string; repairCenterId?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[]; resellerName: string | null; repairCenterName: string | null })[]>;
   getStandaloneQuote(id: string): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] }) | undefined>;
   createStandaloneQuote(quote: InsertStandaloneQuote, items: Omit<InsertStandaloneQuoteItem, 'quoteId'>[]): Promise<StandaloneQuote & { items: StandaloneQuoteItem[] }>;
   updateStandaloneQuoteStatus(id: string, status: string): Promise<StandaloneQuote>;
@@ -13694,6 +13695,40 @@ export class DatabaseStorage implements IStorage {
       const items = await db.select().from(standaloneQuoteItems)
         .where(eq(standaloneQuoteItems.quoteId, q.id));
       result.push({ ...q, items });
+    }
+    return result;
+  }
+
+  async listStandaloneQuotesEnriched(filters?: { status?: string; search?: string; resellerId?: string; repairCenterId?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[]; resellerName: string | null; repairCenterName: string | null })[]> {
+    const conditions: SQL[] = [];
+    if (filters?.status) conditions.push(eq(standaloneQuotes.status, filters.status as any));
+    if (filters?.resellerId) conditions.push(eq(standaloneQuotes.resellerId, filters.resellerId));
+    if (filters?.repairCenterId) conditions.push(eq(standaloneQuotes.repairCenterId, filters.repairCenterId));
+    if (filters?.search) {
+      conditions.push(or(
+        ilike(standaloneQuotes.quoteNumber, `%${filters.search}%`),
+        ilike(standaloneQuotes.customerName, `%${filters.search}%`),
+        ilike(standaloneQuotes.customerEmail, `%${filters.search}%`),
+        ilike(standaloneQuotes.deviceDescription, `%${filters.search}%`)
+      )!);
+    }
+    const resellerAlias = users;
+    const rows = await db
+      .select({
+        quote: standaloneQuotes,
+        resellerName: sql<string | null>`COALESCE(${resellerAlias.ragioneSociale}, ${resellerAlias.fullName})`,
+        repairCenterName: repairCenters.name,
+      })
+      .from(standaloneQuotes)
+      .leftJoin(resellerAlias, eq(standaloneQuotes.resellerId, resellerAlias.id))
+      .leftJoin(repairCenters, eq(standaloneQuotes.repairCenterId, repairCenters.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(standaloneQuotes.createdAt));
+
+    const result: (StandaloneQuote & { items: StandaloneQuoteItem[]; resellerName: string | null; repairCenterName: string | null })[] = [];
+    for (const row of rows) {
+      const items = await db.select().from(standaloneQuoteItems).where(eq(standaloneQuoteItems.quoteId, row.quote.id));
+      result.push({ ...row.quote, items, resellerName: row.resellerName, repairCenterName: row.repairCenterName });
     }
     return result;
   }
