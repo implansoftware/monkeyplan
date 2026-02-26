@@ -640,7 +640,7 @@ export default function AdminDashboard() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry) => `${entry.name}: ${entry.value}`}
+                    label={(entry) => entry.value > 0 ? `${entry.name}: ${entry.value}` : ''}
                     outerRadius={80}
                     dataKey="value"
                   >
