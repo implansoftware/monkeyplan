@@ -205,6 +205,11 @@ export default function NewStandaloneQuote() {
     if (!userWarehouseId) return null;
     const params = new URLSearchParams();
     if (productSearch) params.set("search", productSearch);
+    if (deviceTypeId) params.set("deviceTypeId", deviceTypeId);
+    const _brand = deviceBrands.find((db: any) => db.id === brandId)?.name;
+    if (_brand) params.set("brand", _brand);
+    const _model = deviceModels.find((dm: any) => dm.id === modelId)?.modelName;
+    if (_model) params.set("modelName", _model);
     params.set("limit", "50");
     return `/api/warehouses/${userWarehouseId}/products?${params}`;
   })();
@@ -217,6 +222,11 @@ export default function NewStandaloneQuote() {
   const supplierProductsUrl = (() => {
     const params = new URLSearchParams();
     if (productSearch) params.set("search", productSearch);
+    if (deviceTypeId) params.set("deviceTypeId", deviceTypeId);
+    const _brand = deviceBrands.find((db: any) => db.id === brandId)?.name;
+    if (_brand) params.set("brand", _brand);
+    const _model = deviceModels.find((dm: any) => dm.id === modelId)?.modelName;
+    if (_model) params.set("modelName", _model);
     params.set("limit", "50");
     return `/api/products?${params}`;
   })();

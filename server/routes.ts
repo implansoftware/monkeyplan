@@ -15955,6 +15955,9 @@ export function registerRoutes(app: Express): Server {
       const search = req.query.search as string | undefined;
       const productType = req.query.productType as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const brand = req.query.brand as string | undefined;
+      const modelName = req.query.modelName as string | undefined;
       
       let products = await storage.listProducts();
       
@@ -15971,6 +15974,22 @@ export function registerRoutes(app: Express): Server {
           p.sku.toLowerCase().includes(searchLower) ||
           (p.brand && p.brand.toLowerCase().includes(searchLower)) ||
           (p.category && p.category.toLowerCase().includes(searchLower))
+        );
+      }
+
+      // Device compatibility filter: null/undefined = universal, value = must match
+      if (deviceTypeId) {
+        products = products.filter(p => !p.deviceTypeId || p.deviceTypeId === deviceTypeId);
+      }
+      if (brand) {
+        const brandLower = brand.toLowerCase();
+        products = products.filter(p => !p.brand || p.brand.toLowerCase() === brandLower);
+      }
+      if (modelName) {
+        const modelLower = modelName.toLowerCase();
+        products = products.filter(p =>
+          !p.compatibleModels || p.compatibleModels.length === 0 ||
+          p.compatibleModels.some((m: string) => m.toLowerCase().includes(modelLower))
         );
       }
       
@@ -33329,11 +33348,17 @@ export function registerRoutes(app: Express): Server {
       const search = req.query.search as string | undefined;
       const productType = req.query.productType as string | undefined;
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
+      const deviceTypeId = req.query.deviceTypeId as string | undefined;
+      const brand = req.query.brand as string | undefined;
+      const modelName = req.query.modelName as string | undefined;
       
       let productsWithStock = await storage.listWarehouseProductsWithStock(
         req.params.warehouseId,
         search,
-        productType
+        productType,
+        deviceTypeId,
+        brand,
+        modelName
       );
       
       if (limit > 0) {

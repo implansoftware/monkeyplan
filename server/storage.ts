@@ -1001,7 +1001,7 @@ export interface IStorage {
   updateWarehouseStock(id: string, updates: { minStock?: number | null; location?: string | null; quantity?: number }): Promise<WarehouseStock>;
   getWarehouseStockById(id: string): Promise<WarehouseStock | undefined>;
   updateWarehouseStockQuantity(warehouseId: string, productId: string, quantityDelta: number, location?: string | null): Promise<WarehouseStock>;
-  listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string): Promise<Array<Product & { availableQuantity: number }>>;
+  listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string, deviceTypeId?: string, brand?: string, modelName?: string): Promise<Array<Product & { availableQuantity: number }>>;
   listAccessibleWarehouses(resellerId: string): Promise<Warehouse[]>;
   
   // Product Search with Stock Availability
@@ -9285,7 +9285,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string): Promise<Array<Product & { availableQuantity: number }>> {
+  async listWarehouseProductsWithStock(warehouseId: string, search?: string, productType?: string, deviceTypeId?: string, brand?: string, modelName?: string): Promise<Array<Product & { availableQuantity: number }>> {
     const conditions = [
       eq(warehouseStock.warehouseId, warehouseId),
       sql`${warehouseStock.quantity} > 0`,
@@ -9312,6 +9312,22 @@ export class DatabaseStorage implements IStorage {
         p.name.toLowerCase().includes(searchLower) ||
         p.sku.toLowerCase().includes(searchLower) ||
         (p.brand && p.brand.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Device compatibility filter: null = universal, value = must match
+    if (deviceTypeId) {
+      result = result.filter(p => !p.deviceTypeId || p.deviceTypeId === deviceTypeId);
+    }
+    if (brand) {
+      const brandLower = brand.toLowerCase();
+      result = result.filter(p => !p.brand || p.brand.toLowerCase() === brandLower);
+    }
+    if (modelName) {
+      const modelLower = modelName.toLowerCase();
+      result = result.filter(p =>
+        !p.compatibleModels || p.compatibleModels.length === 0 ||
+        p.compatibleModels.some(m => m.toLowerCase().includes(modelLower))
       );
     }
     
