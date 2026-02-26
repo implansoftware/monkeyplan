@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { RepairCenter, InsertRepairCenter, User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye, KeyRound, AlertTriangle, UserPlus } from "lucide-react";
+import { Plus, Search, MapPin, Phone, Mail, Pencil, Trash2, Building, Store, Clock, ChevronLeft, ChevronRight, Check, FileText, Settings, Eye, KeyRound, AlertTriangle, UserPlus, Upload, ImageIcon, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -40,6 +40,10 @@ export default function AdminRepairCenters() {
   const [addressData, setAddressData] = useState({ address: "", city: "", cap: "", provincia: "" });
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [wizardStep, setWizardStep] = useState(1);
+  const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
+  const [pendingLogoPreview, setPendingLogoPreview] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [centerToResetPassword, setCenterToResetPassword] = useState<RepairCenter | null>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -86,12 +90,23 @@ export default function AdminRepairCenters() {
       const res = await apiRequest("POST", "/api/admin/repair-centers", data);
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: async (newCenter) => {
+      if (pendingLogoFile && newCenter?.id) {
+        try {
+          const fd = new FormData();
+          fd.append("logo", pendingLogoFile);
+          await fetch(`/api/repair-centers/${newCenter.id}/logo`, { method: "POST", body: fd });
+        } catch {
+          toast({ title: t("common.warning"), description: t("admin.repairCenters.centerCreatedLogoFailed", "Centro creato ma logo non salvato. Caricalo in seguito."), variant: "default" });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
       setDialogOpen(false);
       setEditingCenter(null);
       setSelectedResellerId("");
       setSelectedSubResellerId("");
+      setPendingLogoFile(null);
+      setPendingLogoPreview(null);
       toast({ title: t("admin.repairCenters.created") });
     },
     onError: (error: Error) => {
@@ -191,6 +206,9 @@ export default function AdminRepairCenters() {
     setSelectedResellerId("");
     setSelectedSubResellerId("");
     setHourlyRateEuros("");
+    setPendingLogoFile(null);
+    setPendingLogoPreview(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
   };
 
   const progressPercent = (wizardStep / WIZARD_STEPS.length) * 100;
@@ -553,6 +571,104 @@ export default function AdminRepairCenters() {
                 {wizardStep === 4 && (
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">{t("admin.repairCenters.affiliationConfigDesc")}</p>
+
+                    {/* Logo section */}
+                    <div className="space-y-2 pb-4 border-b">
+                      <Label className="text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        {t("profile.companyLogo")} <span className="text-muted-foreground font-normal text-xs">({t("common.optional", "opzionale")})</span>
+                      </Label>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <Avatar className="h-16 w-16 border">
+                          {editingCenter?.logoUrl && !pendingLogoPreview ? (
+                            <AvatarImage src={editingCenter.logoUrl} alt={editingCenter.name} className="object-contain" />
+                          ) : pendingLogoPreview ? (
+                            <AvatarImage src={pendingLogoPreview} alt="logo preview" className="object-contain" />
+                          ) : null}
+                          <AvatarFallback className="text-lg">
+                            {formData.name ? formData.name.slice(0, 2).toUpperCase() : "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-2">
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (editingCenter) {
+                                setLogoUploading(true);
+                                try {
+                                  const fd = new FormData();
+                                  fd.append("logo", file);
+                                  const res = await fetch(`/api/repair-centers/${editingCenter.id}/logo`, { method: "POST", body: fd });
+                                  const result = await res.json();
+                                  setEditingCenter({ ...editingCenter, logoUrl: result.logoUrl });
+                                  queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
+                                  toast({ title: t("profile.logoUploaded") });
+                                } catch {
+                                  toast({ title: t("common.error"), variant: "destructive" });
+                                } finally {
+                                  setLogoUploading(false);
+                                  if (logoInputRef.current) logoInputRef.current.value = "";
+                                }
+                              } else {
+                                setPendingLogoFile(file);
+                                setPendingLogoPreview(URL.createObjectURL(file));
+                              }
+                            }}
+                            data-testid="input-logo-file"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => logoInputRef.current?.click()}
+                            disabled={logoUploading}
+                            data-testid="button-upload-logo"
+                          >
+                            {logoUploading ? (
+                              <span className="h-4 w-4 mr-2 animate-spin inline-block border-2 border-current border-t-transparent rounded-full" />
+                            ) : (
+                              <Upload className="h-4 w-4 mr-2" />
+                            )}
+                            {(editingCenter?.logoUrl || pendingLogoFile) ? t("profile.changeLogo") : t("profile.uploadLogo")}
+                          </Button>
+                          {(pendingLogoFile || editingCenter?.logoUrl) && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (editingCenter?.logoUrl) {
+                                  try {
+                                    await fetch(`/api/repair-centers/${editingCenter.id}/logo`, { method: "DELETE" });
+                                    setEditingCenter({ ...editingCenter, logoUrl: null });
+                                    queryClient.invalidateQueries({ queryKey: ["/api/admin/repair-centers"] });
+                                    toast({ title: t("profile.logoRemoved") });
+                                  } catch {
+                                    toast({ title: t("common.error"), variant: "destructive" });
+                                  }
+                                } else {
+                                  setPendingLogoFile(null);
+                                  setPendingLogoPreview(null);
+                                  if (logoInputRef.current) logoInputRef.current.value = "";
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive"
+                              data-testid="button-remove-logo"
+                            >
+                              <X className="h-4 w-4 mr-2" />
+                              {t("profile.removeLogo")}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t("admin.resellers.logoFormats", "JPG, PNG, WebP. Max 5MB.")}</p>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="resellerId" className="text-slate-700 dark:text-slate-300">{t("admin.repairCenters.belongingReseller")}</Label>
                       <Select 
