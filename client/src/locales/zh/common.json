@@ -832,6 +832,7 @@
     "declaredDefects": "声明的缺陷",
     "aestheticCondition": "美学状态",
     "aestheticNotes": "美学注释",
+    "aestheticNotesPlaceholder": "例如：外壳有划痕，屏幕完好等",
     "unlockCodes": "解锁代码",
     "pinPassword": "PIN/密码",
     "sequencePattern": "序列/图案",

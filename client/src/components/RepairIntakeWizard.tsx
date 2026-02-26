@@ -101,6 +101,7 @@ function getWizardSchema(t: (key: string) => string) {
     
     // Step 3: Conditions
     aestheticCondition: z.string().optional(),
+    aestheticNotes: z.string().optional(),
     accessories: z.array(z.string()).default([]),
     notes: z.string().optional(),
     // Courtesy phone
@@ -266,6 +267,7 @@ export function RepairIntakeWizard({
       imeiNotPresent: false,
       issueDescription: "",
       aestheticCondition: "",
+      aestheticNotes: "",
       accessories: [],
       notes: "",
     },
@@ -750,6 +752,9 @@ export function RepairIntakeWizard({
       // Add optional fields if provided
       if (data.aestheticCondition) {
         acceptance.aestheticCondition = data.aestheticCondition;
+      }
+      if (data.aestheticNotes) {
+        acceptance.aestheticNotes = data.aestheticNotes;
       }
       
       // Include acceptance in payload - this triggers acceptanceOrderSchema on backend
@@ -1964,6 +1969,23 @@ export function RepairIntakeWizard({
                           </p>
                         )}
                       </div>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Aesthetic Notes */}
+                <FormField
+                  control={form.control}
+                  name="aestheticNotes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("repair.aestheticNotes")}</FormLabel>
+                      <Textarea
+                        {...field}
+                        placeholder={t("repair.aestheticNotesPlaceholder")}
+                        rows={3}
+                        data-testid="textarea-aesthetic-notes-intake"
+                      />
                     </FormItem>
                   )}
                 />

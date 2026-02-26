@@ -832,6 +832,7 @@
     "declaredDefects": "Aangegeven defecten",
     "aestheticCondition": "Esthetische toestand",
     "aestheticNotes": "Esthetische notities",
+    "aestheticNotesPlaceholder": "Bijv. krassen op behuizing, scherm intact, etc.",
     "unlockCodes": "Ontgrendelingscodes",
     "pinPassword": "PIN/Wachtwoord",
     "sequencePattern": "Reeks/Patroon",

@@ -1282,6 +1282,7 @@
     "declaredDefects": "الأعطال المعلنة",
     "aestheticCondition": "الحالة الجمالية",
     "aestheticNotes": "الملاحظات الجمالية",
+    "aestheticNotesPlaceholder": "مثل: خدوش على الهيكل، الشاشة سليمة، إلخ.",
     "unlockCodes": "رموز فتح القفل",
     "pinPassword": "PIN / كلمة المرور",
     "sequencePattern": "التسلسل / النمط",

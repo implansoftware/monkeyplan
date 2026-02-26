@@ -7594,6 +7594,7 @@
     "declaredDefects": "Declared defects",
     "aestheticCondition": "Aesthetic estado",
     "aestheticNotes": "Aesthetic notas",
+    "aestheticNotesPlaceholder": "Ej. arañazos en la carcasa, pantalla intacta, etc.",
     "unlockCodes": "Unlock codes",
     "pinPassword": "PIN/Contraseña",
     "sequencePattern": "Sequence/Patrón",

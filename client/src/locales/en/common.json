@@ -7638,6 +7638,7 @@
     "declaredDefects": "Declared defects",
     "aestheticCondition": "Aesthetic condition",
     "aestheticNotes": "Aesthetic notes",
+    "aestheticNotesPlaceholder": "E.g. scratches on the casing, screen intact, etc.",
     "unlockCodes": "Unlock codes",
     "pinPassword": "PIN/Password",
     "sequencePattern": "Sequence/Pattern",

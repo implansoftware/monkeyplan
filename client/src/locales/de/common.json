@@ -1282,6 +1282,7 @@
     "declaredDefects": "Declared defects",
     "aestheticCondition": "Aesthetic condition",
     "aestheticNotes": "Aesthetic notes",
+    "aestheticNotesPlaceholder": "Z.B. Kratzer am Gehäuse, Bildschirm intakt, usw.",
     "unlockCodes": "Unlock codes",
     "pinPassword": "PIN/Password",
     "sequencePattern": "Sequence/Pattern",
