@@ -5986,7 +5986,7 @@
     "subscriptionCancelledDesc": "The subscription will not renew. Your license remains active until the end of the current period.",
     "subscriptionReactivated": "Subscription reactivated",
     "subscriptionReactivatedDesc": "Automatic renewal has been restored.",
-    "month": "month",
+    "month": "Month",
     "year": "year",
     "syncWithStripe": "Sync with Stripe",
     "syncing": "Syncing...",
@@ -6083,7 +6083,6 @@
     "rc5": "5 repair centers",
     "rc10": "10 repair centers",
     "rc20": "20 repair centers",
-    "month": "Month",
     "repairManagement": "Repair management",
     "warehouseInventory": "Warehouse and inventory",
     "invoicingFeature": "Invoicing",
@@ -9829,7 +9828,10 @@
     "courtesyPhoneReturnedDate": "Returned",
     "courtesyPhoneAssignedDate": "Assigned Date",
     "courtesyPhoneReseller": "Reseller",
-    "courtesyPhoneRepairCenter": "Repair Center"
+    "courtesyPhoneRepairCenter": "Repair Center",
+    "issueDescription": "Problem description",
+    "problemDescription": "Describe the issue reported by the customer...",
+    "notesPlaceholder": "Optional internal notes..."
   },
   "staff": {
     "permissions": "Permissions",

@@ -9785,7 +9785,10 @@
     "courtesyPhoneReturnedDate": "Returned",
     "courtesyPhoneAssignedDate": "Asignado Fecha",
     "courtesyPhoneReseller": "Revendedor",
-    "courtesyPhoneRepairCenter": "Centro de Reparación"
+    "courtesyPhoneRepairCenter": "Centro de Reparación",
+    "issueDescription": "Descripción del problema",
+    "problemDescription": "Describa el problema reportado por el cliente...",
+    "notesPlaceholder": "Notas internas opcionales..."
   },
   "staff": {
     "permissions": "Permisos",

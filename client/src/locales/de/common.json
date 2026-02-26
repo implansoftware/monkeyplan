@@ -7139,7 +7139,10 @@
     "courtesyPhoneReturnedDate": "Returned",
     "courtesyPhoneAssignedDate": "Assigned Date",
     "courtesyPhoneReseller": "Händler",
-    "courtesyPhoneRepairCenter": "Reparaturzentrum"
+    "courtesyPhoneRepairCenter": "Reparaturzentrum",
+    "issueDescription": "Problembeschreibung",
+    "problemDescription": "Beschreiben Sie das vom Kunden gemeldete Problem...",
+    "notesPlaceholder": "Optionale interne Notizen..."
   },
   "integrations": {
     "bearerToken": "Bearer Token",

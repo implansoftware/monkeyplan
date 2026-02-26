@@ -9786,7 +9786,10 @@
     "courtesyPhoneReturnedDate": "Retourné",
     "courtesyPhoneAssignedDate": "Assigné Date",
     "courtesyPhoneReseller": "Revendeur",
-    "courtesyPhoneRepairCenter": "Centre de Réparation"
+    "courtesyPhoneRepairCenter": "Centre de Réparation",
+    "issueDescription": "Description du problème",
+    "problemDescription": "Décrivez le problème signalé par le client...",
+    "notesPlaceholder": "Notes internes optionnelles..."
   },
   "staff": {
     "permissions": "Autorisations",

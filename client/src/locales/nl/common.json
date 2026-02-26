@@ -7035,7 +7035,10 @@
     "courtesyPhoneReturnedDate": "Geretourneerd",
     "courtesyPhoneAssignedDate": "Toewijzingsdatum",
     "courtesyPhoneReseller": "Wederverkoper",
-    "courtesyPhoneRepairCenter": "Reparatiecentrum"
+    "courtesyPhoneRepairCenter": "Reparatiecentrum",
+    "issueDescription": "Probleembeschrijving",
+    "problemDescription": "Beschrijf het door de klant gemelde probleem...",
+    "notesPlaceholder": "Optionele interne notities..."
   },
   "integrations": {
     "bearerToken": "Dragertoken",

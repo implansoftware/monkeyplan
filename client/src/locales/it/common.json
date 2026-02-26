@@ -5984,7 +5984,7 @@
     "subscriptionCancelledDesc": "L'abbonamento non si rinnoverà. La licenza resta attiva fino alla scadenza del periodo corrente.",
     "subscriptionReactivated": "Abbonamento riattivato",
     "subscriptionReactivatedDesc": "Il rinnovo automatico è stato ripristinato.",
-    "month": "mese",
+    "month": "Mese",
     "year": "anno",
     "syncWithStripe": "Sincronizza con Stripe",
     "syncing": "Sincronizzazione...",
@@ -6081,7 +6081,6 @@
     "rc5": "5 centri di riparazione",
     "rc10": "10 centri di riparazione",
     "rc20": "20 centri di riparazione",
-    "month": "Mese",
     "repairManagement": "Gestione riparazioni",
     "warehouseInventory": "Magazzino e inventario",
     "invoicingFeature": "Fatturazione",
@@ -9837,7 +9836,10 @@
     "courtesyPhoneReturnedDate": "Restituito",
     "courtesyPhoneAssignedDate": "Data assegnazione",
     "courtesyPhoneReseller": "Rivenditore",
-    "courtesyPhoneRepairCenter": "Centro Riparazione"
+    "courtesyPhoneRepairCenter": "Centro Riparazione",
+    "issueDescription": "Descrizione problema",
+    "problemDescription": "Descrivi il problema riscontrato dal cliente...",
+    "notesPlaceholder": "Note interne opzionali..."
   },
   "staff": {
     "permissions": "Permessi",

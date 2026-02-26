@@ -1888,6 +1888,40 @@ export function RepairIntakeWizard({
                   )}
                 />
 
+                {/* Issue Description */}
+                <FormField
+                  control={form.control}
+                  name="issueDescription"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("repair.issueDescription")}</FormLabel>
+                      <Textarea
+                        {...field}
+                        placeholder={t("repair.problemDescription")}
+                        rows={3}
+                        data-testid="textarea-issue-description"
+                      />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Internal Notes */}
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("common.notes")} <span className="text-muted-foreground font-normal text-xs">({t("common.optional")})</span></FormLabel>
+                      <Textarea
+                        {...field}
+                        placeholder={t("repair.notesPlaceholder")}
+                        rows={2}
+                        data-testid="textarea-repair-notes"
+                      />
+                    </FormItem>
+                  )}
+                />
+
                 </div>
             )}
 

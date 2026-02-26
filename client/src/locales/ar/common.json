@@ -6471,7 +6471,10 @@
     "courtesyPhoneReturnedDate": "تم الإرجاع",
     "courtesyPhoneAssignedDate": "تاريخ التعيين",
     "courtesyPhoneReseller": "الموزع",
-    "courtesyPhoneRepairCenter": "مركز الإصلاح"
+    "courtesyPhoneRepairCenter": "مركز الإصلاح",
+    "issueDescription": "وصف المشكلة",
+    "problemDescription": "صف المشكلة التي أبلغ عنها العميل...",
+    "notesPlaceholder": "ملاحظات داخلية اختيارية..."
   },
   "integrations": {
     "bearerToken": "Bearer Token",
