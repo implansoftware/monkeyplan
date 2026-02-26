@@ -105,7 +105,7 @@ export async function serveStatic(app: Express, _server: Server) {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   const smtpHost = process.env.SMTP_HOST || "mail.monkeyplan.it";
-  const smtpPort = process.env.SMTP_PORT || "465";
+  const smtpPort = process.env.SMTP_PORT || "587";
   if (!smtpUser || !smtpPass) {
     console.error(`[Email] STARTUP CHECK FAILED: SMTP credentials missing. SMTP_USER=${smtpUser ? "SET" : "MISSING"}, SMTP_PASS=${smtpPass ? "SET" : "MISSING"}`);
   } else {
