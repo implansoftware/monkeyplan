@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil } from "lucide-react";
+import { Users, Plus, Search, Edit, Trash2, Shield, UserCog, Eye, FilePlus, Pencil, KeyRound } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
@@ -90,6 +90,8 @@ export default function AdminTeam() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const [selectedMember, setSelectedMember] = useState<AdminStaffMember | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [localPermissions, setLocalPermissions] = useState<Record<string, Record<string, boolean>>>({});
@@ -178,6 +180,21 @@ export default function AdminTeam() {
         description: error.message || t("common.operationFailed"),
         variant: "destructive",
       });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      return apiRequest("POST", `/api/admin/team/${id}/reset-password`, { newPassword });
+    },
+    onSuccess: () => {
+      setResetPasswordDialogOpen(false);
+      setNewPassword("");
+      setSelectedMember(null);
+      toast({ title: t("team.resetPassword", "Password reimpostata"), description: t("admin.teams.passwordResetSuccess", "La password è stata aggiornata con successo.") });
+    },
+    onError: (error: any) => {
+      toast({ title: t("common.error"), description: error.message || t("common.operationFailed"), variant: "destructive" });
     },
   });
 
@@ -412,6 +429,19 @@ export default function AdminTeam() {
                           data-testid={`button-permissions-${member.id}`}
                         >
                           <Shield className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedMember(member);
+                            setNewPassword("");
+                            setResetPasswordDialogOpen(true);
+                          }}
+                          title={t("team.resetPassword", "Reimposta password")}
+                          data-testid={`button-reset-password-${member.id}`}
+                        >
+                          <KeyRound className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -687,6 +717,41 @@ export default function AdminTeam() {
               data-testid="button-confirm-delete"
             >
               Elimina
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={(open) => { setResetPasswordDialogOpen(open); if (!open) setNewPassword(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("team.resetPassword", "Reimposta password")}</DialogTitle>
+            <DialogDescription>
+              {t("admin.teams.resetPasswordDesc", "Inserisci la nuova password per")} <strong>{selectedMember?.fullName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="new-password">{t("team.newPassword", "Nuova password")}</Label>
+            <Input
+              id="new-password"
+              type="password"
+              placeholder="••••••"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              data-testid="input-new-password"
+            />
+            <p className="text-xs text-muted-foreground">{t("admin.teams.passwordMinLength", "Minimo 6 caratteri.")}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
+              {t("common.cancel", "Annulla")}
+            </Button>
+            <Button
+              onClick={() => selectedMember && resetPasswordMutation.mutate({ id: selectedMember.id, newPassword })}
+              disabled={resetPasswordMutation.isPending || newPassword.length < 6}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending ? t("profile.saving", "Salvataggio...") : t("team.resetPassword", "Reimposta")}
             </Button>
           </DialogFooter>
         </DialogContent>

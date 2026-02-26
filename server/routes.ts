@@ -2864,6 +2864,34 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Reset password for an admin staff member
+  app.post("/api/admin/team/:id/reset-password", requireRole("admin"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+
+      const staffId = req.params.id;
+      const { newPassword } = req.body;
+
+      if (!newPassword || newPassword.length < 6) {
+        return res.status(400).send("La password deve contenere almeno 6 caratteri");
+      }
+
+      const staffMember = await storage.getUser(staffId);
+      if (!staffMember || staffMember.role !== 'admin_staff') {
+        return res.status(404).send("Membro staff non trovato");
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUser(staffId, { password: hashedPassword });
+
+      setActivityEntity(res, { type: 'users', id: staffId });
+      res.json({ message: "Password aggiornata con successo" });
+    } catch (error: any) {
+      console.error("Error resetting admin staff password:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Get permissions for a specific admin staff member
   app.get("/api/admin/team/:id/permissions", requireRole("admin"), async (req, res) => {
     try {
