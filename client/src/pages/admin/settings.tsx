@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Settings, Save, Clock, Euro, Timer, CreditCard, Landmark, Loader2, Download, Search, FileText, Package, Wrench, CheckCircle, Truck, Bot } from "lucide-react";
+import { Settings, Save, Clock, Euro, Timer, CreditCard, Landmark, Loader2, Download, Search, FileText, Package, Wrench, CheckCircle, Truck, Bot, Mail, Wifi, Send, XCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -619,6 +619,10 @@ export default function AdminSettings() {
             <Bot className="h-4 w-4" />
             AI
           </TabsTrigger>
+          <TabsTrigger value="email" className="gap-2" data-testid="tab-email">
+            <Mail className="h-4 w-4" />
+            Email
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="tariffe" className="space-y-6">
@@ -1214,7 +1218,121 @@ export default function AdminSettings() {
           <OpenAiKeySettings />
           <AiAccessManagement />
         </TabsContent>
+        <TabsContent value="email" className="space-y-6">
+          <SmtpTestPanel />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function SmtpTestPanel() {
+  const { toast } = useToast();
+  const [testEmail, setTestEmail] = useState("");
+  const [connStatus, setConnStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [connMessage, setConnMessage] = useState("");
+
+  const testConn = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/admin/smtp/test"),
+    onSuccess: async (res) => {
+      const data = await res.json();
+      if (data.success) {
+        setConnStatus("ok");
+        setConnMessage(data.message || "Connessione verificata");
+        toast({ title: "SMTP OK", description: "Connessione al server mail funzionante" });
+      } else {
+        setConnStatus("error");
+        setConnMessage(data.message || "Connessione fallita");
+        toast({ title: "SMTP errore", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: (err: any) => {
+      setConnStatus("error");
+      setConnMessage(err.message || "Errore di connessione");
+      toast({ title: "SMTP errore", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const sendTest = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/admin/smtp/send-test", { to: testEmail }),
+    onSuccess: async (res) => {
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Email inviata", description: data.message });
+      } else {
+        toast({ title: "Invio fallito", description: data.message, variant: "destructive" });
+      }
+    },
+    onError: (err: any) => {
+      toast({ title: "Invio fallito", description: err.message, variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <Wifi className="h-5 w-5" />
+            Test Connessione SMTP
+          </CardTitle>
+          <CardDescription>
+            Verifica che il server riesca a connettersi al server email configurato.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {connStatus !== "idle" && (
+            <div className={`flex items-center gap-2 rounded-md border p-3 text-sm ${connStatus === "ok" ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200" : "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"}`}>
+              {connStatus === "ok" ? <CheckCircle className="h-4 w-4 shrink-0" /> : <XCircle className="h-4 w-4 shrink-0" />}
+              <span>{connMessage}</span>
+            </div>
+          )}
+          <Button
+            onClick={() => { setConnStatus("idle"); testConn.mutate(); }}
+            disabled={testConn.isPending}
+            data-testid="button-test-smtp-connection"
+          >
+            {testConn.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wifi className="mr-2 h-4 w-4" />}
+            {testConn.isPending ? "Verifica in corso…" : "Testa Connessione"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Usa le variabili <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASS</code> configurate nel server.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center gap-2">
+            <Send className="h-5 w-5" />
+            Invia Email di Test
+          </CardTitle>
+          <CardDescription>
+            Invia un'email di prova a un indirizzo specifico per verificare l'intera catena di invio.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="test-email-input">Destinatario</Label>
+            <Input
+              id="test-email-input"
+              type="email"
+              placeholder="esempio@email.com"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+              data-testid="input-test-email"
+            />
+          </div>
+          <Button
+            onClick={() => sendTest.mutate()}
+            disabled={sendTest.isPending || !testEmail}
+            data-testid="button-send-test-email"
+          >
+            {sendTest.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            {sendTest.isPending ? "Invio in corso…" : "Invia Email di Test"}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
