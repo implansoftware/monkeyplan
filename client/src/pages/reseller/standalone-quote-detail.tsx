@@ -66,8 +66,10 @@ export default function StandaloneQuoteDetail() {
 
   const [matchReseller, paramsReseller] = useRoute("/reseller/standalone-quotes/:id");
   const [matchRC, paramsRC] = useRoute("/repair-center/standalone-quotes/:id");
-  const quoteId = paramsReseller?.id || paramsRC?.id;
-  const basePath = user?.role === "repair_center" ? "/repair-center" : "/reseller";
+  const [matchAdmin, paramsAdmin] = useRoute("/admin/standalone-quotes/:id");
+  const quoteId = paramsReseller?.id || paramsRC?.id || paramsAdmin?.id;
+  const isAdmin = user?.role === "admin" || user?.role === "admin_staff";
+  const basePath = user?.role === "repair_center" ? "/repair-center" : isAdmin ? "/admin" : "/reseller";
 
   const { data: quote, isLoading } = useQuery<QuoteWithItems>({
     queryKey: ["/api/standalone-quotes", quoteId],
