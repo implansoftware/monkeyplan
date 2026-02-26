@@ -1,23 +1,4 @@
-import nodemailer from "nodemailer";
-
-const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-const smtpSecure = smtpPort === 465;
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "mail.monkeyplan.it",
-  port: smtpPort,
-  secure: smtpSecure,
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
+import { Resend } from "resend";
 
 interface EmailOptions {
   to: string;
@@ -35,28 +16,40 @@ interface EmailOptions {
 }
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.error("[Email] RESEND_API_KEY not configured");
+    return false;
+  }
+
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error("[Email] SMTP credentials not configured");
-      return false;
-    }
-
+    const resend = new Resend(apiKey);
     const fromName = process.env.SMTP_FROM_NAME || "MonkeyPlan";
-    const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
+    const fromEmail = process.env.SMTP_FROM || "noreply@monkeyplan.it";
 
-    const info = await transporter.sendMail({
-      from: `"${fromName}" <${fromEmail}>`,
-      to: options.to,
+    const attachments = options.attachments?.map((a) => ({
+      filename: a.filename,
+      content: a.content instanceof Buffer ? a.content : Buffer.from(a.content),
+    }));
+
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: [options.to],
       subject: options.subject,
       html: options.html,
       text: options.text,
-      cc: options.cc,
-      bcc: options.bcc,
-      replyTo: options.replyTo,
-      attachments: options.attachments,
+      cc: options.cc ? [options.cc] : undefined,
+      bcc: options.bcc ? [options.bcc] : undefined,
+      reply_to: options.replyTo,
+      attachments,
     });
 
-    console.log(`[Email] Sent to ${options.to} - MessageId: ${info.messageId}`);
+    if (error) {
+      console.error("[Email] Failed to send:", error);
+      return false;
+    }
+
+    console.log(`[Email] Sent to ${options.to} - MessageId: ${data?.id}`);
     return true;
   } catch (error) {
     console.error("[Email] Failed to send:", error);
@@ -65,16 +58,22 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 export async function verifySmtpConnection(): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log("[Email] RESEND_API_KEY not configured - skipping verification");
+    return false;
+  }
   try {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log("[Email] SMTP not configured - skipping verification");
+    const resend = new Resend(apiKey);
+    const { error } = await resend.domains.list();
+    if (error) {
+      console.error("[Email] Resend connection failed:", error);
       return false;
     }
-    await transporter.verify();
-    console.log("[Email] SMTP connection verified successfully");
+    console.log("[Email] Resend connection verified successfully");
     return true;
   } catch (error) {
-    console.error("[Email] SMTP connection failed:", error);
+    console.error("[Email] Resend connection failed:", error);
     return false;
   }
 }
