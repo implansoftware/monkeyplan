@@ -1,0 +1,30 @@
+INSERT INTO prize_type_templates (key, label_it, label_en, prize_category, icon, default_value, value_unit, sort_order, is_active)
+VALUES
+  -- ESENTE
+  ('voucher_discount',     'Voucher / Sconto',              'Voucher / Discount',            'exempt',    'Ticket',      NULL, '€',  10, true),
+  ('gift_card_low',        'Gift Card (valore basso)',       'Gift Card (low value)',          'exempt',    'CreditCard',  NULL, '€',  20, true),
+  ('gadget',               'Gadget / Merchandising',         'Gadget / Merchandise',           'exempt',    'Package',     NULL, '€',  30, true),
+  ('digital_content',      'Contenuto Digitale',             'Digital Content',               'exempt',    'FileText',    NULL, NULL, 40, true),
+  ('subscription',         'Abbonamento / Accesso Premium',  'Subscription / Premium Access', 'exempt',    'Star',        NULL, NULL, 50, true),
+  ('digital_service',      'Servizio Digitale',              'Digital Service',               'exempt',    'Laptop',      NULL, NULL, 60, true),
+  ('product_sample',       'Campione Prodotto',              'Product Sample',                'exempt',    'Gift',        NULL, '€',  70, true),
+  ('experience_low',       'Esperienza (valore basso)',      'Experience (low value)',         'exempt',    'MapPin',      NULL, '€',  80, true),
+  -- REGOLAMENTATO
+  ('cash_prize',           'Premio in Denaro',               'Cash Prize',                    'regulated', 'Banknote',    NULL, '€',  10, true),
+  ('product_high',         'Prodotto Alto Valore',           'High-Value Product',            'regulated', 'ShoppingBag', NULL, '€',  20, true),
+  ('electronics',          'Elettronica',                    'Electronics',                   'regulated', 'Smartphone',  NULL, '€',  30, true),
+  ('travel',               'Viaggio / Soggiorno',            'Travel / Stay',                 'regulated', 'Plane',       NULL, '€',  40, true),
+  ('vehicle',              'Veicolo',                        'Vehicle',                       'regulated', 'Car',         NULL, '€',  50, true),
+  ('jewelry',              'Gioiello / Orologio',            'Jewelry / Watch',               'regulated', 'Gem',         NULL, '€',  60, true),
+  ('gift_card_high',       'Gift Card (alto valore)',        'Gift Card (high value)',         'regulated', 'CreditCard',  NULL, '€',  70, true),
+  ('voucher_high',         'Voucher Alto Valore',            'High-Value Voucher',            'regulated', 'Ticket',      NULL, '€',  80, true),
+  ('real_estate',          'Bene Immobile',                  'Real Estate',                   'regulated', 'Building',    NULL, '€',  90, true),
+  ('professional_service', 'Servizio Professionale',         'Professional Service',          'regulated', 'Briefcase',   NULL, '€', 100, true)
+ON CONFLICT (key) DO UPDATE SET
+  label_it       = EXCLUDED.label_it,
+  label_en       = EXCLUDED.label_en,
+  prize_category = EXCLUDED.prize_category,
+  icon           = EXCLUDED.icon,
+  value_unit     = EXCLUDED.value_unit,
+  sort_order     = EXCLUDED.sort_order,
+  is_active      = EXCLUDED.is_active;

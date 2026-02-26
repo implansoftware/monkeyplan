@@ -37,6 +37,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Stethoscope, 
   Camera, 
+  Search,
   AlertCircle,
   CircuitBoard,
   Monitor,
@@ -258,7 +259,9 @@ export function DiagnosisFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
-  
+  const [findingSearch, setFindingSearch] = useState("");
+  const [componentSearch, setComponentSearch] = useState("");
+
   const isEditMode = !!existingDiagnosis;
 
   // Use standalone deviceTypeId if provided, otherwise use from repairOrder
@@ -329,7 +332,10 @@ export function DiagnosisFormDialog({
 
   // Memoize findingsByCategory to prevent re-calculation on every render
   const findingsByCategory = useMemo(() => {
-    return diagnosticFindings.reduce((acc, finding) => {
+    const filtered = findingSearch.trim()
+      ? diagnosticFindings.filter(f => f.name.toLowerCase().includes(findingSearch.toLowerCase()))
+      : diagnosticFindings;
+    return filtered.reduce((acc, finding) => {
       const category = finding.category || "altro";
       if (!acc[category]) {
         acc[category] = [];
@@ -337,7 +343,12 @@ export function DiagnosisFormDialog({
       acc[category].push(finding);
       return acc;
     }, {} as Record<string, DiagnosticFinding[]>);
-  }, [diagnosticFindings]);
+  }, [diagnosticFindings, findingSearch]);
+
+  const filteredComponents = useMemo(() => {
+    if (!componentSearch.trim()) return damagedComponentTypes;
+    return damagedComponentTypes.filter(c => c.name.toLowerCase().includes(componentSearch.toLowerCase()));
+  }, [damagedComponentTypes, componentSearch]);
 
   const categoryLabels: Record<string, string> = {
     hardware: t("diagnosis.hardware"),
@@ -646,6 +657,16 @@ export function DiagnosisFormDialog({
                         <FormDescription>
                           {t("diagnosis.selectAllIssues")}
                         </FormDescription>
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            placeholder={t("common.search") + "..."}
+                            value={findingSearch}
+                            onChange={(e) => setFindingSearch(e.target.value)}
+                            className="pl-8 h-8 text-sm mb-1"
+                            data-testid="input-finding-search"
+                          />
+                        </div>
                         <ScrollArea className="h-[200px] border rounded-md p-3">
                           <div className="space-y-4">
                             {Object.entries(findingsByCategory).map(([category, findings]) => (
@@ -740,9 +761,19 @@ export function DiagnosisFormDialog({
                         <FormDescription>
                           {t("diagnosis.selectComponentsForRepair")}
                         </FormDescription>
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <Input
+                            placeholder={t("common.search") + "..."}
+                            value={componentSearch}
+                            onChange={(e) => setComponentSearch(e.target.value)}
+                            className="pl-8 h-8 text-sm mb-1"
+                            data-testid="input-component-search"
+                          />
+                        </div>
                         <ScrollArea className="h-[220px] border rounded-md p-3">
                           <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-2">
-                            {damagedComponentTypes.map((component) => {
+                            {filteredComponents.map((component) => {
                               const isSelected = selectedIds.includes(component.id);
                               const ComponentIcon = getComponentIcon(component.name);
                               return (
