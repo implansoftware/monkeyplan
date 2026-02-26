@@ -636,7 +636,7 @@ export default function AdminDashboard() {
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
                   <Pie
-                    data={ticketsChartData}
+                    data={ticketsChartData.filter(d => d.value > 0)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -644,7 +644,7 @@ export default function AdminDashboard() {
                     outerRadius={80}
                     dataKey="value"
                   >
-                    {ticketsChartData.map((entry, index) => (
+                    {ticketsChartData.filter(d => d.value > 0).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
