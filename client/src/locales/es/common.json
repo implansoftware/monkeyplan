@@ -9227,13 +9227,7 @@
     "externalParts": "Externo repuestos",
     "noDiagnosisFound": "No diagnóstico found",
     "noDiagnosisWithFilters": "No diagnóstico con seleccionado filters",
-    "searchPlaceholder": "Buscar diagnoses...",
-    "customProblems": "Problemas personalizados",
-    "customProblemsHint": "Añada problemas libres no presentes en el catálogo (pulse Intro o +)",
-    "typeCustomProblem": "Describa el problema...",
-    "customComponents": "Componentes personalizados",
-    "customComponentsHint": "Añada componentes no presentes en el catálogo (pulse Intro o +)",
-    "typeCustomComponent": "Describa el componente..."
+    "searchPlaceholder": "Buscar diagnoses..."
   },
   "kanban": {
     "inProgress": "En progreso"

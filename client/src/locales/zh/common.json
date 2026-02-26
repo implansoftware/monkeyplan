@@ -8534,13 +8534,7 @@
     "externalParts": "外部部件",
     "noDiagnosisFound": "未找到诊断",
     "noDiagnosisWithFilters": "没有所选过滤器的诊断",
-    "searchPlaceholder": "搜索诊断...",
-    "customProblems": "自定义问题",
-    "customProblemsHint": "添加目录中没有的自定义问题（按回车或+）",
-    "typeCustomProblem": "描述问题...",
-    "customComponents": "自定义组件",
-    "customComponentsHint": "添加目录中没有的自定义组件（按回车或+）",
-    "typeCustomComponent": "描述组件..."
+    "searchPlaceholder": "搜索诊断..."
   },
   "catalog": {
     "addedToCart": "已添加到购物车",
