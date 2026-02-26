@@ -8263,7 +8263,13 @@
     "externalParts": "Externe Teile",
     "noDiagnosisFound": "Keine Diagnose gefunden",
     "noDiagnosisWithFilters": "Keine Diagnose mit ausgewählten Filtern",
-    "searchPlaceholder": "Diagnosen suchen..."
+    "searchPlaceholder": "Diagnosen suchen...",
+    "customProblems": "Benutzerdefinierte Probleme",
+    "customProblemsHint": "Fügen Sie freie Probleme hinzu, die nicht im Katalog vorhanden sind (Enter oder + drücken)",
+    "typeCustomProblem": "Problem beschreiben...",
+    "customComponents": "Benutzerdefinierte Komponenten",
+    "customComponentsHint": "Fügen Sie Komponenten hinzu, die nicht im Katalog vorhanden sind (Enter oder + drücken)",
+    "typeCustomComponent": "Komponente beschreiben..."
   },
   "catalog": {
     "addedToCart": "Zum Warenkorb hinzugefügt",

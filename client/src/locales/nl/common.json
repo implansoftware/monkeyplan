@@ -8077,7 +8077,13 @@
     "hardware": "Hardware",
     "software": "Software",
     "nameRequired": "Naam vereist",
-    "findingCreated": "Diagnostische bevinding aangemaakt"
+    "findingCreated": "Diagnostische bevinding aangemaakt",
+    "customProblems": "Aangepaste problemen",
+    "customProblemsHint": "Voeg vrije problemen toe die niet in de catalogus staan (druk op Enter of +)",
+    "typeCustomProblem": "Beschrijf het probleem...",
+    "customComponents": "Aangepaste componenten",
+    "customComponentsHint": "Voeg componenten toe die niet in de catalogus staan (druk op Enter of +)",
+    "typeCustomComponent": "Beschrijf het onderdeel..."
   },
   "pos": {
     "title": "Verkooppunt",

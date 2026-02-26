@@ -9278,7 +9278,13 @@
     "externalParts": "Ricambi esterni",
     "noDiagnosisFound": "Nessuna diagnosi trovata",
     "noDiagnosisWithFilters": "Nessuna diagnosi con i filtri selezionati",
-    "searchPlaceholder": "Cerca diagnosi..."
+    "searchPlaceholder": "Cerca diagnosi...",
+    "customProblems": "Problemi personalizzati",
+    "customProblemsHint": "Aggiungi problemi liberi non presenti nel catalogo (premi Invio o +)",
+    "typeCustomProblem": "Descrivi il problema...",
+    "customComponents": "Componenti personalizzati",
+    "customComponentsHint": "Aggiungi componenti non presenti nel catalogo (premi Invio o +)",
+    "typeCustomComponent": "Descrivi il componente..."
   },
   "kanban": {
     "inProgress": "In lavorazione"

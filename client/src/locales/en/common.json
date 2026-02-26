@@ -9270,7 +9270,13 @@
     "externalParts": "External parts",
     "noDiagnosisFound": "No diagnosis found",
     "noDiagnosisWithFilters": "No diagnosis with selected filters",
-    "searchPlaceholder": "Search diagnoses..."
+    "searchPlaceholder": "Search diagnoses...",
+    "customProblems": "Custom problems",
+    "customProblemsHint": "Add free-text problems not in the catalog (press Enter or +)",
+    "typeCustomProblem": "Describe the problem...",
+    "customComponents": "Custom components",
+    "customComponentsHint": "Add free-text components not in the catalog (press Enter or +)",
+    "typeCustomComponent": "Describe the component..."
   },
   "kanban": {
     "inProgress": "In progress"

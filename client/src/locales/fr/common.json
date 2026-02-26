@@ -9227,7 +9227,13 @@
     "externalParts": "Externe parts",
     "noDiagnosisFound": "Aucun diagnostic trouvé",
     "noDiagnosisWithFilters": "Aucun diagnostic avec sélectionné filtres",
-    "searchPlaceholder": "Rechercher diagnoses..."
+    "searchPlaceholder": "Rechercher diagnoses...",
+    "customProblems": "Problèmes personnalisés",
+    "customProblemsHint": "Ajoutez des problèmes libres absents du catalogue (appuyez sur Entrée ou +)",
+    "typeCustomProblem": "Décrivez le problème...",
+    "customComponents": "Composants personnalisés",
+    "customComponentsHint": "Ajoutez des composants absents du catalogue (appuyez sur Entrée ou +)",
+    "typeCustomComponent": "Décrivez le composant..."
   },
   "kanban": {
     "inProgress": "En cours"

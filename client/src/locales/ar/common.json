@@ -7595,7 +7595,13 @@
     "externalParts": "External parts",
     "noDiagnosisFound": "No diagnosis found",
     "noDiagnosisWithFilters": "No diagnosis with selected filters",
-    "searchPlaceholder": "Search diagnoses..."
+    "searchPlaceholder": "Search diagnoses...",
+    "customProblems": "مشاكل مخصصة",
+    "customProblemsHint": "أضف مشاكل حرة غير موجودة في الكتالوج (اضغط Enter أو +)",
+    "typeCustomProblem": "صِف المشكلة...",
+    "customComponents": "مكونات مخصصة",
+    "customComponentsHint": "أضف مكونات غير موجودة في الكتالوج (اضغط Enter أو +)",
+    "typeCustomComponent": "صِف المكوّن..."
   },
   "catalog": {
     "addedToCart": "تمت الإضافة إلى السلة",

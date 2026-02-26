@@ -38,6 +38,8 @@ import {
   Stethoscope, 
   Camera, 
   AlertCircle,
+  Plus,
+  X,
   CircuitBoard,
   Monitor,
   Smartphone,
@@ -133,8 +135,10 @@ function getDiagnosisSchema(t: (key: string) => string) {
   return z.object({
     selectedFindingIds: z.array(z.string()).min(1, t("diagnosis.selectAtLeastOneResult")),
     otherFindingDescription: z.string().optional(),
+    customFindingTags: z.array(z.string()).default([]),
     selectedComponentIds: z.array(z.string()).default([]),
     otherComponentDescription: z.string().optional(),
+    customComponentTags: z.array(z.string()).default([]),
     estimatedRepairTimeId: z.string().min(1, t("diagnosis.selectEstimatedTime")),
     requiresExternalParts: z.boolean().default(false),
     skipPhotos: z.boolean().default(false),
@@ -258,7 +262,9 @@ export function DiagnosisFormDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
-  
+  const [findingTagInput, setFindingTagInput] = useState("");
+  const [componentTagInput, setComponentTagInput] = useState("");
+
   const isEditMode = !!existingDiagnosis;
 
   // Use standalone deviceTypeId if provided, otherwise use from repairOrder
@@ -351,8 +357,10 @@ export function DiagnosisFormDialog({
     defaultValues: {
       selectedFindingIds: existingDiagnosis?.findingIds || [],
       otherFindingDescription: "",
+      customFindingTags: [],
       selectedComponentIds: existingDiagnosis?.componentIds || [],
       otherComponentDescription: "",
+      customComponentTags: [],
       estimatedRepairTimeId: existingDiagnosis?.estimatedRepairTimeId || "",
       requiresExternalParts: existingDiagnosis?.requiresExternalParts || false,
       skipPhotos: existingDiagnosis?.skipPhotos || false,
@@ -397,8 +405,10 @@ export function DiagnosisFormDialog({
       form.reset({
         selectedFindingIds: existingDiagnosis.findingIds || [],
         otherFindingDescription: "",
+        customFindingTags: [],
         selectedComponentIds: existingDiagnosis.componentIds || [],
         otherComponentDescription: "",
+        customComponentTags: [],
         estimatedRepairTimeId: existingDiagnosis.estimatedRepairTimeId || "",
         requiresExternalParts: existingDiagnosis.requiresExternalParts || false,
         skipPhotos: existingDiagnosis.skipPhotos || false,
@@ -416,8 +426,10 @@ export function DiagnosisFormDialog({
       form.reset({
         selectedFindingIds: [],
         otherFindingDescription: "",
+        customFindingTags: [],
         selectedComponentIds: [],
         otherComponentDescription: "",
+        customComponentTags: [],
         estimatedRepairTimeId: "",
         requiresExternalParts: false,
         skipPhotos: false,
@@ -456,6 +468,10 @@ export function DiagnosisFormDialog({
     if (hasOtherFinding && data.otherFindingDescription?.trim()) {
       technicalDiagnosis += technicalDiagnosis ? `, ${data.otherFindingDescription.trim()}` : data.otherFindingDescription.trim();
     }
+    if (data.customFindingTags && data.customFindingTags.length > 0) {
+      const customText = data.customFindingTags.join(", ");
+      technicalDiagnosis += technicalDiagnosis ? `, ${customText}` : customText;
+    }
 
     const selectedComponentNames = data.selectedComponentIds
       .map(id => componentsMap.get(id)?.name)
@@ -464,6 +480,9 @@ export function DiagnosisFormDialog({
     const hasOtherComponent = data.selectedComponentIds.some(id => id.includes("-other"));
     if (hasOtherComponent && data.otherComponentDescription?.trim()) {
       selectedComponentNames.push(data.otherComponentDescription.trim());
+    }
+    if (data.customComponentTags && data.customComponentTags.length > 0) {
+      selectedComponentNames.push(...data.customComponentTags);
     }
 
     const selectedTime = timesMap.get(data.estimatedRepairTimeId);
@@ -725,6 +744,64 @@ export function DiagnosisFormDialog({
 
                 <FormField
                   control={form.control}
+                  name="customFindingTags"
+                  render={({ field }) => {
+                    const tags: string[] = field.value || [];
+                    const addTag = () => {
+                      const val = findingTagInput.trim();
+                      if (val && !tags.includes(val)) {
+                        field.onChange([...tags, val]);
+                      }
+                      setFindingTagInput("");
+                    };
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">
+                          {t("diagnosis.customProblems")}
+                        </FormLabel>
+                        <FormDescription className="text-xs">
+                          {t("diagnosis.customProblemsHint")}
+                        </FormDescription>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              value={findingTagInput}
+                              onChange={(e) => setFindingTagInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") { e.preventDefault(); addTag(); }
+                              }}
+                              placeholder={t("diagnosis.typeCustomProblem")}
+                              data-testid="input-custom-finding"
+                            />
+                          </FormControl>
+                          <Button type="button" variant="outline" size="icon" onClick={addTag} data-testid="button-add-custom-finding">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {tags.map((tag, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs bg-muted">
+                                {tag}
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange(tags.filter((_, i) => i !== idx))}
+                                  className="text-muted-foreground hover:text-foreground"
+                                  data-testid={`button-remove-finding-tag-${idx}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
                   name="selectedComponentIds"
                   render={({ field }) => {
                     const selectedIds = field.value || [];
@@ -803,6 +880,64 @@ export function DiagnosisFormDialog({
                           />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customComponentTags"
+                  render={({ field }) => {
+                    const tags: string[] = field.value || [];
+                    const addTag = () => {
+                      const val = componentTagInput.trim();
+                      if (val && !tags.includes(val)) {
+                        field.onChange([...tags, val]);
+                      }
+                      setComponentTagInput("");
+                    };
+                    return (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">
+                          {t("diagnosis.customComponents")}
+                        </FormLabel>
+                        <FormDescription className="text-xs">
+                          {t("diagnosis.customComponentsHint")}
+                        </FormDescription>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              value={componentTagInput}
+                              onChange={(e) => setComponentTagInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") { e.preventDefault(); addTag(); }
+                              }}
+                              placeholder={t("diagnosis.typeCustomComponent")}
+                              data-testid="input-custom-component"
+                            />
+                          </FormControl>
+                          <Button type="button" variant="outline" size="icon" onClick={addTag} data-testid="button-add-custom-component">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {tags.map((tag, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs bg-muted">
+                                {tag}
+                                <button
+                                  type="button"
+                                  onClick={() => field.onChange(tags.filter((_, i) => i !== idx))}
+                                  className="text-muted-foreground hover:text-foreground"
+                                  data-testid={`button-remove-component-tag-${idx}`}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </FormItem>
                     );
                   }}
