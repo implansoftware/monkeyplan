@@ -1,50 +1,42 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  HeadObjectCommand,
-  DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { AwsClient } from "aws4fetch";
 import { Response } from "express";
 import { randomUUID } from "crypto";
 import { Readable, PassThrough } from "stream";
 
 function getR2BucketName(): string {
   const bucket = process.env.R2_BUCKET_NAME;
-  if (!bucket) {
-    throw new Error("R2_BUCKET_NAME not set. Add R2_BUCKET_NAME to your environment secrets.");
-  }
+  if (!bucket) throw new Error("R2_BUCKET_NAME not set");
   return bucket;
 }
 
-function buildR2Client(): S3Client {
+function getR2BaseUrl(): string {
   const accountId = process.env.R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
-  if (!accountId) {
-    throw new Error("R2_ACCOUNT_ID not set. Add R2_ACCOUNT_ID to your environment secrets.");
-  }
-  return new S3Client({
-    region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId, secretAccessKey },
-  });
+  if (!accountId) throw new Error("R2_ACCOUNT_ID not set");
+  return `https://${accountId}.r2.cloudflarestorage.com/${getR2BucketName()}`;
 }
 
-let _client: S3Client | null = null;
-function r2(): S3Client {
-  if (!_client) _client = buildR2Client();
-  return _client;
+let _aws: AwsClient | null = null;
+function r2(): AwsClient {
+  if (!_aws) {
+    _aws = new AwsClient({
+      accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+      service: "s3",
+      region: "auto",
+    });
+  }
+  return _aws;
 }
 
 export class R2File {
-  private bucket: string;
   private key: string;
 
   constructor(_ignoredBucket: string, key: string) {
-    this.bucket = getR2BucketName();
     this.key = key;
+  }
+
+  private url(): string {
+    return `${getR2BaseUrl()}/${this.key}`;
   }
 
   async save(
@@ -58,67 +50,72 @@ export class R2File {
       options?.contentType ||
       options?.metadata?.contentType ||
       "application/octet-stream";
-    await r2().send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: this.key,
-        Body: buffer,
-        ContentType: contentType,
-      })
-    );
+
+    const res = await r2().fetch(this.url(), {
+      method: "PUT",
+      body: buffer,
+      headers: { "Content-Type": contentType },
+    });
+    if (!res.ok) {
+      throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`);
+    }
   }
 
   async exists(): Promise<[boolean]> {
-    try {
-      await r2().send(new HeadObjectCommand({ Bucket: this.bucket, Key: this.key }));
-      return [true];
-    } catch (err: any) {
-      if (
-        err.name === "NotFound" ||
-        err.$metadata?.httpStatusCode === 404 ||
-        err.name === "NoSuchKey"
-      ) {
-        return [false];
-      }
-      throw err;
-    }
+    const res = await r2().fetch(this.url(), { method: "HEAD" });
+    if (res.status === 404 || res.status === 403) return [false];
+    if (res.ok) return [true];
+    // consume body to avoid leak
+    await res.text().catch(() => {});
+    return [false];
   }
 
   async download(): Promise<[Buffer]> {
-    const response = await r2().send(
-      new GetObjectCommand({ Bucket: this.bucket, Key: this.key })
-    );
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of response.Body as any) {
-      chunks.push(chunk);
-    }
-    return [Buffer.concat(chunks)];
+    const res = await r2().fetch(this.url());
+    if (!res.ok) throw new Error(`R2 download failed: ${res.status}`);
+    const ab = await res.arrayBuffer();
+    return [Buffer.from(ab)];
   }
 
   async delete(): Promise<void> {
-    await r2().send(new DeleteObjectCommand({ Bucket: this.bucket, Key: this.key }));
+    const res = await r2().fetch(this.url(), { method: "DELETE" });
+    if (!res.ok && res.status !== 404) {
+      throw new Error(`R2 delete failed: ${res.status}`);
+    }
   }
 
   async getMetadata(): Promise<[{ contentType?: string; size?: number }]> {
-    const response = await r2().send(
-      new HeadObjectCommand({ Bucket: this.bucket, Key: this.key })
-    );
-    return [{ contentType: response.ContentType, size: response.ContentLength }];
+    const res = await r2().fetch(this.url(), { method: "HEAD" });
+    if (!res.ok) throw new Error(`R2 HEAD failed: ${res.status}`);
+    return [
+      {
+        contentType: res.headers.get("content-type") || undefined,
+        size: Number(res.headers.get("content-length")) || undefined,
+      },
+    ];
   }
 
   createReadStream(): Readable {
     const passThrough = new PassThrough();
     r2()
-      .send(new GetObjectCommand({ Bucket: this.bucket, Key: this.key }))
-      .then((response) => {
-        (response.Body as any).pipe(passThrough);
+      .fetch(this.url())
+      .then((res) => {
+        if (!res.ok || !res.body) {
+          passThrough.destroy(new Error(`R2 stream failed: ${res.status}`));
+          return;
+        }
+        Readable.fromWeb(res.body as any).pipe(passThrough);
       })
       .catch((err) => passThrough.destroy(err));
     return passThrough;
   }
 
-  getBucketName(): string { return this.bucket; }
-  getKey(): string { return this.key; }
+  getBucketName(): string {
+    return getR2BucketName();
+  }
+  getKey(): string {
+    return this.key;
+  }
 }
 
 class R2Bucket {
@@ -199,13 +196,9 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityFile(objectPath: string): Promise<R2File> {
-    if (!objectPath.startsWith("/objects/")) {
-      throw new ObjectNotFoundError();
-    }
+    if (!objectPath.startsWith("/objects/")) throw new ObjectNotFoundError();
     const parts = objectPath.slice(1).split("/");
-    if (parts.length < 2) {
-      throw new ObjectNotFoundError();
-    }
+    if (parts.length < 2) throw new ObjectNotFoundError();
     const entityId = parts.slice(1).join("/");
     let entityDir = this.getPrivateObjectDir();
     if (!entityDir.endsWith("/")) entityDir = `${entityDir}/`;
@@ -242,15 +235,15 @@ export function parseObjectPath(path: string): {
   if (!path.startsWith("/")) path = `/${path}`;
   const pathParts = path.split("/").filter(Boolean);
   if (pathParts.length < 2) {
-    throw new Error("Invalid path: must contain at least a bucket name and object name");
+    throw new Error("Invalid path: must contain at least bucket name and object name");
   }
-  const bucketName = pathParts[0];
-  const objectName = pathParts.slice(1).join("/");
-  return { bucketName, objectName };
+  return {
+    bucketName: pathParts[0],
+    objectName: pathParts.slice(1).join("/"),
+  };
 }
 
 export async function signObjectURL({
-  bucketName: _ignored,
   objectName,
   method,
   ttlSec,
@@ -260,16 +253,11 @@ export async function signObjectURL({
   method: "GET" | "PUT" | "DELETE" | "HEAD";
   ttlSec: number;
 }): Promise<string> {
-  const bucket = getR2BucketName();
-  let command: any;
-  if (method === "PUT") {
-    command = new PutObjectCommand({ Bucket: bucket, Key: objectName });
-  } else if (method === "DELETE") {
-    command = new DeleteObjectCommand({ Bucket: bucket, Key: objectName });
-  } else if (method === "HEAD") {
-    command = new HeadObjectCommand({ Bucket: bucket, Key: objectName });
-  } else {
-    command = new GetObjectCommand({ Bucket: bucket, Key: objectName });
-  }
-  return getSignedUrl(r2(), command, { expiresIn: ttlSec });
+  const url = new URL(`${getR2BaseUrl()}/${objectName}`);
+  url.searchParams.set("X-Amz-Expires", String(ttlSec));
+  const signed = await r2().sign(
+    new Request(url.toString(), { method }),
+    { aws: { signQuery: true } }
+  );
+  return signed.url;
 }

@@ -60,6 +60,7 @@
     "@uppy/dashboard": "^5.0.4",
     "@uppy/react": "^5.1.1",
     "@uppy/xhr-upload": "^5.0.2",
+    "aws4fetch": "^1.0.20",
     "bwip-js": "^4.8.0",
     "canvas": "^3.2.0",
     "class-variance-authority": "^0.7.1",
