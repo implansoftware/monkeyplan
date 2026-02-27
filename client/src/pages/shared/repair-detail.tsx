@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,7 +42,7 @@ import {
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag,
-  Upload, ChevronDown, ChevronUp, Printer, Info, RotateCcw, ExternalLink, Phone
+  Upload, ChevronDown, ChevronUp, Printer, Info, RotateCcw, ExternalLink, Phone, Search
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -380,6 +381,44 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   });
 
   const [courtesyReturnDialogOpen, setCourtesyReturnDialogOpen] = useState(false);
+  const [courtesyAssignDialogOpen, setCourtesyAssignDialogOpen] = useState(false);
+  const [courtesyAssignSearch, setCourtesyAssignSearch] = useState("");
+  const [courtesyAssignPhoneId, setCourtesyAssignPhoneId] = useState<string | null>(null);
+  const [courtesyAssignNotes, setCourtesyAssignNotes] = useState("");
+
+  const { data: availableCourtesyPhones = [], isLoading: availableCourtesyPhonesLoading } = useQuery<any[]>({
+    queryKey: ["/api/courtesy-phones/available"],
+    enabled: courtesyAssignDialogOpen,
+  });
+
+  const filteredCourtesyPhones = availableCourtesyPhones.filter((p: any) =>
+    !courtesyAssignSearch ||
+    (p.name || "").toLowerCase().includes(courtesyAssignSearch.toLowerCase()) ||
+    (p.brand || "").toLowerCase().includes(courtesyAssignSearch.toLowerCase()) ||
+    (p.sku || "").toLowerCase().includes(courtesyAssignSearch.toLowerCase())
+  );
+
+  const courtesyPhoneAssignMutation = useMutation({
+    mutationFn: async ({ productId, notes }: { productId: string; notes: string }) => {
+      const res = await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}/courtesy-phone-assign`, {
+        courtesyPhoneProductId: productId,
+        courtesyPhoneNotes: notes || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Telefono di cortesia assegnato" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courtesy-phones/available"] });
+      setCourtesyAssignDialogOpen(false);
+      setCourtesyAssignPhoneId(null);
+      setCourtesyAssignNotes("");
+      setCourtesyAssignSearch("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore assegnazione telefono di cortesia", description: error.message, variant: "destructive" });
+    },
+  });
 
   const courtesyPhoneReturnMutation = useMutation({
     mutationFn: async () => {
@@ -2061,85 +2100,120 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
             </CardContent>
           </Card>
 
-          {/* Courtesy Phone Card */}
-          {repair.courtesyPhoneProductId && (
+          {/* Courtesy Phone Card — always visible for non-customer roles */}
+          {user?.role !== 'customer' && (
             <Card data-testid="card-courtesy-phone" className="relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent pointer-events-none" />
               <CardHeader className="pb-3 relative">
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-base flex items-center gap-2 flex-wrap">
                   <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
                     <Phone className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <span>{t("repair.courtesyPhoneSection")}</span>
-                  {repair.courtesyPhoneReturnedAt ? (
-                    <Badge variant="outline" className="ml-auto text-green-600 border-green-500/30">{t("repair.courtesyPhoneReturnedBadge", "Restituito")}</Badge>
+                  {repair.courtesyPhoneProductId ? (
+                    repair.courtesyPhoneReturnedAt ? (
+                      <Badge variant="outline" className="ml-auto text-green-600 border-green-500/30">{t("repair.courtesyPhoneReturnedBadge", "Restituito")}</Badge>
+                    ) : (
+                      <Badge variant="outline" className="ml-auto text-cyan-600 border-cyan-500/30">{t("repair.courtesyPhoneActiveBadge", "In prestito")}</Badge>
+                    )
                   ) : (
-                    <Badge variant="outline" className="ml-auto text-cyan-600 border-cyan-500/30">{t("repair.courtesyPhoneActiveBadge", "In prestito")}</Badge>
+                    <Badge variant="outline" className="ml-auto text-muted-foreground">{t("repair.courtesyPhoneNone", "Non assegnato")}</Badge>
                   )}
                 </CardTitle>
               </CardHeader>
               <CardContent className="relative space-y-4">
-                <div className="flex items-center gap-4">
-                  {courtesyPhoneProduct?.imageUrl ? (
-                    <img
-                      src={courtesyPhoneProduct.imageUrl}
-                      alt={courtesyPhoneProduct.name}
-                      className="w-12 h-12 rounded-lg object-cover border"
-                      data-testid="img-courtesy-phone"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-muted/50 flex items-center justify-center border">
+                {repair.courtesyPhoneProductId ? (
+                  <>
+                    <div className="flex items-center gap-4">
+                      {courtesyPhoneProduct?.imageUrl ? (
+                        <img
+                          src={courtesyPhoneProduct.imageUrl}
+                          alt={courtesyPhoneProduct.name}
+                          className="w-12 h-12 rounded-lg object-cover border"
+                          data-testid="img-courtesy-phone"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-muted/50 flex items-center justify-center border">
+                          <Phone className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold truncate" data-testid="text-courtesy-phone-name">
+                          {courtesyPhoneProduct?.name || t("repair.courtesyPhoneLabel")}
+                        </p>
+                        {courtesyPhoneProduct?.brand && (
+                          <p className="text-sm text-muted-foreground">{courtesyPhoneProduct.brand}</p>
+                        )}
+                        {courtesyPhoneProduct?.sku && (
+                          <p className="text-xs text-muted-foreground font-mono">SKU: {courtesyPhoneProduct.sku}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.courtesyPhoneAssignedDate", "Data assegnazione")}</span>
+                        <p className="font-semibold mt-1">
+                          {repair.courtesyPhoneAssignedAt
+                            ? format(new Date(repair.courtesyPhoneAssignedAt), "dd/MM/yyyy HH:mm", { locale: it })
+                            : "-"}
+                        </p>
+                      </div>
+                      {repair.courtesyPhoneReturnedAt && (
+                        <div className="bg-muted/30 rounded-lg p-3">
+                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.courtesyPhoneReturnedDate", "Data restituzione")}</span>
+                          <p className="font-semibold mt-1">
+                            {format(new Date(repair.courtesyPhoneReturnedAt), "dd/MM/yyyy HH:mm", { locale: it })}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {repair.courtesyPhoneNotes && (
+                      <div className="bg-muted/30 rounded-lg p-3">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.courtesyPhoneNotes")}</span>
+                        <p className="text-sm mt-1">{repair.courtesyPhoneNotes}</p>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {!repair.courtesyPhoneReturnedAt && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setCourtesyReturnDialogOpen(true)}
+                          data-testid="button-return-courtesy-phone"
+                        >
+                          <RotateCcw className="h-4 w-4 mr-2" />
+                          {t("repair.returnCourtesyPhone")}
+                        </Button>
+                      )}
+                      {repair.courtesyPhoneReturnedAt && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setCourtesyAssignDialogOpen(true)}
+                          data-testid="button-assign-new-courtesy-phone"
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          {t("repair.assignNewCourtesyPhone", "Assegna nuovo telefono")}
+                        </Button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-4 gap-3 text-center">
+                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
                       <Phone className="h-5 w-5 text-muted-foreground" />
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate" data-testid="text-courtesy-phone-name">
-                      {courtesyPhoneProduct?.name || t("repair.courtesyPhoneLabel")}
-                    </p>
-                    {courtesyPhoneProduct?.brand && (
-                      <p className="text-sm text-muted-foreground">{courtesyPhoneProduct.brand}</p>
-                    )}
-                    {courtesyPhoneProduct?.sku && (
-                      <p className="text-xs text-muted-foreground font-mono">SKU: {courtesyPhoneProduct.sku}</p>
-                    )}
+                    <p className="text-sm text-muted-foreground">{t("repair.courtesyPhoneNotAssigned", "Nessun telefono di cortesia assegnato a questa lavorazione.")}</p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCourtesyAssignDialogOpen(true)}
+                      data-testid="button-assign-courtesy-phone"
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      {t("repair.assignCourtesyPhone", "Assegna telefono di cortesia")}
+                    </Button>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.courtesyPhoneAssignedDate", "Data assegnazione")}</span>
-                    <p className="font-semibold mt-1">
-                      {repair.courtesyPhoneAssignedAt
-                        ? format(new Date(repair.courtesyPhoneAssignedAt), "dd/MM/yyyy HH:mm", { locale: it })
-                        : "-"}
-                    </p>
-                  </div>
-                  {repair.courtesyPhoneReturnedAt && (
-                    <div className="bg-muted/30 rounded-lg p-3">
-                      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.courtesyPhoneReturnedDate", "Data restituzione")}</span>
-                      <p className="font-semibold mt-1">
-                        {format(new Date(repair.courtesyPhoneReturnedAt), "dd/MM/yyyy HH:mm", { locale: it })}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {repair.courtesyPhoneNotes && (
-                  <div className="bg-muted/30 rounded-lg p-3">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.courtesyPhoneNotes")}</span>
-                    <p className="text-sm mt-1">{repair.courtesyPhoneNotes}</p>
-                  </div>
-                )}
-
-                {!repair.courtesyPhoneReturnedAt && user?.role !== 'customer' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => setCourtesyReturnDialogOpen(true)}
-                    data-testid="button-return-courtesy-phone"
-                  >
-                    <RotateCcw className="h-4 w-4 mr-2" />
-                    {t("repair.returnCourtesyPhone")}
-                  </Button>
                 )}
               </CardContent>
             </Card>
@@ -2163,6 +2237,100 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                 >
                   {courtesyPhoneReturnMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {t("common.confirm")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Courtesy Phone Assign Dialog */}
+          <Dialog open={courtesyAssignDialogOpen} onOpenChange={(open) => {
+            setCourtesyAssignDialogOpen(open);
+            if (!open) { setCourtesyAssignPhoneId(null); setCourtesyAssignSearch(""); setCourtesyAssignNotes(""); }
+          }}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-cyan-500" />
+                  {t("repair.assignCourtesyPhone", "Assegna telefono di cortesia")}
+                </DialogTitle>
+                <DialogDescription>
+                  {t("repair.assignCourtesyPhoneDesc", "Seleziona un telefono disponibile nel tuo magazzino da prestare al cliente.")}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={t("repair.searchCourtesyPhone", "Cerca per nome, brand o SKU...")}
+                    value={courtesyAssignSearch}
+                    onChange={(e) => setCourtesyAssignSearch(e.target.value)}
+                    className="pl-9"
+                    data-testid="input-courtesy-phone-search"
+                  />
+                </div>
+                <div className="max-h-52 overflow-y-auto space-y-1 border rounded-md p-1">
+                  {availableCourtesyPhonesLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : filteredCourtesyPhones.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {availableCourtesyPhones.length === 0
+                        ? t("repair.noCourtesyPhonesAvailable", "Nessun telefono di cortesia disponibile nel magazzino.")
+                        : t("repair.noCourtesyPhonesFound", "Nessun risultato per la ricerca.")}
+                    </p>
+                  ) : (
+                    filteredCourtesyPhones.map((p: any) => (
+                      <div
+                        key={p.id}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer ${
+                          courtesyAssignPhoneId === p.id ? "bg-primary text-primary-foreground" : "hover-elevate"
+                        }`}
+                        onClick={() => setCourtesyAssignPhoneId(p.id)}
+                        data-testid={`courtesy-phone-option-${p.id}`}
+                      >
+                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          courtesyAssignPhoneId === p.id ? "bg-primary-foreground/20" : "bg-muted/50"
+                        }`}>
+                          <Phone className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{p.name}</p>
+                          <p className={`text-xs truncate ${courtesyAssignPhoneId === p.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                            {[p.brand, p.sku].filter(Boolean).join(" · ")}
+                            {p.availableQuantity !== undefined && ` · ${p.availableQuantity} disp.`}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {t("repair.courtesyPhoneNotes")} ({t("common.optional", "opzionale")})
+                  </label>
+                  <Textarea
+                    placeholder={t("repair.courtesyPhoneNotesPlaceholder", "Note sul prestito (es. condizioni del dispositivo)...")}
+                    value={courtesyAssignNotes}
+                    onChange={(e) => setCourtesyAssignNotes(e.target.value)}
+                    rows={2}
+                    data-testid="input-courtesy-phone-notes"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCourtesyAssignDialogOpen(false)}>
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  onClick={() => courtesyPhoneAssignMutation.mutate({ productId: courtesyAssignPhoneId!, notes: courtesyAssignNotes })}
+                  disabled={!courtesyAssignPhoneId || courtesyPhoneAssignMutation.isPending}
+                  data-testid="button-confirm-assign-courtesy-phone"
+                >
+                  {courtesyPhoneAssignMutation.isPending
+                    ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    : <Phone className="h-4 w-4 mr-2" />}
+                  {t("repair.assignCourtesyPhone", "Assegna telefono")}
                 </Button>
               </DialogFooter>
             </DialogContent>

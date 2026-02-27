@@ -15863,6 +15863,73 @@ export function registerRoutes(app: Express): Server {
     }
   });
   
+  // PATCH /api/repair-orders/:id/courtesy-phone-assign - Assign a courtesy phone to an existing repair order
+  app.patch("/api/repair-orders/:id/courtesy-phone-assign", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const allowedRoles = ['admin', 'reseller', 'reseller_staff', 'repair_center', 'repair_center_staff'];
+      if (!allowedRoles.includes(req.user.role)) {
+        return res.status(403).send("Forbidden");
+      }
+
+      const { courtesyPhoneProductId, courtesyPhoneNotes } = req.body;
+      if (!courtesyPhoneProductId) return res.status(400).send("courtesyPhoneProductId is required");
+
+      const order = await storage.getRepairOrder(req.params.id);
+      if (!order) return res.status(404).send("Repair order not found");
+
+      // If a courtesy phone is already active (not returned), block
+      if (order.courtesyPhoneProductId && !order.courtesyPhoneReturnedAt) {
+        return res.status(400).send("A courtesy phone is already assigned to this order");
+      }
+
+      // RBAC check
+      if (req.user.role === 'reseller' || req.user.role === 'reseller_staff') {
+        const resellerId = getResellerId(req);
+        if (order.resellerId !== resellerId) return res.status(403).send("Forbidden");
+      } else if (req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') {
+        if (order.repairCenterId !== (req.user.repairCenterId || req.user.id)) return res.status(403).send("Forbidden");
+      }
+
+      const updated = await storage.updateRepairOrder(order.id, {
+        courtesyPhoneProductId,
+        courtesyPhoneAssignedAt: new Date(),
+        courtesyPhoneReturnedAt: null,
+        courtesyPhoneNotes: courtesyPhoneNotes || null,
+      });
+
+      // Deduct stock from warehouse
+      try {
+        let ownerType = req.user.role === 'admin' ? 'admin' : (req.user.role === 'reseller' || req.user.role === 'reseller_staff') ? 'reseller' : 'repair_center';
+        let ownerId = req.user.role === 'admin' ? req.user.id : (req.user.role === 'reseller' || req.user.role === 'reseller_staff') ? getResellerId(req) : (req.user.repairCenterId || req.user.id);
+        const warehouse = await storage.getWarehouseByOwner(ownerType, ownerId);
+        if (warehouse) {
+          await storage.createWarehouseMovement({
+            warehouseId: warehouse.id,
+            productId: courtesyPhoneProductId,
+            movementType: 'scarico',
+            quantity: 1,
+            referenceType: 'courtesy_phone',
+            referenceId: order.id,
+            notes: `Telefono di cortesia assegnato - Ordine ${order.orderNumber}`,
+            createdBy: req.user.id,
+          });
+          const stockItem = await storage.getWarehouseStockItem(warehouse.id, courtesyPhoneProductId);
+          if (stockItem && stockItem.quantity > 0) {
+            await storage.updateWarehouseStock(stockItem.id, { quantity: stockItem.quantity - 1 });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to deduct courtesy phone stock:", e);
+      }
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error assigning courtesy phone:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Update repair order (status, costs, notes, assignment)
   app.patch("/api/repair-orders/:id", requireAuth, async (req, res) => {
     try {
