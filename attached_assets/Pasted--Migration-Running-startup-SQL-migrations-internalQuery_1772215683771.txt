@@ -1,0 +1,80 @@
+[Migration] Running startup SQL migrations...
+  internalQuery: undefined,
+[Migration] Warning: startup SQL migrations failed, continuing anyway: error: there is no unique constraint matching given keys for referenced table "repair_orders"
+  where: undefined,
+    at /app/node_modules/pg-pool/index.js:45:11
+  schema: undefined,
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+  table: undefined,
+    at async file:///app/dist/index.js:61522:5 {
+Starting SLA notification job (interval: 30 minutes)
+  code: '42830',
+  column: undefined,
+  length: 159,
+  detail: undefined,
+[ExpoPush] Started push notification jobs (receipts: 15min, retry: 5min)
+  severity: 'ERROR',
+[Email] SMTP configured: host=mail.monkeyplan.it, port=587, user=noreply@monkeyplan.it
+  hint: undefined,
+5:56:47 PM [express] serving on port 8080
+  position: undefined,
+  internalPosition: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'tablecmds.c',
+  line: '12165',
+  routine: 'transformFkeyCheckAttrs'
+}
+[Email] Resend connection verified successfully
+[AUTH] Login attempt: { usernameOrEmail: 't.petrulli@m5dgroup.com', passwordLength: 8 }
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+/app/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+error: column "notes" does not exist
+Initial SLA check failed: error: column "notes" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+    at async runSLANotificationCheck (file:///app/dist/index.js:61336:19) {
+  length: 106,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '376',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+    at async DatabaseStorage.getUserByUsername (file:///app/dist/index.js:7400:24)
+    at async Strategy._verify (file:///app/dist/index.js:18381:18) {
+  length: 106,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '376',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+Node.js v22.22.0

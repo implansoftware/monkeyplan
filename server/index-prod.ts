@@ -84,42 +84,63 @@ export async function serveStatic(app: Express, _server: Server) {
 
 (async () => {
   // Run database migrations before starting the server
-  try {
-    const pg = await import("pg");
-    const migrationPool = new pg.default.Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL?.includes("neon.tech") ? undefined : { rejectUnauthorized: false },
-    });
-    console.log("[Migration] Running startup SQL migrations...");
+  const pg = await import("pg");
+  const migrationPool = new pg.default.Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL?.includes("neon.tech") ? undefined : { rejectUnauthorized: false },
+  });
+  console.log("[Migration] Running startup SQL migrations...");
 
-    await migrationPool.query(`
-      CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
-        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "user_id" varchar NOT NULL,
-        "token" varchar(255) NOT NULL,
-        "expires_at" timestamp NOT NULL,
-        "used_at" timestamp,
-        "created_at" timestamp DEFAULT now() NOT NULL
-      );
-    `);
-    await migrationPool.query(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "password_reset_tokens_token_idx"
-      ON "password_reset_tokens" ("token");
-    `);
-    await migrationPool.query(`
-      ALTER TABLE "standalone_quotes"
-      ADD COLUMN IF NOT EXISTS "linked_repair_order_id" varchar REFERENCES "repair_orders"("id") ON DELETE SET NULL;
-    `);
-    await migrationPool.query(`
-      ALTER TABLE "users"
-      ADD COLUMN IF NOT EXISTS "notes" TEXT;
-    `);
+  const runMigration = async (label: string, sql: string) => {
+    try {
+      await migrationPool.query(sql);
+      console.log(`[Migration] OK: ${label}`);
+    } catch (err: any) {
+      console.warn(`[Migration] WARN: ${label} — ${err.message}`);
+    }
+  };
 
-    await migrationPool.end();
-    console.log("[Migration] Startup SQL migrations completed successfully");
-  } catch (err) {
-    console.error("[Migration] Warning: startup SQL migrations failed, continuing anyway:", err);
-  }
+  await runMigration("create password_reset_tokens", `
+    CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
+      "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "user_id" varchar NOT NULL,
+      "token" varchar(255) NOT NULL,
+      "expires_at" timestamp NOT NULL,
+      "used_at" timestamp,
+      "created_at" timestamp DEFAULT now() NOT NULL
+    );
+  `);
+
+  await runMigration("index password_reset_tokens_token", `
+    CREATE UNIQUE INDEX IF NOT EXISTS "password_reset_tokens_token_idx"
+    ON "password_reset_tokens" ("token");
+  `);
+
+  await runMigration("users.notes column", `
+    ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "notes" TEXT;
+  `);
+
+  await runMigration("standalone_quotes.linked_repair_order_id column", `
+    ALTER TABLE "standalone_quotes"
+    ADD COLUMN IF NOT EXISTS "linked_repair_order_id" varchar;
+  `);
+
+  await runMigration("standalone_quotes FK to repair_orders", `
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'standalone_quotes_linked_repair_order_id_fkey'
+      ) THEN
+        ALTER TABLE "standalone_quotes"
+        ADD CONSTRAINT "standalone_quotes_linked_repair_order_id_fkey"
+        FOREIGN KEY ("linked_repair_order_id") REFERENCES "repair_orders"("id") ON DELETE SET NULL;
+      END IF;
+    END $$;
+  `);
+
+  await migrationPool.end();
+  console.log("[Migration] Startup SQL migrations completed");
 
   await runApp(serveStatic);
 
