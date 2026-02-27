@@ -24,6 +24,14 @@ const GENERIC_IMAGE_PATTERNS = [
   "seal_of",
   "blank",
   "map_of",
+  "logo_",
+  "_logo",
+];
+
+const COMPANY_SUFFIXES = [
+  " inc.", " inc,", " corp.", " ltd.", " co.", " group", " holdings",
+  "(company)", "(brand)", "(manufacturer)", "(corporation)", "silicon",
+  " plc", " sa", " ag", " gmbh",
 ];
 
 function isValidImageUrl(src: string): boolean {
@@ -31,18 +39,29 @@ function isValidImageUrl(src: string): boolean {
   return !GENERIC_IMAGE_PATTERNS.some((p) => lower.includes(p));
 }
 
+function cleanModelName(model: string): string {
+  return model
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/\s*\d+["""′]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getModelKey(model: string): string {
+  const cleaned = cleanModelName(model);
+  const first = cleaned.toLowerCase().split(" ")[0];
+  return first || model.toLowerCase().split(" ")[0];
+}
+
 function isTitleRelevant(title: string, brand: string, model: string): boolean {
   const titleLower = title.toLowerCase();
   const brandLower = brand.toLowerCase();
-  const modelKey = stripSizeSuffix(model).toLowerCase().split(" ")[0];
+  const modelKey = getModelKey(model);
 
   if (titleLower === brandLower) return false;
   if (titleLower.startsWith("list of")) return false;
-
-  const COMPANY_SUFFIXES = [" inc.", " inc,", " corp.", " ltd.", " co.", " group", " holdings",
-    "(company)", "(brand)", "(manufacturer)", "(corporation)", "silicon", " plc", " sa", " ag", " gmbh"];
+  if (titleLower.startsWith("history of")) return false;
   if (COMPANY_SUFFIXES.some(s => titleLower.includes(s))) return false;
-
   if (!titleLower.includes(modelKey) && modelKey.length > 1) return false;
   return true;
 }
@@ -51,16 +70,8 @@ function isCommonsFileRelevant(filename: string, brand: string, model: string): 
   const lower = filename.toLowerCase();
   if (GENERIC_IMAGE_PATTERNS.some((p) => lower.includes(p))) return false;
   const brandLower = brand.toLowerCase();
-  const modelKey = stripSizeSuffix(model).toLowerCase().split(" ")[0];
+  const modelKey = getModelKey(model);
   return lower.includes(brandLower) || lower.includes(modelKey);
-}
-
-function stripSizeSuffix(name: string): string {
-  return name
-    .replace(/\s*\(.*?(mm|cm|inch|")\)/gi, "")
-    .replace(/\s*[-–]\s*\d+\s*(mm|cm|gb|tb)/gi, "")
-    .replace(/\s*\(\d+(st|nd|rd|th)\s+gen.*?\)/gi, "")
-    .trim();
 }
 
 async function fetchWithTimeout(url: string, timeoutMs = 6000): Promise<Response | null> {
@@ -108,6 +119,28 @@ async function fetchWikipediaImage(
   }
 }
 
+async function fetchWikipediaImageByTitle(
+  title: string,
+  model: string
+): Promise<string | null> {
+  try {
+    const pageRes = await fetchWithTimeout(
+      `${WIKIPEDIA_API}?action=query&titles=${encodeURIComponent(title)}&prop=pageimages&format=json&pithumbsize=500&redirects=1`
+    );
+    if (!pageRes?.ok) return null;
+    const pageData = await pageRes.json();
+    const pages = Object.values(pageData?.query?.pages || {}) as (WikiPage & { missing?: string })[];
+    const page = pages[0];
+    if (!page || "missing" in page) return null;
+    if (page?.thumbnail?.source && isValidImageUrl(page.thumbnail.source)) {
+      return page.thumbnail.source;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchWikimediaCommonsImage(
   query: string,
   brand: string,
@@ -147,34 +180,37 @@ async function fetchWikimediaCommonsImage(
 function buildSearchQueries(brand: string, model: string): string[] {
   const brandLower = brand.toLowerCase();
   const modelLower = model.toLowerCase();
-  const alreadyHasBrand = modelLower.includes(brandLower);
-  const modelStripped = stripSizeSuffix(model);
+  const hasBrand = brand.length > 0 && modelLower.includes(brandLower);
+
+  const modelClean = cleanModelName(model);
   const queries = new Set<string>();
 
-  if (alreadyHasBrand) {
-    queries.add(`${model} smartphone`);
-    queries.add(model);
-    queries.add(`${model} phone`);
-    queries.add(`${model} laptop`);
-    if (modelStripped !== model) {
-      queries.add(`${modelStripped} smartphone`);
-      queries.add(modelStripped);
-    }
-  } else {
-    queries.add(`${brand} ${model} smartphone`);
-    queries.add(`${brand} ${model}`);
-    queries.add(`${brand} ${model} phone`);
-    queries.add(`${brand} ${model} laptop`);
-    if (modelStripped !== model) {
-      queries.add(`${brand} ${modelStripped} smartphone`);
-      queries.add(`${brand} ${modelStripped}`);
-    }
+  const prefix = hasBrand ? "" : brand ? brand + " " : "";
+
+  if (modelClean && modelClean !== model) {
+    queries.add(`${prefix}${modelClean} smartphone`);
+    queries.add(`${prefix}${modelClean}`);
+    queries.add(`${prefix}${modelClean} phone`);
+    queries.add(`${prefix}${modelClean} laptop`);
+    queries.add(`${prefix}${modelClean} tablet`);
+  }
+
+  queries.add(`${prefix}${model} smartphone`);
+  queries.add(`${prefix}${model}`);
+  queries.add(`${prefix}${model} phone`);
+  queries.add(`${prefix}${model} laptop`);
+
+  if (model !== modelClean && modelClean.split(" ").length > 1) {
+    const modelFamily = modelClean.split(" ").slice(0, 2).join(" ");
+    queries.add(`${prefix}${modelFamily}`);
   }
 
   return Array.from(queries);
 }
 
 export async function fetchDeviceImage(brand: string, model: string): Promise<string | null> {
+  if (!model || model.trim().length < 2) return null;
+
   const queries = buildSearchQueries(brand, model);
 
   for (const query of queries) {
@@ -182,7 +218,12 @@ export async function fetchDeviceImage(brand: string, model: string): Promise<st
     if (wikiResult) return wikiResult;
   }
 
-  for (const query of queries.slice(0, 4)) {
+  const modelClean = cleanModelName(model);
+  const cleanQueries = modelClean !== model
+    ? [brand ? `${brand} ${modelClean}` : modelClean]
+    : [];
+
+  for (const query of [...cleanQueries, ...queries.slice(0, 3)]) {
     const commonsResult = await fetchWikimediaCommonsImage(query, brand, model);
     if (commonsResult) return commonsResult;
   }
@@ -200,7 +241,7 @@ export interface BatchFetchResult {
 export async function fetchDeviceImagesBatch(
   models: Array<{ id: string; modelName: string; brand: string }>
 ): Promise<BatchFetchResult[]> {
-  const CONCURRENCY = 5;
+  const CONCURRENCY = 3;
   const results: BatchFetchResult[] = [];
 
   for (let i = 0; i < models.length; i += CONCURRENCY) {
@@ -218,7 +259,7 @@ export async function fetchDeviceImagesBatch(
     );
     results.push(...chunkResults);
     if (i + CONCURRENCY < models.length) {
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 300));
     }
   }
 
