@@ -23717,6 +23717,17 @@ export function registerRoutes(app: Express): Server {
   });
 
 
+  // Get single device model by ID
+  app.get("/api/device-models/:id", requireAuth, async (req, res) => {
+    try {
+      const model = await storage.getDeviceModel(req.params.id);
+      if (!model) return res.status(404).json({ error: "Model not found" });
+      res.json(model);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============ MARKET CODE VALIDATION HELPER ============
   
   // Helper function to check for duplicate market codes

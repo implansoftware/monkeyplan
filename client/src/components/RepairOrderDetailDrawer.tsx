@@ -85,6 +85,7 @@ type RepairOrder = {
   warrantyPurchaseDate: string | null;
   warrantyPurchasePrice: number | null;
   warrantyProofAttachmentId: string | null;
+  deviceModelId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -280,6 +281,18 @@ export function RepairOrderDetailDrawer({
   const { data: repairCenters = [] } = useQuery<RepairCenter[]>({
     queryKey: [repairCentersEndpoint],
     enabled: open && (user?.role === 'reseller' || user?.role === 'admin'),
+  });
+
+  // Device model photo
+  const { data: deviceModelData } = useQuery<{ photoUrl: string | null; modelName: string } | null>({
+    queryKey: ["/api/device-models", repair?.deviceModelId],
+    queryFn: async () => {
+      if (!repair?.deviceModelId) return null;
+      const res = await fetch(`/api/device-models/${repair.deviceModelId}`, { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!repair?.deviceModelId && open,
   });
 
   // Mutation to update repair center
@@ -1025,6 +1038,16 @@ export function RepairOrderDetailDrawer({
                 <Wrench className="h-4 w-4" />
                 {t("repair.device")}
               </div>
+              {deviceModelData?.photoUrl && (
+                <div className="flex justify-center">
+                  <img
+                    src={deviceModelData.photoUrl}
+                    alt={repair.deviceModel}
+                    className="h-28 w-28 object-contain rounded-md border border-border bg-muted/30"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              )}
               <div className="grid gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>

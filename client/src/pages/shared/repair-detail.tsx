@@ -73,6 +73,7 @@ type RepairOrder = {
   deviceTypeId: string | null;
   deviceModel: string;
   brand: string | null;
+  deviceModelId: string | null;
   imei: string | null;
   serial: string | null;
   imeiNotReadable: boolean;
@@ -487,6 +488,18 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
     enabled: !!repairOrderId,
     retry: false,
+  });
+
+  // Device model photo
+  const { data: deviceModelData } = useQuery<{ photoUrl: string | null; modelName: string } | null>({
+    queryKey: ["/api/device-models", repair?.deviceModelId],
+    queryFn: async () => {
+      if (!repair?.deviceModelId) return null;
+      const res = await fetch(`/api/device-models/${repair.deviceModelId}`, { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!repair?.deviceModelId,
   });
 
   // Suggested accessories for pickup (only when status is pronto_ritiro)
@@ -2064,6 +2077,16 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               </CardTitle>
             </CardHeader>
             <CardContent className="relative space-y-4">
+              {deviceModelData?.photoUrl && (
+                <div className="flex justify-center py-2">
+                  <img
+                    src={deviceModelData.photoUrl}
+                    alt={repair.deviceModel}
+                    className="h-28 w-28 object-contain rounded-md border border-border bg-muted/30"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-muted/30 rounded-lg p-3">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("common.type")}</span>

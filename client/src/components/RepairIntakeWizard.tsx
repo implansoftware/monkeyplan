@@ -481,6 +481,7 @@ export function RepairIntakeWizard({
     id: string; 
     modelName: string; 
     brandId: string;
+    photoUrl?: string | null;
   }>>({
     queryKey: isResellerOrStaff
       ? ["/api/reseller/device-models", { typeId: selectedTypeId, includeGlobal: true }]
@@ -1706,6 +1707,22 @@ export function RepairIntakeWizard({
                           </FormItem>
                         )}
                       />
+
+                    {/* Device Model Image Preview */}
+                    {(() => {
+                      const selId = form.watch("deviceModelId");
+                      const sel = selId ? filteredModels.find(m => m.id === selId) : null;
+                      return sel?.photoUrl ? (
+                        <div className="flex justify-center py-2">
+                          <img
+                            src={sel.photoUrl}
+                            alt={sel.modelName}
+                            className="h-24 w-24 object-contain rounded-md border border-border bg-muted/30"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* New Brand Form Inline */}
                     {showNewBrandForm && (
