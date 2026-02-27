@@ -194,7 +194,7 @@ import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc, inArray, gt, isNotNull, isNull } from "drizzle-orm";
-import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock } from "@shared/schema";
+import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock, repairAcceptance } from "@shared/schema";
 import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
 import Stripe from 'stripe';
 
@@ -49590,6 +49590,18 @@ export function registerRoutes(app: Express): Server {
         notes: `Creato da preventivo ${quote.quoteNumber}`,
         status: "ingressato",
         ingressatoAt: new Date(),
+      });
+
+      // Create acceptance record automatically (required for document generation and UI)
+      const declaredDefects: string[] = [];
+      if (quote.notes) declaredDefects.push(quote.notes);
+      await db.insert(repairAcceptance).values({
+        repairOrderId: repairOrder.id,
+        declaredDefects: declaredDefects.length > 0 ? declaredDefects : ['Da preventivo'],
+        aestheticCondition: 'Non verificato - creato da preventivo',
+        aestheticPhotosMandatory: false,
+        acceptedBy: req.user.id,
+        acceptedAt: new Date(),
       });
 
       await storage.invalidateCache('overview_%');
