@@ -85,15 +85,28 @@ export async function serveStatic(app: Express, _server: Server) {
 (async () => {
   // Run database migrations before starting the server
   try {
-    const { execSync } = await import("child_process");
-    console.log("[Migration] Running drizzle-kit push...");
-    execSync("npx drizzle-kit push", { 
-      stdio: "inherit",
-      env: { ...process.env }
+    const pg = await import("pg");
+    const migrationPool = new pg.default.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_URL?.includes("neon.tech") ? undefined : { rejectUnauthorized: false },
     });
-    console.log("[Migration] Database schema synced successfully");
+    console.log("[Migration] Running startup SQL migrations...");
+
+    await migrationPool.query(`
+      CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
+        "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+        "user_id" varchar NOT NULL REFERENCES "users"("id"),
+        "token" varchar(255) NOT NULL UNIQUE,
+        "expires_at" timestamp NOT NULL,
+        "used_at" timestamp,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      );
+    `);
+
+    await migrationPool.end();
+    console.log("[Migration] Startup SQL migrations completed successfully");
   } catch (err) {
-    console.error("[Migration] Warning: drizzle-kit push failed, continuing anyway:", err);
+    console.error("[Migration] Warning: startup SQL migrations failed, continuing anyway:", err);
   }
 
   await runApp(serveStatic);
