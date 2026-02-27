@@ -90,6 +90,19 @@ export default function StandaloneQuoteDetail() {
     },
   });
 
+  const createRepairMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/standalone-quotes/${quoteId}/create-repair`);
+    },
+    onSuccess: (repairOrder: any) => {
+      toast({ title: "Lavorazione creata", description: `Ordine ${repairOrder.orderNumber} creato con stato Ingressato` });
+      navigate(`${basePath}/repairs/${repairOrder.id}`);
+    },
+    onError: (error: any) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
   const downloadPdf = async () => {
     try {
       const res = await fetch(`/api/standalone-quotes/${quoteId}/pdf`, { credentials: "include" });
@@ -191,6 +204,19 @@ export default function StandaloneQuoteDetail() {
             >
               <Clock className="h-4 w-4 mr-1.5" />{t("standalone.expired")}</Button>
           )}
+          {quote.status === "accepted" && (
+            <Button
+              onClick={() => createRepairMutation.mutate()}
+              disabled={createRepairMutation.isPending || !quote.customerId}
+              title={!quote.customerId ? "Collega un cliente al preventivo per creare una lavorazione" : undefined}
+              data-testid="button-create-repair"
+            >
+              {createRepairMutation.isPending
+                ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                : <Wrench className="h-4 w-4 mr-1.5" />}
+              Crea Lavorazione
+            </Button>
+          )}
         </div>
       </div>
 
@@ -242,7 +268,12 @@ export default function StandaloneQuoteDetail() {
                 )}
               </>
             ) : (
-              <p className="text-muted-foreground">{t("admin.resellerDetail.noCustomersFound")}</p>
+              <div className="space-y-1">
+                <p className="text-muted-foreground">{t("admin.resellerDetail.noCustomersFound")}</p>
+                {quote.status === "accepted" && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">Collega un cliente registrato per poter creare la lavorazione</p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>

@@ -49457,6 +49457,73 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.post("/api/standalone-quotes/:id/create-repair", requireAuth, async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+
+      const quote = await storage.getStandaloneQuote(req.params.id);
+      if (!quote) return res.status(404).send("Preventivo non trovato");
+      if (quote.status !== "accepted") {
+        return res.status(400).json({ error: "Solo i preventivi accettati possono essere convertiti in lavorazione" });
+      }
+      if (!quote.customerId) {
+        return res.status(400).json({ error: "Il preventivo deve avere un cliente collegato per creare una lavorazione" });
+      }
+
+      // Resolve device names from IDs
+      let deviceTypeName = "Smartphone";
+      let brandName: string | undefined;
+      let modelName = "N/D";
+      let deviceModelId: string | undefined;
+
+      if (quote.deviceTypeId) {
+        const dt = await storage.getDeviceType(quote.deviceTypeId);
+        if (dt) deviceTypeName = dt.name;
+      }
+      if (quote.brandId) {
+        const brand = await storage.getDeviceBrand(quote.brandId);
+        if (brand) brandName = brand.name;
+      }
+      if (quote.modelId) {
+        const model = await storage.getDeviceModel(quote.modelId);
+        if (model) {
+          modelName = model.modelName;
+          deviceModelId = model.id;
+          if (!brandName && model.brandId) {
+            const brand = await storage.getDeviceBrand(model.brandId);
+            if (brand) brandName = brand.name;
+          }
+        }
+      }
+      if (quote.deviceDescription && modelName === "N/D") {
+        modelName = quote.deviceDescription;
+      }
+
+      // Determine resellerId and repairCenterId from the quote
+      const repairOrder = await storage.createRepairOrder({
+        customerId: quote.customerId,
+        resellerId: quote.resellerId || undefined,
+        repairCenterId: quote.repairCenterId || undefined,
+        deviceType: deviceTypeName,
+        deviceModel: modelName,
+        brand: brandName,
+        deviceModelId: deviceModelId,
+        issueDescription: quote.notes || "",
+        notes: `Creato da preventivo ${quote.quoteNumber}`,
+        status: "ingressato",
+        ingressatoAt: new Date(),
+      });
+
+      await storage.invalidateCache('overview_%');
+      await storage.invalidateCache('centers_%');
+
+      res.status(201).json(repairOrder);
+    } catch (error: any) {
+      console.error("Errore creazione lavorazione da preventivo:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // ============ AI ASSISTANT ============
 
 
