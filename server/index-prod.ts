@@ -95,12 +95,16 @@ export async function serveStatic(app: Express, _server: Server) {
     await migrationPool.query(`
       CREATE TABLE IF NOT EXISTS "password_reset_tokens" (
         "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-        "user_id" varchar NOT NULL REFERENCES "users"("id"),
-        "token" varchar(255) NOT NULL UNIQUE,
+        "user_id" varchar NOT NULL,
+        "token" varchar(255) NOT NULL,
         "expires_at" timestamp NOT NULL,
         "used_at" timestamp,
         "created_at" timestamp DEFAULT now() NOT NULL
       );
+    `);
+    await migrationPool.query(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "password_reset_tokens_token_idx"
+      ON "password_reset_tokens" ("token");
     `);
 
     await migrationPool.end();
