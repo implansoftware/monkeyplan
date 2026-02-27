@@ -49466,8 +49466,11 @@ export function registerRoutes(app: Express): Server {
       if (quote.status !== "accepted") {
         return res.status(400).json({ error: "Solo i preventivi accettati possono essere convertiti in lavorazione" });
       }
-      if (!quote.customerId) {
-        return res.status(400).json({ error: "Il preventivo deve avere un cliente collegato per creare una lavorazione" });
+      // Accept customerId from body (overrides quote's customerId for quotes without linked customer)
+      const overrideCustomerId = req.body?.customerId as string | undefined;
+      const resolvedCustomerId = overrideCustomerId || quote.customerId;
+      if (!resolvedCustomerId) {
+        return res.status(400).json({ error: "Seleziona un cliente per creare la lavorazione" });
       }
 
       // Resolve device names from IDs
@@ -49501,7 +49504,7 @@ export function registerRoutes(app: Express): Server {
 
       // Determine resellerId and repairCenterId from the quote
       const repairOrder = await storage.createRepairOrder({
-        customerId: quote.customerId,
+        customerId: resolvedCustomerId,
         resellerId: quote.resellerId || undefined,
         repairCenterId: quote.repairCenterId || undefined,
         deviceType: deviceTypeName,

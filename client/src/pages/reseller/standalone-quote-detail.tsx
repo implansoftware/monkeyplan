@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRoute, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -8,6 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   ArrowLeft,
   FileText,
@@ -23,6 +32,7 @@ import {
   Calendar,
   Package,
   Loader2,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -71,6 +81,10 @@ export default function StandaloneQuoteDetail() {
   const isAdmin = user?.role === "admin" || user?.role === "admin_staff";
   const basePath = user?.role === "repair_center" ? "/repair-center" : isAdmin ? "/admin" : "/reseller";
 
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+
   const { data: quote, isLoading } = useQuery<QuoteWithItems>({
     queryKey: ["/api/standalone-quotes", quoteId],
     enabled: !!quoteId,
@@ -90,11 +104,29 @@ export default function StandaloneQuoteDetail() {
     },
   });
 
+  const customersApiUrl = user?.role === "repair_center" || user?.role === "repair_center_staff"
+    ? "/api/repair-center/customers"
+    : "/api/reseller/customers";
+
+  const { data: customers = [] } = useQuery<any[]>({
+    queryKey: [customersApiUrl],
+    enabled: customerDialogOpen,
+  });
+
+  const filteredCustomers = customerSearch.trim()
+    ? customers.filter((c: any) =>
+        (c.fullName || "").toLowerCase().includes(customerSearch.toLowerCase()) ||
+        (c.email || "").toLowerCase().includes(customerSearch.toLowerCase()) ||
+        (c.phone || "").toLowerCase().includes(customerSearch.toLowerCase())
+      )
+    : customers;
+
   const createRepairMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("POST", `/api/standalone-quotes/${quoteId}/create-repair`);
+    mutationFn: async (customerId?: string) => {
+      return apiRequest("POST", `/api/standalone-quotes/${quoteId}/create-repair`, customerId ? { customerId } : undefined);
     },
     onSuccess: (repairOrder: any) => {
+      setCustomerDialogOpen(false);
       toast({ title: "Lavorazione creata", description: `Ordine ${repairOrder.orderNumber} creato con stato Ingressato` });
       navigate(`${basePath}/repairs/${repairOrder.id}`);
     },
@@ -102,6 +134,16 @@ export default function StandaloneQuoteDetail() {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
+
+  const handleCreateRepairClick = () => {
+    if (quote?.customerId) {
+      createRepairMutation.mutate(undefined);
+    } else {
+      setSelectedCustomerId("");
+      setCustomerSearch("");
+      setCustomerDialogOpen(true);
+    }
+  };
 
   const downloadPdf = async () => {
     try {
@@ -206,9 +248,8 @@ export default function StandaloneQuoteDetail() {
           )}
           {quote.status === "accepted" && (
             <Button
-              onClick={() => createRepairMutation.mutate()}
-              disabled={createRepairMutation.isPending || !quote.customerId}
-              title={!quote.customerId ? "Collega un cliente al preventivo per creare una lavorazione" : undefined}
+              onClick={handleCreateRepairClick}
+              disabled={createRepairMutation.isPending}
               data-testid="button-create-repair"
             >
               {createRepairMutation.isPending
@@ -268,12 +309,7 @@ export default function StandaloneQuoteDetail() {
                 )}
               </>
             ) : (
-              <div className="space-y-1">
-                <p className="text-muted-foreground">{t("admin.resellerDetail.noCustomersFound")}</p>
-                {quote.status === "accepted" && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">Collega un cliente registrato per poter creare la lavorazione</p>
-                )}
-              </div>
+              <p className="text-muted-foreground">{t("admin.resellerDetail.noCustomersFound")}</p>
             )}
           </CardContent>
         </Card>
@@ -429,6 +465,72 @@ export default function StandaloneQuoteDetail() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Seleziona Cliente
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Questo preventivo non ha un cliente collegato. Seleziona un cliente registrato per creare la lavorazione.
+            </p>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca per nome, email o telefono..."
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+                className="pl-9"
+                data-testid="input-customer-search-dialog"
+              />
+            </div>
+            <div className="max-h-64 overflow-y-auto space-y-1 border rounded-md p-1">
+              {filteredCustomers.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nessun cliente trovato</p>
+              ) : (
+                filteredCustomers.map((c: any) => (
+                  <div
+                    key={c.id}
+                    className={`flex flex-col px-3 py-2 rounded-md cursor-pointer transition-colors ${
+                      selectedCustomerId === c.id
+                        ? "bg-primary text-primary-foreground"
+                        : "hover-elevate"
+                    }`}
+                    onClick={() => setSelectedCustomerId(c.id)}
+                    data-testid={`customer-option-${c.id}`}
+                  >
+                    <span className="font-medium text-sm">{c.fullName}</span>
+                    {(c.email || c.phone) && (
+                      <span className={`text-xs ${selectedCustomerId === c.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        {c.email || c.phone}
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCustomerDialogOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => createRepairMutation.mutate(selectedCustomerId)}
+              disabled={!selectedCustomerId || createRepairMutation.isPending}
+              data-testid="button-confirm-create-repair"
+            >
+              {createRepairMutation.isPending
+                ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                : <Wrench className="h-4 w-4 mr-1.5" />}
+              Crea Lavorazione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
