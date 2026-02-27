@@ -24051,7 +24051,7 @@ export function registerRoutes(app: Express): Server {
   // Batch fetch images for all models without an image (admin only)
   app.post("/api/admin/device-models/fetch-images-batch", requireRole("admin"), async (req, res) => {
     try {
-      const BATCH_SIZE = 50;
+      const BATCH_SIZE = 20;
       const offset = parseInt(String(req.body?.offset ?? 0), 10) || 0;
 
       const allModels = await storage.listDeviceModels();

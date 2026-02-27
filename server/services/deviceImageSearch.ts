@@ -74,15 +74,32 @@ function isCommonsFileRelevant(filename: string, brand: string, model: string): 
   return lower.includes(brandLower) || lower.includes(modelKey);
 }
 
-async function fetchWithTimeout(url: string, timeoutMs = 6000): Promise<Response | null> {
-  try {
-    return await fetch(url, {
-      headers: { "User-Agent": "MonkeyPlan/1.0 (repair-management; contact@monkeyplan.it)" },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch {
-    return null;
+const RATE_LIMIT_PAUSE_MS = 5000;
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function fetchWithTimeout(url: string, timeoutMs = 8000, retries = 2): Promise<Response | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "MonkeyPlan/1.0 (repair-management; contact@monkeyplan.it)" },
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get("retry-after") || "0", 10);
+        const pause = retryAfter > 0 ? retryAfter * 1000 : RATE_LIMIT_PAUSE_MS;
+        console.warn(`[DeviceImageSearch] Rate limited (429). Waiting ${pause}ms before retry...`);
+        await sleep(pause);
+        continue;
+      }
+      return res;
+    } catch {
+      if (attempt < retries) await sleep(1000 * (attempt + 1));
+    }
   }
+  return null;
 }
 
 async function fetchWikipediaImage(
@@ -251,7 +268,7 @@ export async function fetchDeviceImagesBatch(
       imageUrl,
       success: !!imageUrl,
     });
-    await new Promise((r) => setTimeout(r, 100));
+    await sleep(500);
   }
 
   return results;
