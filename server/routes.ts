@@ -23718,7 +23718,7 @@ export function registerRoutes(app: Express): Server {
 
 
   // Get single device model by ID
-  app.get("/api/device-models/:id", requireAuth, async (req, res) => {
+  app.get("/api/device-models/:id([0-9a-f-]{36})", requireAuth, async (req, res) => {
     try {
       const model = await storage.getDeviceModel(req.params.id);
       if (!model) return res.status(404).json({ error: "Model not found" });
