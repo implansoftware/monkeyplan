@@ -23936,6 +23936,43 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Upload device brand logo (admin only)
+  app.post("/api/admin/device-brands/:id/logo", requireRole("admin"), upload.single("logo"), async (req, res) => {
+    try {
+      const brand = await storage.getDeviceBrand(req.params.id);
+      if (!brand) return res.status(404).send("Marca non trovata");
+
+      if (!req.file) return res.status(400).send("Nessun file caricato");
+
+      const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).send("Formato non supportato. Usa JPEG, PNG, WebP, GIF o SVG.");
+      }
+
+      const maxSize = 2 * 1024 * 1024;
+      if (req.file.size > maxSize) return res.status(400).send("Immagine troppo grande. Massimo 2MB.");
+
+      const ext = (req.file.originalname.split(".").pop() || "jpg").toLowerCase();
+      const objectPath = `device-brands/${req.params.id}/logo.${ext}`;
+
+      const privateObjectDir = objectStorage.getPrivateObjectDir();
+      const fullPath = `${privateObjectDir}/${objectPath}`;
+      const { bucketName, objectName } = parseObjectPath(fullPath);
+      const bucket = objectStorageClient.bucket(bucketName);
+      const file = bucket.file(objectName);
+
+      await file.save(req.file.buffer, { metadata: { contentType: req.file.mimetype } });
+
+      const logoUrl = `/objects/${objectPath}`;
+      await storage.updateDeviceBrand(req.params.id, { logoUrl });
+
+      res.json({ logoUrl });
+    } catch (error: any) {
+      console.error("Error uploading brand logo:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Create device model (admin only)
   app.post("/api/admin/device-models", requireRole("admin"), async (req, res) => {
     try {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Smartphone, Tablet, Laptop, Monitor, Tv, Watch, Gamepad2, Headphones, Printer,
-  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X, FileUp, CheckCircle2, AlertCircle, Wand2, ImageIcon, Images
+  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X, FileUp, CheckCircle2, AlertCircle, Wand2, ImageIcon, Images, Upload, Camera
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +51,10 @@ export default function AdminDeviceCatalog() {
   const [brandForm, setBrandForm] = useState({ name: "", logoUrl: "" });
   const [deleteBrandDialogOpen, setDeleteBrandDialogOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<DeviceBrand | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<DeviceModel | null>(null);
@@ -139,12 +143,31 @@ export default function AdminDeviceCatalog() {
 
   const createBrandMutation = useMutation({
     mutationFn: async (data: { name: string; logoUrl?: string }) => {
-      return apiRequest("POST", "/api/admin/device-brands", data);
+      const res = await apiRequest("POST", "/api/admin/device-brands", data);
+      return res.json() as Promise<DeviceBrand>;
     },
-    onSuccess: () => {
+    onSuccess: async (brand) => {
+      if (logoFile && brand?.id) {
+        try {
+          setIsUploadingLogo(true);
+          const formData = new FormData();
+          formData.append("logo", logoFile);
+          await fetch(`/api/admin/device-brands/${brand.id}/logo`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+        } catch (e) {
+          console.error("Logo upload failed:", e);
+        } finally {
+          setIsUploadingLogo(false);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-brands"] });
       setBrandDialogOpen(false);
       setBrandForm({ name: "", logoUrl: "" });
+      setLogoFile(null);
+      setLogoPreview("");
       toast({ title: t("products.brandCreatedDevice") });
     },
     onError: (error: any) => {
@@ -161,6 +184,8 @@ export default function AdminDeviceCatalog() {
       setBrandDialogOpen(false);
       setEditingBrand(null);
       setBrandForm({ name: "", logoUrl: "" });
+      setLogoFile(null);
+      setLogoPreview("");
       toast({ title: t("products.brandUpdated") });
     },
     onError: (error: any) => {
@@ -306,14 +331,58 @@ export default function AdminDeviceCatalog() {
   };
 
   const openBrandDialog = (brand?: DeviceBrand) => {
+    setLogoFile(null);
     if (brand) {
       setEditingBrand(brand);
       setBrandForm({ name: brand.name, logoUrl: brand.logoUrl || "" });
+      setLogoPreview(brand.logoUrl || "");
     } else {
       setEditingBrand(null);
       setBrandForm({ name: "", logoUrl: "" });
+      setLogoPreview("");
     }
     setBrandDialogOpen(true);
+  };
+
+  const handleLogoFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setLogoPreview(objectUrl);
+    setBrandForm(prev => ({ ...prev, logoUrl: "" }));
+  }, []);
+
+  const handleSaveBrand = async () => {
+    if (!brandForm.name) return;
+    if (editingBrand) {
+      if (logoFile) {
+        try {
+          setIsUploadingLogo(true);
+          const formData = new FormData();
+          formData.append("logo", logoFile);
+          const res = await fetch(`/api/admin/device-brands/${editingBrand.id}/logo`, {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
+          if (res.ok) {
+            const data = await res.json();
+            updateBrandMutation.mutate({ id: editingBrand.id, data: { name: brandForm.name, logoUrl: data.logoUrl } });
+          } else {
+            updateBrandMutation.mutate({ id: editingBrand.id, data: brandForm });
+          }
+        } catch (e) {
+          updateBrandMutation.mutate({ id: editingBrand.id, data: brandForm });
+        } finally {
+          setIsUploadingLogo(false);
+        }
+      } else {
+        updateBrandMutation.mutate({ id: editingBrand.id, data: brandForm });
+      }
+    } else {
+      createBrandMutation.mutate(brandForm);
+    }
   };
 
   const openModelDialog = (model?: DeviceModel) => {
@@ -893,14 +962,63 @@ export default function AdminDeviceCatalog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="brand-logo">Logo URL</Label>
-              <Input
-                id="brand-logo"
-                value={brandForm.logoUrl}
-                onChange={(e) => setBrandForm({ ...brandForm, logoUrl: e.target.value })}
-                placeholder="https://..."
-                data-testid="input-brand-logo"
+              <Label>Logo</Label>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                className="hidden"
+                onChange={handleLogoFileChange}
+                data-testid="input-brand-logo-file"
               />
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  className="relative w-20 h-20 rounded-md border-2 border-dashed border-muted-foreground/30 flex items-center justify-center overflow-hidden hover-elevate shrink-0 bg-muted/30"
+                  data-testid="button-upload-brand-logo"
+                >
+                  {logoPreview ? (
+                    <img
+                      src={logoPreview}
+                      alt="Logo preview"
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                      <Camera className="h-6 w-6" />
+                      <span className="text-xs">Upload</span>
+                    </div>
+                  )}
+                </button>
+                <div className="flex-1 space-y-2">
+                  {logoFile && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      <span className="truncate max-w-[160px]">{logoFile.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => { setLogoFile(null); setLogoPreview(editingBrand?.logoUrl || ""); setBrandForm(prev => ({ ...prev, logoUrl: editingBrand?.logoUrl || "" })); if (logoInputRef.current) logoInputRef.current.value = ""; }}
+                        className="text-destructive hover:text-destructive/80"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <Label htmlFor="brand-logo" className="text-xs text-muted-foreground">o inserisci URL manuale</Label>
+                    <Input
+                      id="brand-logo"
+                      value={logoFile ? "" : brandForm.logoUrl}
+                      onChange={(e) => { setBrandForm({ ...brandForm, logoUrl: e.target.value }); if (e.target.value) { setLogoFile(null); setLogoPreview(e.target.value); if (logoInputRef.current) logoInputRef.current.value = ""; } }}
+                      placeholder="https://..."
+                      disabled={!!logoFile}
+                      data-testid="input-brand-logo"
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -909,16 +1027,12 @@ export default function AdminDeviceCatalog() {
             </Button>
             <Button
               onClick={() => {
-                if (editingBrand) {
-                  updateBrandMutation.mutate({ id: editingBrand.id, data: brandForm });
-                } else {
-                  createBrandMutation.mutate(brandForm);
-                }
+                handleSaveBrand();
               }}
-              disabled={!brandForm.name || createBrandMutation.isPending || updateBrandMutation.isPending}
+              disabled={!brandForm.name || createBrandMutation.isPending || updateBrandMutation.isPending || isUploadingLogo}
               data-testid="button-save-brand"
             >
-              {(createBrandMutation.isPending || updateBrandMutation.isPending) && (
+              {(createBrandMutation.isPending || updateBrandMutation.isPending || isUploadingLogo) && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
               {editingBrand ? t("common.save") : t("common.create")}
