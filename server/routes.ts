@@ -24003,19 +24003,23 @@ export function registerRoutes(app: Express): Server {
   // Batch fetch images for all models without an image (admin only)
   app.post("/api/admin/device-models/fetch-images-batch", requireRole("admin"), async (req, res) => {
     try {
+      const BATCH_SIZE = 50;
+      const offset = parseInt(String(req.body?.offset ?? 0), 10) || 0;
+
       const allModels = await storage.listDeviceModels();
       const brands = await storage.listDeviceBrands();
       const brandMap = new Map(brands.map(b => [b.id, b.name]));
 
-      const modelsWithoutImage = allModels
-        .filter(m => !m.photoUrl)
-        .slice(0, 30);
+      const allMissingImage = allModels.filter(m => !m.photoUrl);
+      const totalRemaining = allMissingImage.length;
 
-      if (modelsWithoutImage.length === 0) {
-        return res.json({ processed: 0, succeeded: 0, failed: 0, results: [] });
+      if (totalRemaining === 0) {
+        return res.json({ processed: 0, succeeded: 0, failed: 0, totalRemaining: 0, results: [] });
       }
 
-      const toProcess = modelsWithoutImage.map(m => ({
+      const slice = allMissingImage.slice(offset, offset + BATCH_SIZE);
+
+      const toProcess = slice.map(m => ({
         id: m.id,
         modelName: m.modelName,
         brand: brandMap.get(m.brandId || "") || m.brand || "",
@@ -24030,10 +24034,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       const succeeded = results.filter(r => r.success).length;
+      const stillRemaining = allMissingImage.length - slice.length;
+
       res.json({
         processed: results.length,
         succeeded,
         failed: results.length - succeeded,
+        totalRemaining: stillRemaining,
         results,
       });
     } catch (error: any) {

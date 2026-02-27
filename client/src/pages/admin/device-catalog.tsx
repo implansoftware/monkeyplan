@@ -62,6 +62,7 @@ export default function AdminDeviceCatalog() {
   const [modelTypeFilter, setModelTypeFilter] = useState<string>("all");
   const [fetchingImageId, setFetchingImageId] = useState<string | null>(null);
   const [batchFetching, setBatchFetching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ done: 0, found: 0, total: 0 });
 
   // Excel import state
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -264,21 +265,34 @@ export default function AdminDeviceCatalog() {
     },
   });
 
-  const batchFetchImagesMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/admin/device-models/fetch-images-batch");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
+  const runBatchFetchImages = async () => {
+    setBatchFetching(true);
+    setBatchProgress({ done: 0, found: 0, total: 0 });
+    let totalDone = 0;
+    let totalFound = 0;
+
+    try {
+      while (true) {
+        const res = await apiRequest("POST", "/api/admin/device-models/fetch-images-batch", { offset: 0 });
+        const data = await res.json();
+
+        totalDone += data.processed;
+        totalFound += data.succeeded;
+        setBatchProgress({ done: totalDone, found: totalFound, total: totalDone + (data.totalRemaining ?? 0) });
+
+        if (data.processed > 0) {
+          queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
+        }
+
+        if (!data.processed || data.succeeded === 0 || data.totalRemaining === 0) break;
+      }
+      toast({ title: "Ricerca completata", description: `${totalFound} immagini trovate su ${totalDone} modelli elaborati` });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Errore ricerca immagini", description: error.message });
+    } finally {
       setBatchFetching(false);
-      toast({ title: "Ricerca completata", description: `${data.succeeded} immagini trovate su ${data.processed} modelli elaborati` });
-    },
-    onError: (error: any) => {
-      setBatchFetching(false);
-      toast({ variant: "destructive", title: "Errore", description: error.message });
-    },
-  });
+    }
+  };
 
   const openTypeDialog = (type?: DeviceType) => {
     if (type) {
@@ -625,16 +639,23 @@ export default function AdminDeviceCatalog() {
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => { setBatchFetching(true); batchFetchImagesMutation.mutate(); }}
-                    disabled={batchFetchImagesMutation.isPending}
+                    onClick={runBatchFetchImages}
+                    disabled={batchFetching}
                     data-testid="button-batch-fetch-images"
                   >
-                    {batchFetchImagesMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {batchFetching ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {batchProgress.total > 0
+                          ? `${batchProgress.done}/${batchProgress.total}`
+                          : "Ricerca..."}
+                      </>
                     ) : (
-                      <Images className="h-4 w-4 mr-2" />
+                      <>
+                        <Images className="h-4 w-4 mr-2" />
+                        Cerca immagini
+                      </>
                     )}
-                    Cerca immagini
                   </Button>
                   <Button onClick={() => openModelDialog()} data-testid="button-add-model">
                     <Plus className="h-4 w-4 mr-2" />
