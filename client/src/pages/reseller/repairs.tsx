@@ -76,6 +76,7 @@ export default function ResellerRepairs() {
     },
     onSuccess: () => {
       toast({ title: "Lavorazione annullata" });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs/paginated"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs"] });
       setCancelTargetId(null);
     },

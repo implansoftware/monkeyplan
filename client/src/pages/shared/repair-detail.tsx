@@ -429,6 +429,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     onSuccess: () => {
       toast({ title: "Lavorazione annullata" });
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs/paginated"] });
       queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs"] });
       setCancelRepairDialogOpen(false);
     },
