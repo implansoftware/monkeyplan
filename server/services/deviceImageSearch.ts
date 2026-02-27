@@ -241,26 +241,17 @@ export interface BatchFetchResult {
 export async function fetchDeviceImagesBatch(
   models: Array<{ id: string; modelName: string; brand: string }>
 ): Promise<BatchFetchResult[]> {
-  const CONCURRENCY = 3;
   const results: BatchFetchResult[] = [];
 
-  for (let i = 0; i < models.length; i += CONCURRENCY) {
-    const chunk = models.slice(i, i + CONCURRENCY);
-    const chunkResults = await Promise.all(
-      chunk.map(async (m) => {
-        const imageUrl = await fetchDeviceImage(m.brand, m.modelName);
-        return {
-          modelId: m.id,
-          modelName: m.modelName,
-          imageUrl,
-          success: !!imageUrl,
-        };
-      })
-    );
-    results.push(...chunkResults);
-    if (i + CONCURRENCY < models.length) {
-      await new Promise((r) => setTimeout(r, 300));
-    }
+  for (const m of models) {
+    const imageUrl = await fetchDeviceImage(m.brand, m.modelName);
+    results.push({
+      modelId: m.id,
+      modelName: m.modelName,
+      imageUrl,
+      success: !!imageUrl,
+    });
+    await new Promise((r) => setTimeout(r, 100));
   }
 
   return results;
