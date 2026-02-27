@@ -1,5 +1,6 @@
 import { useState, useEffect, Fragment } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { RepairOrder, RepairCenter } from "@shared/schema";
 import { Building, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle2, PackageCheck, Play, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,9 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw, ChevronDown, ChevronUp, CornerDownRight, Phone } from "lucide-react";
+import { Search, Wrench, CalendarIcon, Plus, Eye, Clock, AlertTriangle, AlertCircle, LayoutGrid, TableIcon, RotateCcw, ChevronDown, ChevronUp, CornerDownRight, Phone, XCircle, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { queryClient } from "@/lib/queryClient";
 import { formatDistanceToNow, format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -63,7 +65,24 @@ export default function ResellerRepairs() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(25);
   const [expandedReturns, setExpandedReturns] = useState<Set<string>>(new Set());
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
+  const [cancelTargetNumber, setCancelTargetNumber] = useState<string>("");
   const { toast } = useToast();
+
+  const cancelRepairMutation = useMutation({
+    mutationFn: async (repairId: string) => {
+      const res = await apiRequest("PATCH", `/api/repair-orders/${repairId}`, { status: "cancelled" });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Lavorazione annullata" });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs"] });
+      setCancelTargetId(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore annullamento", description: error.message, variant: "destructive" });
+    },
+  });
 
   // Debounce search input
   useEffect(() => {
@@ -644,7 +663,29 @@ export default function ResellerRepairs() {
                         {formatDistanceToNow(new Date(repair.createdAt), { addSuffix: true, locale: it })}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-1">
+                          {['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive border-destructive/30 hover:bg-destructive/10"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCancelTargetId(repair.id);
+                                    setCancelTargetNumber(repair.orderNumber);
+                                  }}
+                                  data-testid={`button-cancel-repair-${repair.id}`}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Annulla lavorazione</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
@@ -745,6 +786,34 @@ export default function ResellerRepairs() {
           queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs/paginated"] });
         }}
       />
+
+      <Dialog open={!!cancelTargetId} onOpenChange={(open) => { if (!open) setCancelTargetId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Annulla lavorazione
+            </DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler annullare la lavorazione <strong>#{cancelTargetNumber}</strong>? Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelTargetId(null)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => cancelTargetId && cancelRepairMutation.mutate(cancelTargetId)}
+              disabled={cancelRepairMutation.isPending}
+              data-testid="button-confirm-cancel-repair-list"
+            >
+              {cancelRepairMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Sì, annulla lavorazione
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

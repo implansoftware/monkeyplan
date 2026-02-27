@@ -238,6 +238,7 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
   const [dataRecoveryDialogOpen, setDataRecoveryDialogOpen] = useState(false);
   const [appointmentDialogOpen, setAppointmentDialogOpen] = useState(false);
   const [docsExpanded, setDocsExpanded] = useState(false);
+  const [cancelRepairDialogOpen, setCancelRepairDialogOpen] = useState(false);
 
   const { data: repair, isLoading, error } = useQuery<RepairOrder>({
     queryKey: ["/api/repair-orders", repairOrderId],
@@ -417,6 +418,22 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
     onError: (error: Error) => {
       toast({ title: "Errore assegnazione telefono di cortesia", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const cancelRepairMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}`, { status: "cancelled" });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Lavorazione annullata" });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/repairs"] });
+      setCancelRepairDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({ title: "Errore annullamento", description: error.message, variant: "destructive" });
     },
   });
 
@@ -995,6 +1012,19 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               )}
               {getStatusBadge(repair.status)}
               {getSLADisplay()}
+              {(user?.role === 'reseller' || user?.role === 'reseller_staff') &&
+               ['ingressato', 'in_diagnosi'].includes(repair.status) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCancelRepairDialogOpen(true)}
+                  className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                  data-testid="button-cancel-repair"
+                >
+                  <XCircle className="h-4 w-4 mr-1.5" />
+                  Annulla lavorazione
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -2218,6 +2248,35 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
               </CardContent>
             </Card>
           )}
+
+          {/* Cancel Repair Confirmation Dialog */}
+          <Dialog open={cancelRepairDialogOpen} onOpenChange={setCancelRepairDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-destructive">
+                  <XCircle className="h-5 w-5" />
+                  Annulla lavorazione
+                </DialogTitle>
+                <DialogDescription>
+                  Sei sicuro di voler annullare la lavorazione <strong>#{repair?.orderNumber}</strong>? Questa azione non può essere annullata.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setCancelRepairDialogOpen(false)}>
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => cancelRepairMutation.mutate()}
+                  disabled={cancelRepairMutation.isPending}
+                  data-testid="button-confirm-cancel-repair"
+                >
+                  {cancelRepairMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Sì, annulla lavorazione
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* Courtesy Phone Return Confirmation Dialog */}
           <Dialog open={courtesyReturnDialogOpen} onOpenChange={setCourtesyReturnDialogOpen}>

@@ -15981,6 +15981,14 @@ export function registerRoutes(app: Express): Server {
           }
           updates.repairCenterId = req.body.repairCenterId;
         }
+        // Reseller can cancel only in early stages
+        if (req.body.status === 'cancelled') {
+          const cancellableStatuses = ['ingressato', 'in_diagnosi'];
+          if (!cancellableStatuses.includes(order.status)) {
+            return res.status(400).send("La lavorazione può essere annullata solo negli stati iniziali (ingressato, in diagnosi)");
+          }
+          updates.status = 'cancelled';
+        }
       } else if ((req.user.role === 'repair_center' || req.user.role === 'repair_center_staff') && req.user.repairCenterId) {
         // Repair center can only update orders assigned to their center
         if (!req.user.repairCenterId) {
