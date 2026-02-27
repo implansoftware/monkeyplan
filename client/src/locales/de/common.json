@@ -8172,7 +8172,9 @@
     "selectOrCreateNew": "Select or create new",
     "usernamePasswordRequired": "Username and password are required",
     "createdDescription": "Customer created successfully",
-    "newType": "New type"
+    "newType": "New type",
+    "notesPlaceholder": "Interne Notizen zum Kunden (optional)...",
+    "notesDescription": "Notizen nur für interne Betreiber sichtbar"
   },
   "diagnosis": {
     "componentsLoadError": "Fehler beim Laden von Komponenten",

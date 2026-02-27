@@ -9083,7 +9083,9 @@
     "selectOrCreateNew": "Sélectionner ou créer nouveau",
     "usernamePasswordRequired": "Username et mot de passe sont obligatoire",
     "createdDescription": "Client créé avec succès",
-    "newType": "Nouveau type"
+    "newType": "Nouveau type",
+    "notesPlaceholder": "Notes internes sur le client (optionnel)...",
+    "notesDescription": "Notes visibles uniquement pour les opérateurs internes"
   },
   "dataRecovery": {
     "assignedToTechnician": "Données récupération assigné à technicien",

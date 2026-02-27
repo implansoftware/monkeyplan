@@ -7504,7 +7504,9 @@
     "selectOrCreateNew": "اختر أو قم بإنشاء جديد",
     "usernamePasswordRequired": "اسم المستخدم وكلمة المرور مطلوبة",
     "createdDescription": "تم إنشاء العميل بنجاح",
-    "newType": "نوع جديد"
+    "newType": "نوع جديد",
+    "notesPlaceholder": "ملاحظات داخلية حول العميل (اختياري)...",
+    "notesDescription": "ملاحظات مرئية للمشغلين الداخليين فقط"
   },
   "diagnosis": {
     "componentsLoadError": "خطأ في تحميل المكونات",

@@ -6214,6 +6214,7 @@ export function registerRoutes(app: Express): Server {
         repairCenterIds: z.array(z.string()).optional(),
         username: z.string().optional(),
         password: z.string().optional(),
+        notes: z.string().optional(),
       });
       const validatedData = baseSchema.parse(req.body);
       
@@ -6263,6 +6264,7 @@ export function registerRoutes(app: Express): Server {
         role: "customer", // Force customer role
         resellerId: effectiveResellerId, // Associate with the reseller (or staff's reseller)
         repairCenterId: repairCenterIds[0] || null, // Keep first one for backward compatibility
+        notes: validatedData.notes || null,
       });
       
       // Set all repair center associations
@@ -6444,6 +6446,7 @@ export function registerRoutes(app: Express): Server {
         repairCenterIds: z.array(z.string()).optional(),
         username: z.string().min(3).optional(),
         password: z.string().min(6).optional(),
+        notes: z.string().optional().nullable(),
         billingData: z.object({
           customerType: z.enum(["private", "company"]).optional(),
           companyName: z.string().optional().nullable(),
@@ -6487,6 +6490,7 @@ export function registerRoutes(app: Express): Server {
       if (validatedData.phone !== undefined) updates.phone = validatedData.phone;
       if (validatedData.isActive !== undefined) updates.isActive = validatedData.isActive;
       if (validatedData.username !== undefined) updates.username = validatedData.username;
+      if (validatedData.notes !== undefined) updates.notes = validatedData.notes;
       
       // Hash and update password if provided
       if (validatedData.password) {
@@ -21756,7 +21760,7 @@ export function registerRoutes(app: Express): Server {
       const resellerFiscalFields = ['phone', 'ragioneSociale', 'partitaIva', 'codiceFiscale', 'indirizzo', 'citta', 'cap', 'provincia', 'iban', 'codiceUnivoco', 'pec'] as const;
       
       const allowedUpdates = req.user.role === 'admin' 
-        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId', 'parentResellerId', ...resellerFiscalFields] as const
+        ? ['username', 'email', 'fullName', 'role', 'isActive', 'repairCenterId', 'resellerCategory', 'resellerId', 'parentResellerId', 'notes', ...resellerFiscalFields] as const
         : req.user.role === 'reseller' 
           ? ['email', 'fullName', ...resellerFiscalFields] as const
           : ['email', 'fullName'] as const; // Non-admin/non-reseller can only update basic profile fields
@@ -22258,6 +22262,7 @@ export function registerRoutes(app: Express): Server {
         isActive: true,
         resellerId: assignedResellerId,
         subResellerId: assignedSubResellerId,
+        notes: validatedData.notes || null,
       };
       
       // Prepare billing data
@@ -38137,6 +38142,7 @@ export function registerRoutes(app: Express): Server {
         pec: z.string().optional(),
         codiceUnivoco: z.string().optional(),
         iban: z.string().optional(),
+        notes: z.string().optional(),
       });
       const validatedData = baseSchema.parse(req.body);
       
@@ -38183,6 +38189,7 @@ export function registerRoutes(app: Express): Server {
         codiceFiscale: validatedData.fiscalCode || validatedData.codiceFiscale || null,
         partitaIva: validatedData.vatNumber || validatedData.partitaIva || null,
         ragioneSociale: validatedData.companyName || validatedData.ragioneSociale || null,
+        notes: validatedData.notes || null,
       });
       
       // Associate customer with this repair center
@@ -38382,6 +38389,7 @@ export function registerRoutes(app: Express): Server {
         phone: z.string().optional().nullable(),
         password: z.string().min(6).optional(),
         isActive: z.boolean().optional(),
+        notes: z.string().optional().nullable(),
         billingData: z.object({
           customerType: z.enum(["private", "company"]).optional(),
           companyName: z.string().optional().nullable(),
@@ -38398,7 +38406,7 @@ export function registerRoutes(app: Express): Server {
       });
 
       const validatedBody = updateSchema.parse(req.body);
-      const { fullName, email, phone, password, isActive, billingData } = validatedBody;
+      const { fullName, email, phone, password, isActive, notes, billingData } = validatedBody;
 
       // Update user fields
       const updateData: Record<string, any> = {};
@@ -38406,6 +38414,7 @@ export function registerRoutes(app: Express): Server {
       if (email) updateData.email = email;
       if (phone !== undefined) updateData.phone = phone;
       if (isActive !== undefined) updateData.isActive = isActive;
+      if (notes !== undefined) updateData.notes = notes;
       if (password && password.length >= 6) {
         updateData.password = await hashPassword(password);
       }

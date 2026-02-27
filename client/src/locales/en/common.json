@@ -9126,7 +9126,9 @@
     "selectOrCreateNew": "Select or create new",
     "usernamePasswordRequired": "Username and password are required",
     "createdDescription": "Customer created successfully",
-    "newType": "New type"
+    "newType": "New type",
+    "notesPlaceholder": "Internal notes about the customer (optional)...",
+    "notesDescription": "Notes visible only to internal operators"
   },
   "dataRecovery": {
     "assignedToTechnician": "Data recovery assigned to technician",

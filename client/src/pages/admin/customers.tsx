@@ -4,6 +4,7 @@ import { User, BillingData } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -42,6 +43,7 @@ interface CustomerEditFormData {
   city: string;
   zipCode: string;
   country: string;
+  notes: string;
 }
 
 const defaultFormData: CustomerEditFormData = {
@@ -61,6 +63,7 @@ const defaultFormData: CustomerEditFormData = {
   city: "",
   zipCode: "",
   country: "IT",
+  notes: "",
 };
 
 export default function AdminCustomers() {
@@ -198,6 +201,7 @@ export default function AdminCustomers() {
         city: billingData?.city || "",
         zipCode: billingData?.zipCode || "",
         country: billingData?.country || "IT",
+        notes: (customer as any).notes || "",
       });
     }
   }, [customerDetails, editingCustomer]);
@@ -219,6 +223,7 @@ export default function AdminCustomers() {
           email: editFormData.email,
           resellerId: editFormData.resellerId || null,
           isActive: editFormData.isActive,
+          notes: editFormData.notes || null,
         },
       });
       
@@ -569,6 +574,18 @@ export default function AdminCustomers() {
                     onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
                     className="h-11 rounded-xl"
                     data-testid="input-edit-phone"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-notes" className="text-slate-700 dark:text-slate-300">{t("common.notes")}</Label>
+                  <Textarea
+                    id="edit-notes"
+                    value={editFormData.notes}
+                    onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                    placeholder={t("customer.notesPlaceholder")}
+                    className="rounded-xl resize-none"
+                    rows={3}
+                    data-testid="textarea-edit-notes"
                   />
                 </div>
               </TabsContent>

@@ -537,6 +537,7 @@ export const users = pgTable("users", {
   hasAutonomousInvoicing: boolean("has_autonomous_invoicing").notNull().default(false), // Per sub-reseller: se true, emette fatture proprie
   logoUrl: text("logo_url"), // URL del logo per reseller
   stripeCustomerId: varchar("stripe_customer_id"), // Stripe Customer ID for subscription billing
+  notes: text("notes"), // Note interne sul cliente
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -5492,6 +5493,7 @@ const baseCustomerSchema = z.object({
   showIban: z.boolean().optional().default(false),
   showFiscalCode: z.boolean().optional().default(false),
   fiscalCode: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export const privateCustomerSchema = baseCustomerSchema.extend({

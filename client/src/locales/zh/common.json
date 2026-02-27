@@ -8443,7 +8443,9 @@
     "selectOrCreateNew": "Select or create new",
     "usernamePasswordRequired": "Username and password are required",
     "createdDescription": "Customer created successfully",
-    "newType": "New type"
+    "newType": "New type",
+    "notesPlaceholder": "关于客户的内部备注（可选）...",
+    "notesDescription": "仅供内部操作员查看的备注"
   },
   "diagnosis": {
     "componentsLoadError": "加载组件时出错",

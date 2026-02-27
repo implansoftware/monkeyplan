@@ -342,6 +342,12 @@ export default function RepairCenterCustomers() {
                         </span>
                       </div>
                     )}
+                    {(selectedCustomer as any).notes && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mb-1">{t("common.notes")}</p>
+                        <p className="text-sm whitespace-pre-wrap" data-testid="text-customer-notes">{(selectedCustomer as any).notes}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div>

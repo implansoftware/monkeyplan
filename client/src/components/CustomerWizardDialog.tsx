@@ -28,6 +28,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -102,6 +103,7 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       showAddress: false,
       showIban: false,
       showFiscalCode: false,
+      notes: "",
     },
   });
 
@@ -645,6 +647,29 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
             </>
           )}
 
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
+          <FormField
+            control={form.control as any}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-slate-700 dark:text-slate-300">{t("common.notes")}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    value={field.value || ""}
+                    placeholder={t("customer.notesPlaceholder")}
+                    className="rounded-xl resize-none"
+                    rows={3}
+                    data-testid="textarea-customer-notes"
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">{t("customer.notesDescription")}</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           {isAdmin && resellers.length > 0 && (
             <>
               <div className="h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
@@ -961,6 +986,12 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
                   ) : null;
                 })}
               </div>
+            </div>
+          )}
+          {form.watch("notes") && (
+            <div>
+              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{t("common.notes")}</p>
+              <p className="text-slate-700 dark:text-slate-300 text-sm whitespace-pre-wrap" data-testid="text-review-notes">{form.watch("notes")}</p>
             </div>
           )}
         </div>

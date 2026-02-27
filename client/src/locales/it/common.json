@@ -9134,7 +9134,9 @@
     "selectOrCreateNew": "Seleziona o crea nuovo",
     "usernamePasswordRequired": "Username e password sono obbligatori",
     "createdDescription": "Cliente creato con successo",
-    "newType": "Nuovo tipo"
+    "newType": "Nuovo tipo",
+    "notesPlaceholder": "Note interne sul cliente (opzionale)...",
+    "notesDescription": "Note visibili solo agli operatori interni"
   },
   "dataRecovery": {
     "assignedToTechnician": "Il recupero dati è stato assegnato al tecnico",

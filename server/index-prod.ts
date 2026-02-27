@@ -110,6 +110,10 @@ export async function serveStatic(app: Express, _server: Server) {
       ALTER TABLE "standalone_quotes"
       ADD COLUMN IF NOT EXISTS "linked_repair_order_id" varchar REFERENCES "repair_orders"("id") ON DELETE SET NULL;
     `);
+    await migrationPool.query(`
+      ALTER TABLE "users"
+      ADD COLUMN IF NOT EXISTS "notes" TEXT;
+    `);
 
     await migrationPool.end();
     console.log("[Migration] Startup SQL migrations completed successfully");

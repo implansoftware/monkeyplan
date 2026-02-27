@@ -8001,7 +8001,9 @@
     "selectOrCreateNew": "Selecteer of maak nieuw aan",
     "usernamePasswordRequired": "Gebruikersnaam en wachtwoord zijn vereist",
     "createdDescription": "Klant met succes aangemaakt",
-    "newType": "Nieuw type"
+    "newType": "Nieuw type",
+    "notesPlaceholder": "Interne notities over de klant (optioneel)...",
+    "notesDescription": "Notities die alleen zichtbaar zijn voor interne operators"
   },
   "diagnosis": {
     "componentsLoadError": "Fout bij het laden van onderdelen",

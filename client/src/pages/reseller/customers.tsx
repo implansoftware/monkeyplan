@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -46,6 +47,7 @@ export default function ResellerCustomers() {
     phone: "",
     isActive: true,
     repairCenterIds: [] as string[],
+    notes: "",
   });
   const { toast } = useToast();
 
@@ -145,6 +147,7 @@ export default function ResellerCustomers() {
       phone: customer.phone || "",
       isActive: customer.isActive,
       repairCenterIds: customer.assignedRepairCenters?.map(rc => rc.id) || [],
+      notes: (customer as any).notes || "",
     });
     setIsEditing(true);
   };
@@ -599,6 +602,19 @@ export default function ResellerCustomers() {
                   </div>
                 </div>
                 
+                <div className="pt-4 border-t space-y-2">
+                  <Label htmlFor="edit-notes">{t("common.notes")}</Label>
+                  <Textarea
+                    id="edit-notes"
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                    placeholder={t("customer.notesPlaceholder")}
+                    rows={3}
+                    className="resize-none"
+                    data-testid="textarea-edit-notes"
+                  />
+                </div>
+
                 <DialogFooter className="gap-2">
                   <Button variant="outline" onClick={cancelEditing} data-testid="button-cancel-edit">{t("common.cancel")}</Button>
                   <Button onClick={saveEditing} disabled={updateCustomerMutation.isPending} data-testid="button-save-edit">
@@ -663,6 +679,12 @@ export default function ResellerCustomers() {
                           </Badge>
                         ))}
                       </div>
+                    </div>
+                  )}
+                  {(selectedCustomer as any).notes && (
+                    <div className="pt-4 border-t">
+                      <Label className="text-xs text-muted-foreground mb-1 block">{t("common.notes")}</Label>
+                      <p className="text-sm whitespace-pre-wrap text-muted-foreground" data-testid="text-customer-notes">{(selectedCustomer as any).notes}</p>
                     </div>
                   )}
                 </TabsContent>
