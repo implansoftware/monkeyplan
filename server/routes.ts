@@ -194,7 +194,7 @@ import type { RTProviderConfig } from "./services/fiscalRT";
 import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc, inArray, gt, isNotNull, isNull } from "drizzle-orm";
-import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock, repairAcceptance } from "@shared/schema";
+import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock, repairAcceptance, standaloneQuotes } from "@shared/schema";
 import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
 import Stripe from 'stripe';
 
@@ -49603,6 +49603,11 @@ export function registerRoutes(app: Express): Server {
         acceptedBy: req.user.id,
         acceptedAt: new Date(),
       });
+
+      // Save back-link from quote to repair order
+      await db.update(standaloneQuotes)
+        .set({ linkedRepairOrderId: repairOrder.id } as any)
+        .where(eq(standaloneQuotes.id, req.params.id));
 
       await storage.invalidateCache('overview_%');
       await storage.invalidateCache('centers_%');

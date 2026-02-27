@@ -7556,6 +7556,7 @@ export const standaloneQuotes = pgTable("standalone_quotes", {
   createdBy: varchar("created_by").notNull().references(() => users.id),
   resellerId: varchar("reseller_id").references(() => users.id),
   repairCenterId: varchar("repair_center_id").references(() => repairCenters.id),
+  linkedRepairOrderId: varchar("linked_repair_order_id").references(() => repairOrders.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

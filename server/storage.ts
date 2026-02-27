@@ -13685,7 +13685,7 @@ export class DatabaseStorage implements IStorage {
     return `${prefix}${String(nextNum).padStart(4, "0")}`;
   }
 
-  async listStandaloneQuotes(filters?: { createdBy?: string; resellerId?: string; repairCenterId?: string; status?: string; search?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] })[]> {
+  async listStandaloneQuotes(filters?: { createdBy?: string; resellerId?: string; repairCenterId?: string; status?: string; search?: string }): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[]; linkedRepairOrder: { id: string; orderNumber: string; status: string } | null })[]> {
     const conditions: SQL[] = [];
     if (filters?.createdBy) conditions.push(eq(standaloneQuotes.createdBy, filters.createdBy));
     if (filters?.resellerId) conditions.push(eq(standaloneQuotes.resellerId, filters.resellerId));
@@ -13706,11 +13706,22 @@ export class DatabaseStorage implements IStorage {
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(standaloneQuotes.createdAt));
 
-    const result: (StandaloneQuote & { items: StandaloneQuoteItem[] })[] = [];
+    // Batch-load linked repair orders
+    const linkedIds = quotes.map(q => (q as any).linkedRepairOrderId).filter(Boolean) as string[];
+    const linkedRepairMap: Record<string, { id: string; orderNumber: string; status: string }> = {};
+    if (linkedIds.length > 0) {
+      const linkedRepairs = await db.select({ id: repairOrders.id, orderNumber: repairOrders.orderNumber, status: repairOrders.status })
+        .from(repairOrders)
+        .where(inArray(repairOrders.id, linkedIds));
+      for (const r of linkedRepairs) linkedRepairMap[r.id] = r as any;
+    }
+
+    const result: (StandaloneQuote & { items: StandaloneQuoteItem[]; linkedRepairOrder: { id: string; orderNumber: string; status: string } | null })[] = [];
     for (const q of quotes) {
       const items = await db.select().from(standaloneQuoteItems)
         .where(eq(standaloneQuoteItems.quoteId, q.id));
-      result.push({ ...q, items });
+      const linkedRepairOrderId = (q as any).linkedRepairOrderId as string | null;
+      result.push({ ...q, items, linkedRepairOrder: linkedRepairOrderId ? (linkedRepairMap[linkedRepairOrderId] ?? null) : null });
     }
     return result;
   }
@@ -13749,12 +13760,20 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getStandaloneQuote(id: string): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[] }) | undefined> {
+  async getStandaloneQuote(id: string): Promise<(StandaloneQuote & { items: StandaloneQuoteItem[]; linkedRepairOrder: { id: string; orderNumber: string; status: string } | null }) | undefined> {
     const [quote] = await db.select().from(standaloneQuotes).where(eq(standaloneQuotes.id, id));
     if (!quote) return undefined;
     const items = await db.select().from(standaloneQuoteItems)
       .where(eq(standaloneQuoteItems.quoteId, quote.id));
-    return { ...quote, items };
+    const linkedRepairOrderId = (quote as any).linkedRepairOrderId as string | null;
+    let linkedRepairOrder: { id: string; orderNumber: string; status: string } | null = null;
+    if (linkedRepairOrderId) {
+      const [ro] = await db.select({ id: repairOrders.id, orderNumber: repairOrders.orderNumber, status: repairOrders.status })
+        .from(repairOrders)
+        .where(eq(repairOrders.id, linkedRepairOrderId));
+      linkedRepairOrder = ro ? (ro as any) : null;
+    }
+    return { ...quote, items, linkedRepairOrder };
   }
 
   async createStandaloneQuote(quoteData: InsertStandaloneQuote, items: Omit<InsertStandaloneQuoteItem, 'quoteId'>[]): Promise<StandaloneQuote & { items: StandaloneQuoteItem[] }> {

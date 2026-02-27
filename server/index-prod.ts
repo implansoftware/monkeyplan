@@ -106,6 +106,10 @@ export async function serveStatic(app: Express, _server: Server) {
       CREATE UNIQUE INDEX IF NOT EXISTS "password_reset_tokens_token_idx"
       ON "password_reset_tokens" ("token");
     `);
+    await migrationPool.query(`
+      ALTER TABLE "standalone_quotes"
+      ADD COLUMN IF NOT EXISTS "linked_repair_order_id" varchar REFERENCES "repair_orders"("id") ON DELETE SET NULL;
+    `);
 
     await migrationPool.end();
     console.log("[Migration] Startup SQL migrations completed successfully");

@@ -33,13 +33,15 @@ import {
   Package,
   Loader2,
   Search,
+  ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { StandaloneQuote, StandaloneQuoteItem } from "@shared/schema";
 import { useTranslation } from "react-i18next";
 
-type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[] };
+type LinkedRepairOrder = { id: string; orderNumber: string; status: string };
+type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[]; linkedRepairOrder?: LinkedRepairOrder | null };
 
 function getStatusLabels(t: (key: string) => string): Record<string, string> {
   return {
@@ -247,7 +249,7 @@ export default function StandaloneQuoteDetail() {
             >
               <Clock className="h-4 w-4 mr-1.5" />{t("standalone.expired")}</Button>
           )}
-          {quote.status === "accepted" && (
+          {quote.status === "accepted" && !quote.linkedRepairOrder && (
             <Button
               onClick={handleCreateRepairClick}
               disabled={createRepairMutation.isPending}
@@ -259,8 +261,33 @@ export default function StandaloneQuoteDetail() {
               Crea Lavorazione
             </Button>
           )}
+          {quote.linkedRepairOrder && (
+            <Button
+              variant="outline"
+              onClick={() => navigate(`${basePath}/repairs/${quote.linkedRepairOrder!.id}`)}
+              data-testid="button-go-to-repair"
+            >
+              <ExternalLink className="h-4 w-4 mr-1.5" />
+              {quote.linkedRepairOrder.orderNumber}
+            </Button>
+          )}
         </div>
       </div>
+
+      {quote.linkedRepairOrder && (
+        <div
+          className="flex items-center gap-3 p-4 rounded-md border bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 cursor-pointer hover-elevate"
+          onClick={() => navigate(`${basePath}/repairs/${quote.linkedRepairOrder!.id}`)}
+          data-testid="banner-linked-repair"
+        >
+          <Wrench className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">Lavorazione collegata</p>
+            <p className="text-sm text-blue-700 dark:text-blue-300">{quote.linkedRepairOrder.orderNumber}</p>
+          </div>
+          <ExternalLink className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>

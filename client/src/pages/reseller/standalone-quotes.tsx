@@ -39,6 +39,7 @@ import {
   Clock,
   Eye,
   Download,
+  Wrench,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -70,7 +71,8 @@ function formatCurrency(cents: number): string {
   }).format(cents / 100);
 }
 
-type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[] };
+type LinkedRepairOrder = { id: string; orderNumber: string; status: string };
+type QuoteWithItems = StandaloneQuote & { items: StandaloneQuoteItem[]; linkedRepairOrder?: LinkedRepairOrder | null };
 
 export default function StandaloneQuotesList() {
   const { t } = useTranslation();
@@ -234,6 +236,16 @@ export default function StandaloneQuotesList() {
                       <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${statusClasses[quote.status] || ""}`}>
                         {statusLabels[quote.status] || quote.status}
                       </span>
+                      {quote.linkedRepairOrder && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 cursor-pointer hover-elevate"
+                          onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/repairs/${quote.linkedRepairOrder!.id}`); }}
+                          data-testid={`badge-linked-repair-${quote.id}`}
+                        >
+                          <Wrench className="h-3 w-3" />
+                          {quote.linkedRepairOrder.orderNumber}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
