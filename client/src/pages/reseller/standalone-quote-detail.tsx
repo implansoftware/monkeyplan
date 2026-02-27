@@ -123,7 +123,8 @@ export default function StandaloneQuoteDetail() {
 
   const createRepairMutation = useMutation({
     mutationFn: async (customerId?: string) => {
-      return apiRequest("POST", `/api/standalone-quotes/${quoteId}/create-repair`, customerId ? { customerId } : undefined);
+      const res = await apiRequest("POST", `/api/standalone-quotes/${quoteId}/create-repair`, customerId ? { customerId } : undefined);
+      return res.json();
     },
     onSuccess: (repairOrder: any) => {
       setCustomerDialogOpen(false);
