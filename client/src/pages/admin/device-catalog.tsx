@@ -615,7 +615,7 @@ export default function AdminDeviceCatalog() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("common.name")}</TableHead>
-                      <TableHead>Logo URL</TableHead>
+                      <TableHead>Logo</TableHead>
                       <TableHead>{t("common.status")}</TableHead>
                       <TableHead className="text-right">{t("common.actions")}</TableHead>
                     </TableRow>
@@ -624,10 +624,29 @@ export default function AdminDeviceCatalog() {
                     {filteredBrands.map(brand => (
                       <TableRow key={brand.id} data-testid={`row-brand-${brand.id}`}>
                         <TableCell>
-                          <span className="font-medium">{brand.name}</span>
+                          <div className="flex items-center gap-2">
+                            {brand.logoUrl && (
+                              <img
+                                src={brand.logoUrl}
+                                alt={brand.name}
+                                className="h-6 w-6 object-contain shrink-0"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                              />
+                            )}
+                            <span className="font-medium">{brand.name}</span>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground max-w-[200px] truncate">
-                          {brand.logoUrl || "-"}
+                        <TableCell>
+                          {brand.logoUrl ? (
+                            <img
+                              src={brand.logoUrl}
+                              alt={brand.name}
+                              className="h-8 w-auto max-w-[80px] object-contain"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Switch
