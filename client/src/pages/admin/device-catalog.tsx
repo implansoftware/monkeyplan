@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Smartphone, Tablet, Laptop, Monitor, Tv, Watch, Gamepad2, Headphones, Printer,
-  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X, FileUp, CheckCircle2, AlertCircle
+  Plus, Pencil, Trash2, Loader2, Search, ChevronRight, ChevronDown, Building2, Package, X, FileUp, CheckCircle2, AlertCircle, Wand2, ImageIcon, Images
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -54,12 +54,14 @@ export default function AdminDeviceCatalog() {
 
   const [modelDialogOpen, setModelDialogOpen] = useState(false);
   const [editingModel, setEditingModel] = useState<DeviceModel | null>(null);
-  const [modelForm, setModelForm] = useState({ modelName: "", brandId: "", typeId: "", marketCodes: [] as string[] });
+  const [modelForm, setModelForm] = useState({ modelName: "", brandId: "", typeId: "", marketCodes: [] as string[], photoUrl: "" });
   const [newMarketCode, setNewMarketCode] = useState("");
   const [deleteModelDialogOpen, setDeleteModelDialogOpen] = useState(false);
   const [modelToDelete, setModelToDelete] = useState<DeviceModel | null>(null);
   const [modelBrandFilter, setModelBrandFilter] = useState<string>("all");
   const [modelTypeFilter, setModelTypeFilter] = useState<string>("all");
+  const [fetchingImageId, setFetchingImageId] = useState<string | null>(null);
+  const [batchFetching, setBatchFetching] = useState(false);
 
   // Excel import state
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -196,7 +198,7 @@ export default function AdminDeviceCatalog() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setModelDialogOpen(false);
-      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
+      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [], photoUrl: "" });
       setNewMarketCode("");
       toast({ title: t("products.modelCreated") });
     },
@@ -213,7 +215,7 @@ export default function AdminDeviceCatalog() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
       setModelDialogOpen(false);
       setEditingModel(null);
-      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
+      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [], photoUrl: "" });
       setNewMarketCode("");
       toast({ title: t("products.modelUpdated") });
     },
@@ -246,6 +248,38 @@ export default function AdminDeviceCatalog() {
     },
   });
 
+  const fetchImageMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("POST", `/api/admin/device-models/${id}/fetch-image`);
+      return res.json();
+    },
+    onSuccess: (data, id) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
+      setFetchingImageId(null);
+      toast({ title: "Immagine trovata", description: data.imageUrl });
+    },
+    onError: (error: any) => {
+      setFetchingImageId(null);
+      toast({ variant: "destructive", title: "Immagine non trovata", description: error.message || "Nessuna immagine disponibile per questo modello" });
+    },
+  });
+
+  const batchFetchImagesMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/device-models/fetch-images-batch");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
+      setBatchFetching(false);
+      toast({ title: "Ricerca completata", description: `${data.succeeded} immagini trovate su ${data.processed} modelli elaborati` });
+    },
+    onError: (error: any) => {
+      setBatchFetching(false);
+      toast({ variant: "destructive", title: "Errore", description: error.message });
+    },
+  });
+
   const openTypeDialog = (type?: DeviceType) => {
     if (type) {
       setEditingType(type);
@@ -275,11 +309,12 @@ export default function AdminDeviceCatalog() {
         modelName: model.modelName, 
         brandId: model.brandId || "", 
         typeId: model.typeId || "",
-        marketCodes: model.marketCodes || []
+        marketCodes: model.marketCodes || [],
+        photoUrl: model.photoUrl || ""
       });
     } else {
       setEditingModel(null);
-      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [] });
+      setModelForm({ modelName: "", brandId: "", typeId: "", marketCodes: [], photoUrl: "" });
     }
     setNewMarketCode("");
     setModelDialogOpen(true);
@@ -588,6 +623,19 @@ export default function AdminDeviceCatalog() {
                     <FileUp className="h-4 w-4 mr-2" />
                     Importa Excel
                   </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { setBatchFetching(true); batchFetchImagesMutation.mutate(); }}
+                    disabled={batchFetchImagesMutation.isPending}
+                    data-testid="button-batch-fetch-images"
+                  >
+                    {batchFetchImagesMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Images className="h-4 w-4 mr-2" />
+                    )}
+                    Cerca immagini
+                  </Button>
                   <Button onClick={() => openModelDialog()} data-testid="button-add-model">
                     <Plus className="h-4 w-4 mr-2" />
                     Nuovo Modello
@@ -603,6 +651,7 @@ export default function AdminDeviceCatalog() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-16">Img</TableHead>
                         <TableHead>{t("products.marketCode")}</TableHead>
                         <TableHead>{t("products.model")}</TableHead>
                         <TableHead>{t("products.brand")}</TableHead>
@@ -617,6 +666,21 @@ export default function AdminDeviceCatalog() {
                         const type = deviceTypes.find(t => t.id === model.typeId);
                         return (
                           <TableRow key={model.id} data-testid={`row-model-${model.id}`}>
+                            <TableCell className="w-16">
+                              {model.photoUrl ? (
+                                <img
+                                  src={model.photoUrl}
+                                  alt={model.modelName}
+                                  className="h-10 w-10 object-contain rounded-md bg-muted"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                  data-testid={`img-model-${model.id}`}
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">
                               {model.marketCodes && model.marketCodes.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
@@ -651,6 +715,23 @@ export default function AdminDeviceCatalog() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  title="Cerca immagine automaticamente"
+                                  onClick={() => {
+                                    setFetchingImageId(model.id);
+                                    fetchImageMutation.mutate(model.id);
+                                  }}
+                                  disabled={fetchingImageId === model.id}
+                                  data-testid={`button-fetch-image-${model.id}`}
+                                >
+                                  {fetchingImageId === model.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Wand2 className="h-4 w-4" />
+                                  )}
+                                </Button>
                                 <Button 
                                   size="icon" 
                                   variant="ghost"
@@ -677,7 +758,7 @@ export default function AdminDeviceCatalog() {
                       })}
                       {filteredModels.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Nessun modello trovato
                           </TableCell>
                         </TableRow>
@@ -968,6 +1049,27 @@ export default function AdminDeviceCatalog() {
               </div>
               <p className="text-xs text-muted-foreground">Premi Invio o + per aggiungere un codice</p>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="model-photo">URL Immagine</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="model-photo"
+                  value={modelForm.photoUrl || ""}
+                  onChange={(e) => setModelForm({ ...modelForm, photoUrl: e.target.value })}
+                  placeholder="https://..."
+                  data-testid="input-model-photo"
+                />
+                {modelForm.photoUrl && (
+                  <img
+                    src={modelForm.photoUrl}
+                    alt="preview"
+                    className="h-9 w-9 object-contain rounded-md bg-muted flex-shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">Lascia vuoto per ricerca automatica</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModelDialogOpen(false)}>
@@ -979,6 +1081,7 @@ export default function AdminDeviceCatalog() {
                 if (modelForm.brandId) payload.brandId = modelForm.brandId;
                 if (modelForm.typeId) payload.typeId = modelForm.typeId;
                 if (modelForm.marketCodes.length > 0) payload.marketCodes = modelForm.marketCodes;
+                if (modelForm.photoUrl) payload.photoUrl = modelForm.photoUrl;
                 
                 if (editingModel) {
                   updateModelMutation.mutate({ id: editingModel.id, data: payload });

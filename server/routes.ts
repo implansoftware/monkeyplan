@@ -54,6 +54,7 @@ import { generateAndStoreReturnDocuments, getSignedDownloadUrl, generateTransfer
 import { generatePosReceiptPdf } from "./services/posReceipt";
 import { getAvailableProviders, testRTConnection, submitTransactionToRT, getProvider } from "./services/fiscalRT";
 import { testOpenApiConnection, getConfigurations as getOpenApiConfigurations, createConfiguration as createOpenApiConfiguration, updateConfiguration as updateOpenApiConfiguration, sendInvoice as sendOpenApiInvoice, getInvoices as getOpenApiInvoices } from "./services/openApiInvoice";
+import { fetchDeviceImage, fetchDeviceImagesBatch } from "./services/deviceImageSearch";
 import OpenAI from "openai";
 
 // Helper: Attempt automatic RT submission for a completed POS transaction
@@ -23972,6 +23973,75 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Delete device model (admin only)
+  // Fetch device image automatically from Wikipedia (admin only)
+  app.post("/api/admin/device-models/:id/fetch-image", requireRole("admin"), async (req, res) => {
+    try {
+      const model = await storage.getDeviceModel(req.params.id);
+      if (!model) return res.status(404).json({ error: "Modello non trovato" });
+
+      const brands = await storage.listDeviceBrands();
+      const brand = brands.find(b => b.id === model.brandId);
+      const brandName = brand?.name || model.brand || "";
+
+      if (!brandName && !model.modelName) {
+        return res.status(400).json({ error: "Marca e modello sono richiesti per la ricerca immagine" });
+      }
+
+      const imageUrl = await fetchDeviceImage(brandName, model.modelName);
+      if (!imageUrl) {
+        return res.status(404).json({ error: "Immagine non trovata per questo modello" });
+      }
+
+      const updated = await storage.updateDeviceModel(req.params.id, { photoUrl: imageUrl });
+      res.json({ imageUrl, model: updated });
+    } catch (error: any) {
+      console.error("fetch-image error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // Batch fetch images for all models without an image (admin only)
+  app.post("/api/admin/device-models/fetch-images-batch", requireRole("admin"), async (req, res) => {
+    try {
+      const allModels = await storage.listDeviceModels();
+      const brands = await storage.listDeviceBrands();
+      const brandMap = new Map(brands.map(b => [b.id, b.name]));
+
+      const modelsWithoutImage = allModels
+        .filter(m => !m.photoUrl)
+        .slice(0, 30);
+
+      if (modelsWithoutImage.length === 0) {
+        return res.json({ processed: 0, succeeded: 0, failed: 0, results: [] });
+      }
+
+      const toProcess = modelsWithoutImage.map(m => ({
+        id: m.id,
+        modelName: m.modelName,
+        brand: brandMap.get(m.brandId || "") || m.brand || "",
+      }));
+
+      const results = await fetchDeviceImagesBatch(toProcess);
+
+      for (const result of results) {
+        if (result.success && result.imageUrl) {
+          await storage.updateDeviceModel(result.modelId, { photoUrl: result.imageUrl });
+        }
+      }
+
+      const succeeded = results.filter(r => r.success).length;
+      res.json({
+        processed: results.length,
+        succeeded,
+        failed: results.length - succeeded,
+        results,
+      });
+    } catch (error: any) {
+      console.error("fetch-images-batch error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   app.delete("/api/admin/device-models/:id", requireRole("admin"), async (req, res) => {
     try {
       await storage.deleteDeviceModel(req.params.id);
