@@ -268,25 +268,25 @@ export default function AdminDeviceCatalog() {
   const runBatchFetchImages = async () => {
     setBatchFetching(true);
     setBatchProgress({ done: 0, found: 0, total: 0 });
-    let totalDone = 0;
     let totalFound = 0;
+    let offset = 0;
 
     try {
       while (true) {
-        const res = await apiRequest("POST", "/api/admin/device-models/fetch-images-batch", { offset: 0 });
+        const res = await apiRequest("POST", "/api/admin/device-models/fetch-images-batch", { offset });
         const data = await res.json();
 
-        totalDone += data.processed;
+        offset += data.processed;
         totalFound += data.succeeded;
-        setBatchProgress({ done: totalDone, found: totalFound, total: totalDone + (data.totalRemaining ?? 0) });
+        setBatchProgress({ done: offset, found: totalFound, total: data.totalModels ?? offset });
 
-        if (data.processed > 0) {
+        if (data.succeeded > 0) {
           queryClient.invalidateQueries({ queryKey: ["/api/admin/device-models"] });
         }
 
-        if (!data.processed || data.succeeded === 0 || data.totalRemaining === 0) break;
+        if (!data.processed || offset >= (data.totalModels ?? offset)) break;
       }
-      toast({ title: "Ricerca completata", description: `${totalFound} immagini trovate su ${totalDone} modelli elaborati` });
+      toast({ title: "Ricerca completata", description: `${totalFound} immagini trovate su ${offset} modelli elaborati` });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Errore ricerca immagini", description: error.message });
     } finally {

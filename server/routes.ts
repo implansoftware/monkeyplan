@@ -24010,22 +24010,21 @@ export function registerRoutes(app: Express): Server {
       const brands = await storage.listDeviceBrands();
       const brandMap = new Map(brands.map(b => [b.id, b.name]));
 
-      const allMissingImage = allModels.filter(m => !m.photoUrl);
-      const totalRemaining = allMissingImage.length;
+      const totalModels = allModels.length;
 
-      if (totalRemaining === 0) {
-        return res.json({ processed: 0, succeeded: 0, failed: 0, totalRemaining: 0, results: [] });
-      }
+      const slice = allModels.slice(offset, offset + BATCH_SIZE);
 
-      const slice = allMissingImage.slice(offset, offset + BATCH_SIZE);
+      const toProcess = slice
+        .filter(m => !m.photoUrl)
+        .map(m => ({
+          id: m.id,
+          modelName: m.modelName,
+          brand: brandMap.get(m.brandId || "") || m.brand || "",
+        }));
 
-      const toProcess = slice.map(m => ({
-        id: m.id,
-        modelName: m.modelName,
-        brand: brandMap.get(m.brandId || "") || m.brand || "",
-      }));
-
-      const results = await fetchDeviceImagesBatch(toProcess);
+      const results = toProcess.length > 0
+        ? await fetchDeviceImagesBatch(toProcess)
+        : [];
 
       for (const result of results) {
         if (result.success && result.imageUrl) {
@@ -24034,13 +24033,13 @@ export function registerRoutes(app: Express): Server {
       }
 
       const succeeded = results.filter(r => r.success).length;
-      const stillRemaining = allMissingImage.length - slice.length;
 
       res.json({
-        processed: results.length,
+        processed: slice.length,
+        attempted: toProcess.length,
         succeeded,
-        failed: results.length - succeeded,
-        totalRemaining: stillRemaining,
+        failed: toProcess.length - succeeded,
+        totalModels,
         results,
       });
     } catch (error: any) {
