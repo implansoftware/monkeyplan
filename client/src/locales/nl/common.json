@@ -10038,7 +10038,8 @@
     "quoteReady": "Er is een offerte voor de reparatie opgesteld",
     "waitingParts": "Wachten op noodzakelijke onderdelen",
     "testingRepair": "Verifiëren van juiste werking",
-    "imeiCode": "IMEI-code"
+    "imeiCode": "IMEI-code",
+    "recentActivity": "Recente Activiteit"
   },
   "returns": {
     "refundProcessed": "De terugbetaling van {{amount}} is verwerkt.",

@@ -8622,7 +8622,8 @@
     "quoteReady": "un devis a été prepared pour le réparation",
     "waitingParts": "Waiting pour necessary components",
     "testingRepair": "Vérification du fonctionnement correct",
-    "imeiCode": "Code IMEI"
+    "imeiCode": "Code IMEI",
+    "recentActivity": "Activité Récente"
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses disponible pour le réparation",

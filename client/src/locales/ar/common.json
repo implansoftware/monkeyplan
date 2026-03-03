@@ -9986,7 +9986,8 @@
     "quoteReady": "A quote has been prepared for the repair",
     "waitingParts": "Waiting for necessary components",
     "testingRepair": "Verifying correct operation",
-    "imeiCode": "IMEI Code"
+    "imeiCode": "IMEI Code",
+    "recentActivity": "النشاط الأخير"
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "التشخيصات المتاحة للإصلاح",

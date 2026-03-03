@@ -8679,7 +8679,8 @@
     "testingRepair": "Verifica del corretto funzionamento",
     "imeiCode": "Codice IMEI",
     "noRepairs": "Nessuna riparazione",
-    "noWarranties": "Nessuna garanzia"
+    "noWarranties": "Nessuna garanzia",
+    "recentActivity": "Attività Recente"
   },
   "returns": {
     "refundProcessed": "Il rimborso di {{amount}} è stato effettuato.",

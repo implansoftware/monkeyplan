@@ -10363,7 +10363,8 @@
     "quoteReady": "Für die Reparatur wurde ein Angebot erstellt",
     "waitingParts": "Warten auf notwendige Komponenten",
     "testingRepair": "Überprüfung des korrekten Betriebs",
-    "imeiCode": "IMEI Code"
+    "imeiCode": "IMEI Code",
+    "recentActivity": "Letzte Aktivität"
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnosen für die Reparatur verfügbar",

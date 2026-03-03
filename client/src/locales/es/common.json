@@ -8622,7 +8622,8 @@
     "quoteReady": "Un presupuesto tiene been prepared para el reparación",
     "waitingParts": "Waiting para necessary componentes",
     "testingRepair": "Verifying correcto operation",
-    "imeiCode": "IMEI Código"
+    "imeiCode": "IMEI Código",
+    "recentActivity": "Actividad Reciente"
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses disponible para el reparación",

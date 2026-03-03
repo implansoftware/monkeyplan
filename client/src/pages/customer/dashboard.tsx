@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, ShoppingBag, Smartphone, Send, ArrowRight, Package, Euro, FileText, Shield, RotateCcw, ChevronRight } from "lucide-react";
+import { Wrench, Ticket, CheckCircle, Clock, Building2, Store, Phone, MapPin, ShoppingBag, Smartphone, Send, ArrowRight, Package, Euro, FileText, Shield, RotateCcw, ChevronRight, Activity } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,38 @@ export default function CustomerDashboard() {
   const { data: stats, isLoading } = useQuery<CustomerStats>({
     queryKey: ["/api/stats"],
   });
+
+  const { data: repairs = [] } = useQuery<any[]>({
+    queryKey: ["/api/customer/repairs"],
+  });
+
+  const { data: serviceOrders = [] } = useQuery<any[]>({
+    queryKey: ["/api/customer/service-orders"],
+  });
+
+  // Merge and sort by most recent date
+  const recentActivity = [
+    ...repairs.map((r: any) => ({
+      type: "repair" as const,
+      id: r.id,
+      label: `#${r.orderNumber || r.id.slice(0,8)}`,
+      subtitle: [r.brand, r.model].filter(Boolean).join(" ") || r.deviceType || "",
+      status: r.status,
+      date: r.updatedAt || r.createdAt,
+      href: "/customer/repairs",
+    })),
+    ...serviceOrders.map((o: any) => ({
+      type: "service" as const,
+      id: o.id,
+      label: `#${o.orderNumber || o.id.slice(0,8)}`,
+      subtitle: (o as any).serviceItem?.name || "",
+      status: o.status,
+      date: o.updatedAt || o.createdAt,
+      href: "/customer/service-orders",
+    })),
+  ]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
 
   const firstName = user?.fullName?.split(" ")[0] || user?.username || t("customers.customer");
 
@@ -294,6 +326,70 @@ export default function CustomerDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Recent Activity */}
+          {recentActivity.length > 0 && (
+            <Card data-testid="card-recent-activity">
+              <CardHeader className="flex flex-row items-center justify-between gap-1 pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                  {t("customerPages.recentActivity")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-1">
+                  {recentActivity.map((item) => {
+                    const repairStatusMap: Record<string, { label: string; color: string }> = {
+                      pending: { label: t("b2b.status.pending"), color: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+                      ingressato: { label: t("repairs.status.ingressato"), color: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+                      in_diagnosi: { label: t("repairs.status.inDiagnosi"), color: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+                      preventivo_emesso: { label: t("repairs.status.preventivoEmesso"), color: "bg-violet-500/15 text-violet-700 dark:text-violet-400" },
+                      preventivo_accettato: { label: t("repairs.status.preventivoAccettato"), color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
+                      preventivo_rifiutato: { label: t("repairs.status.preventivoRifiutato"), color: "bg-red-500/15 text-red-700 dark:text-red-400" },
+                      attesa_ricambi: { label: t("repairs.status.attesaRicambi"), color: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+                      in_riparazione: { label: t("repairs.status.inRiparazione"), color: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+                      in_test: { label: t("repairs.status.inTest"), color: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+                      pronto_ritiro: { label: t("repairs.status.prontoRitiro"), color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
+                      consegnato: { label: t("repairs.status.consegnato"), color: "bg-muted text-muted-foreground" },
+                      cancelled: { label: t("repairs.status.cancelled"), color: "bg-red-500/15 text-red-700 dark:text-red-400" },
+                      accepted: { label: t("standalone.accepted"), color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" },
+                      scheduled: { label: t("customerPages.scheduledLabel"), color: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+                      in_progress: { label: t("tickets.status.inProgress"), color: "bg-blue-500/15 text-blue-700 dark:text-blue-400" },
+                      completed: { label: t("repairs.status.completed"), color: "bg-muted text-muted-foreground" },
+                    };
+                    const statusInfo = repairStatusMap[item.status] || { label: item.status, color: "bg-muted text-muted-foreground" };
+                    const isRepair = item.type === "repair";
+                    return (
+                      <Link key={`${item.type}-${item.id}`} href={item.href}>
+                        <div className="flex items-center gap-3 p-2.5 rounded-md cursor-pointer hover:bg-muted/50 transition-colors" data-testid={`activity-item-${item.id}`}>
+                          <div className={`h-8 w-8 rounded-md flex items-center justify-center shrink-0 ${isRepair ? "bg-emerald-500/10" : "bg-blue-500/10"}`}>
+                            {isRepair
+                              ? <Wrench className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                              : <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium">{item.label}</span>
+                              <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium ${statusInfo.color}`}>
+                                {statusInfo.label}
+                              </span>
+                            </div>
+                            {item.subtitle && (
+                              <p className="text-xs text-muted-foreground truncate">{item.subtitle}</p>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {format(new Date(item.date), "dd MMM", { locale: it })}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
