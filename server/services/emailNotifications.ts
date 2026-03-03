@@ -16,6 +16,7 @@ import {
   emailWarrantyActivated,
   emailDeliveryAppointment,
   emailStandaloneQuote,
+  emailRemoteRepairRequestCreated,
   type RepairEmailData,
   type InvoiceEmailData,
   type TicketEmailData,
@@ -24,6 +25,7 @@ import {
   type WarrantyEmailData,
   type DeliveryAppointmentEmailData,
   type StandaloneQuoteEmailData,
+  type RemoteRepairRequestEmailData,
 } from "./email";
 
 async function getUserEmail(userId: string): Promise<{ email: string; fullName: string } | null> {
@@ -360,5 +362,38 @@ export async function notifyStandaloneQuote(quote: any, items: any[]): Promise<v
     await sendEmail({ to: customer.email, subject, html });
   } catch (error) {
     console.error("[EmailNotify] Failed to send standalone quote email:", error);
+  }
+}
+
+export async function notifyRemoteRepairRequestCreated(
+  request: any,
+  customer: { fullName?: string; username?: string },
+  devices: any[]
+): Promise<void> {
+  try {
+    if (!request.resellerId) return;
+    const reseller = await getUserEmail(request.resellerId);
+    if (!reseller) return;
+
+    const data: RemoteRepairRequestEmailData = {
+      resellerName: reseller.fullName,
+      resellerEmail: reseller.email,
+      customerName: customer.fullName || customer.username || "Cliente",
+      requestNumber: request.requestNumber || request.id.slice(0, 8).toUpperCase(),
+      deviceCount: devices.length,
+      devices: devices.map((d) => ({
+        deviceType: d.deviceType,
+        brand: d.brand,
+        model: d.model,
+        issue: d.issue || d.issueDescription,
+      })),
+      notes: request.notes,
+    };
+
+    const { subject, html } = emailRemoteRepairRequestCreated(data);
+    await sendEmail({ to: reseller.email, subject, html });
+    console.log(`[EmailNotify] Remote repair request email sent to reseller ${reseller.email}`);
+  } catch (error) {
+    console.error("[EmailNotify] Failed to send remote repair request email:", error);
   }
 }

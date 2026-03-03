@@ -658,6 +658,47 @@ export interface StandaloneQuoteEmailData {
   notes?: string;
 }
 
+export interface RemoteRepairRequestEmailData {
+  resellerName: string;
+  resellerEmail: string;
+  customerName: string;
+  requestNumber: string;
+  deviceCount: number;
+  devices: Array<{ deviceType?: string; brand?: string; model?: string; issue?: string }>;
+  notes?: string;
+}
+
+export function emailRemoteRepairRequestCreated(data: RemoteRepairRequestEmailData): { subject: string; html: string } {
+  const deviceRows = data.devices.map((d) => {
+    const name = [d.brand, d.model].filter(Boolean).join(" ") || d.deviceType || "Dispositivo";
+    return `<tr><td>${name}</td><td>${d.deviceType || "—"}</td><td>${d.issue || "—"}</td></tr>`;
+  }).join("");
+
+  const devicesTable = `
+    <table class="items">
+      <thead><tr><th>Dispositivo</th><th>Tipo</th><th>Problema</th></tr></thead>
+      <tbody>${deviceRows}</tbody>
+    </table>`;
+
+  const body = `
+    <p>Gentile <strong>${data.resellerName}</strong>,</p>
+    <p>Il cliente <strong>${data.customerName}</strong> ha inviato una nuova richiesta di riparazione remota.</p>
+    ${detailCard([
+      { label: "N. Richiesta", value: `<strong>${data.requestNumber}</strong>` },
+      { label: "Cliente", value: data.customerName },
+      { label: "Dispositivi", value: `<strong>${data.deviceCount}</strong>` },
+      { label: "Stato", value: statusBadge("Nuova Richiesta", "info") },
+    ])}
+    ${devicesTable}
+    ${data.notes ? `<div class="tip-box"><strong>Note:</strong> ${data.notes}</div>` : ""}
+    <p style="color:#64748b;font-size:13px;margin-top:16px;">Accedi alla piattaforma per gestire la richiesta.</p>
+  `;
+  return {
+    subject: `Nuova richiesta remota da ${data.customerName} (${data.requestNumber})`,
+    html: baseTemplate("Nuova Richiesta Remota", body, "#0f766e"),
+  };
+}
+
 export function emailStandaloneQuote(data: StandaloneQuoteEmailData): { subject: string; html: string } {
   const itemsTable = `
     <table class="items">

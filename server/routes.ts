@@ -10,7 +10,7 @@ import ExcelJS from "exceljs";
 import multer from "multer";
 import { enqueuePushNotification } from "./services/expoPush";
 import { sendEmail, verifySmtpConnection, buildEmailTemplate } from "./services/email";
-import { notifyRepairCreated, notifyRepairStatusChanged, notifyQuoteIssued, notifyInvoiceCreated, notifyTicketCreated, notifyTicketReply, notifyTicketClosed, notifyUserCreated, notifyDeliveryAppointment, notifyStandaloneQuote, notifyWarrantyActivated, notifyB2BOrderCreated, notifyB2BOrderShipped } from "./services/emailNotifications";
+import { notifyRepairCreated, notifyRepairStatusChanged, notifyQuoteIssued, notifyInvoiceCreated, notifyTicketCreated, notifyTicketReply, notifyTicketClosed, notifyUserCreated, notifyDeliveryAppointment, notifyStandaloneQuote, notifyWarrantyActivated, notifyB2BOrderCreated, notifyB2BOrderShipped, notifyRemoteRepairRequestCreated } from "./services/emailNotifications";
 import {
   insertUserSchema, insertRepairCenterSchema, insertProductSchema,
   insertRepairOrderSchema, insertRepairAcceptanceSchema, insertTicketSchema, insertInvoiceSchema,
@@ -11520,6 +11520,9 @@ export function registerRoutes(app: Express): Server {
         message: `${req.user.fullName} ha inviato una richiesta di riparazione remota`,
         requestId: request.id
       });
+
+      // Fire-and-forget email to reseller
+      notifyRemoteRepairRequestCreated(request, req.user, createdDevices);
 
       // Notify repair center users associated with the customer or requested center
       const rcNotifyUserIds = new Set<string>();
