@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,8 @@ interface InviteLinkInfo {
 }
 
 export default function CustomerRegisterPage() {
-  const params = useParams<{ token: string }>();
-  const token = params.token;
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+  const token = location.startsWith("/invite/") ? location.slice("/invite/".length) : location.split("/").pop();
   const { toast } = useToast();
   usePageTitle("Registrazione Cliente");
 
