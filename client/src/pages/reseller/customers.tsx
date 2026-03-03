@@ -36,6 +36,12 @@ type FilterType = "all" | "active" | "inactive";
 
 export default function ResellerCustomers() {
   const { t } = useTranslation();
+  const [inviteLinksOpen, setInviteLinksOpen] = useState(false);
+  const [newLinkType, setNewLinkType] = useState<"private" | "business">("private");
+  const [newLinkLabel, setNewLinkLabel] = useState("");
+  const [newLinkMaxUsages, setNewLinkMaxUsages] = useState("");
+  const [newLinkExpiry, setNewLinkExpiry] = useState("");
+
   // Invite links
   const { data: inviteLinks = [], refetch: refetchLinks } = useQuery<any[]>({
     queryKey: ["/api/reseller/invite-links"],
@@ -85,11 +91,6 @@ export default function ResellerCustomers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<CustomerWithRepairCenters | null>(null);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
-  const [inviteLinksOpen, setInviteLinksOpen] = useState(false);
-  const [newLinkType, setNewLinkType] = useState<"private" | "business">("private");
-  const [newLinkLabel, setNewLinkLabel] = useState("");
-  const [newLinkMaxUsages, setNewLinkMaxUsages] = useState("");
-  const [newLinkExpiry, setNewLinkExpiry] = useState("");
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
