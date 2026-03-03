@@ -125,6 +125,21 @@ export async function serveStatic(app: Express, _server: Server) {
     ADD COLUMN IF NOT EXISTS "linked_repair_order_id" varchar;
   `);
 
+  await runMigration("create customer_invite_links table", `
+    CREATE TABLE IF NOT EXISTS "customer_invite_links" (
+      "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+      "reseller_id" varchar NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+      "token" varchar(64) NOT NULL UNIQUE,
+      "customer_type" varchar(20) NOT NULL DEFAULT 'private',
+      "label" varchar(100),
+      "is_active" boolean NOT NULL DEFAULT true,
+      "expires_at" timestamp,
+      "usage_count" integer NOT NULL DEFAULT 0,
+      "max_usages" integer,
+      "created_at" timestamp NOT NULL DEFAULT now()
+    );
+  `);
+
   await runMigration("standalone_quotes FK to repair_orders", `
     DO $$
     BEGIN

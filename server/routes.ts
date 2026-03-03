@@ -6283,6 +6283,141 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ============ CUSTOMER INVITE LINKS (Reseller) ============
+  app.get("/api/reseller/invite-links", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = getResellerId(req);
+      const links = await storage.listCustomerInviteLinks(resellerId);
+      res.json(links);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/reseller/invite-links", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = getResellerId(req);
+      const { customerType, label, expiresAt, maxUsages } = req.body;
+      if (!customerType || !["private", "business"].includes(customerType)) {
+        return res.status(400).send("customerType deve essere 'private' o 'business'");
+      }
+      const token = randomBytes(32).toString("hex");
+      const link = await storage.createCustomerInviteLink({
+        resellerId,
+        token,
+        customerType,
+        label: label || null,
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+        maxUsages: maxUsages ? parseInt(maxUsages) : undefined,
+      });
+      res.status(201).json(link);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.patch("/api/reseller/invite-links/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = getResellerId(req);
+      const links = await storage.listCustomerInviteLinks(resellerId);
+      const link = links.find(l => l.id === req.params.id);
+      if (!link) return res.status(404).send("Link non trovato");
+      const { isActive, label } = req.body;
+      const updated = await storage.updateCustomerInviteLink(req.params.id, { isActive, label });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.delete("/api/reseller/invite-links/:id", requireRole("reseller", "reseller_staff"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const resellerId = getResellerId(req);
+      const links = await storage.listCustomerInviteLinks(resellerId);
+      const link = links.find(l => l.id === req.params.id);
+      if (!link) return res.status(404).send("Link non trovato");
+      await storage.deleteCustomerInviteLink(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // ============ PUBLIC CUSTOMER SELF-REGISTRATION via INVITE LINK ============
+  app.get("/api/public/invite/:token", async (req, res) => {
+    try {
+      const link = await storage.getCustomerInviteLinkByToken(req.params.token);
+      if (!link || !link.isActive) return res.status(404).json({ error: "Link non valido o scaduto" });
+      if (link.expiresAt && new Date() > link.expiresAt) return res.status(410).json({ error: "Link scaduto" });
+      if (link.maxUsages && link.usageCount >= link.maxUsages) return res.status(410).json({ error: "Link esaurito" });
+      const reseller = await storage.getUser(link.resellerId);
+      res.json({
+        linkId: link.id,
+        customerType: link.customerType,
+        label: link.label,
+        resellerName: reseller?.fullName || reseller?.ragioneSociale || "Il tuo rivenditore",
+        resellerLogo: reseller?.logoUrl || null,
+      });
+    } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/public/invite/:token/register", async (req, res) => {
+    try {
+      const link = await storage.getCustomerInviteLinkByToken(req.params.token);
+      if (!link || !link.isActive) return res.status(404).json({ error: "Link non valido o scaduto" });
+      if (link.expiresAt && new Date() > link.expiresAt) return res.status(410).json({ error: "Link scaduto" });
+      if (link.maxUsages && link.usageCount >= link.maxUsages) return res.status(410).json({ error: "Link esaurito (numero massimo di registrazioni raggiunto)" });
+
+      const { fullName, email, phone, password, ragioneSociale, partitaIva, pec, codiceFiscale, address } = req.body;
+      if (!fullName || !email || !password) return res.status(400).json({ error: "Nome, email e password sono obbligatori" });
+      if (password.length < 6) return res.status(400).json({ error: "La password deve essere di almeno 6 caratteri" });
+
+      // Check email uniqueness
+      const existing = await storage.getUserByEmail(email);
+      if (existing) return res.status(409).json({ error: "Email già registrata" });
+
+      // Auto-generate username
+      let baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, "").substring(0, 20) || "cliente";
+      if (baseUsername.length < 3) baseUsername = "cliente";
+      let username = baseUsername;
+      let counter = 1;
+      while (await storage.getUserByUsername(username)) {
+        username = `${baseUsername}${counter++}`;
+      }
+
+      const hashedPassword = await hashPassword(password);
+      const user = await storage.createUser({
+        username,
+        password: hashedPassword,
+        email,
+        fullName,
+        phone: phone || null,
+        role: "customer",
+        resellerId: link.resellerId,
+        isActive: true,
+        ragioneSociale: ragioneSociale || null,
+        partitaIva: partitaIva || null,
+        pec: pec || null,
+        codiceFiscale: codiceFiscale || null,
+        address: address || null,
+      });
+
+      await storage.incrementInviteLinkUsage(link.id);
+      notifyUserCreated(user, password).catch(e => console.error("[Email]", e));
+      const { password: _, ...safeUser } = user;
+      res.status(201).json({ user: safeUser });
+    } catch (error: any) {
+      console.error("Invite register error:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // Import customers from CSV
   app.post("/api/reseller/customers/import-csv", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "create"), async (req, res) => {
     try {

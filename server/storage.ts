@@ -908,6 +908,13 @@ export interface IStorage {
   
   // E-commerce: Shopping Cart
   getActiveCart(customerId: string | null, sessionId: string | null, resellerId: string): Promise<Cart | undefined>;
+  // Customer invite links
+  createCustomerInviteLink(data: { resellerId: string; token: string; customerType: string; label?: string; expiresAt?: Date; maxUsages?: number }): Promise<import("../shared/schema").CustomerInviteLink>;
+  listCustomerInviteLinks(resellerId: string): Promise<import("../shared/schema").CustomerInviteLink[]>;
+  getCustomerInviteLinkByToken(token: string): Promise<import("../shared/schema").CustomerInviteLink | undefined>;
+  updateCustomerInviteLink(id: string, updates: Partial<import("../shared/schema").CustomerInviteLink>): Promise<import("../shared/schema").CustomerInviteLink>;
+  deleteCustomerInviteLink(id: string): Promise<void>;
+  incrementInviteLinkUsage(id: string): Promise<void>;
   getCart(id: string): Promise<Cart | undefined>;
   createCart(cart: InsertCart): Promise<Cart>;
   updateCart(id: string, updates: Partial<InsertCart>): Promise<Cart>;
@@ -13832,6 +13839,57 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(selfDiagnosisSessions)
       .where(eq(selfDiagnosisSessions.createdBy, createdBy))
       .orderBy(desc(selfDiagnosisSessions.createdAt));
+  }
+
+  // ---- Customer Invite Links ----
+  async createCustomerInviteLink(data: { resellerId: string; token: string; customerType: string; label?: string; expiresAt?: Date; maxUsages?: number }) {
+    const { customerInviteLinks } = await import("../shared/schema");
+    const [link] = await db.insert(customerInviteLinks).values({
+      resellerId: data.resellerId,
+      token: data.token,
+      customerType: data.customerType,
+      label: data.label || null,
+      expiresAt: data.expiresAt || null,
+      maxUsages: data.maxUsages || null,
+      isActive: true,
+      usageCount: 0,
+    }).returning();
+    return link;
+  }
+
+  async listCustomerInviteLinks(resellerId: string) {
+    const { customerInviteLinks } = await import("../shared/schema");
+    return db.select().from(customerInviteLinks)
+      .where(eq(customerInviteLinks.resellerId, resellerId))
+      .orderBy(desc(customerInviteLinks.createdAt));
+  }
+
+  async getCustomerInviteLinkByToken(token: string) {
+    const { customerInviteLinks } = await import("../shared/schema");
+    const [link] = await db.select().from(customerInviteLinks)
+      .where(eq(customerInviteLinks.token, token));
+    return link;
+  }
+
+  async updateCustomerInviteLink(id: string, updates: any) {
+    const { customerInviteLinks } = await import("../shared/schema");
+    const [link] = await db.update(customerInviteLinks)
+      .set(updates)
+      .where(eq(customerInviteLinks.id, id))
+      .returning();
+    return link;
+  }
+
+  async deleteCustomerInviteLink(id: string) {
+    const { customerInviteLinks } = await import("../shared/schema");
+    await db.delete(customerInviteLinks).where(eq(customerInviteLinks.id, id));
+  }
+
+  async incrementInviteLinkUsage(id: string) {
+    const { customerInviteLinks } = await import("../shared/schema");
+    await db.update(customerInviteLinks)
+      .set({ usageCount: sql`${customerInviteLinks.usageCount} + 1` })
+      .where(eq(customerInviteLinks.id, id));
   }
 
 }

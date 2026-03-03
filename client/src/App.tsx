@@ -29,6 +29,7 @@ import PrivacyPage from "@/pages/public/privacy";
 import TermsPage from "@/pages/public/terms";
 import SelfDiagnosis from "@/pages/public/self-diagnosis";
 import RegisterResellerPage from "@/pages/public/register-reseller";
+import CustomerRegisterPage from "@/pages/public/customer-register";
 import ForgotPasswordPage from "@/pages/public/forgot-password";
 import ResetPasswordPage from "@/pages/public/reset-password";
 
@@ -801,6 +802,11 @@ function AppContent() {
   }
   
   // Public pages render without sidebar/header
+  if (location.startsWith("/invite/")) {
+    const inviteToken = location.replace("/invite/", "");
+    return <CustomerRegisterPage params={{ token: inviteToken }} />;
+  }
+
   if (location.startsWith("/self-diagnosis/")) {
     const diagToken = location.replace("/self-diagnosis/", "");
     return <SelfDiagnosis params={{ token: diagToken }} />;

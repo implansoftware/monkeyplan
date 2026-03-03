@@ -7620,3 +7620,26 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 });
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+
+// ===================== CUSTOMER INVITE LINKS =====================
+export const customerInviteLinks = pgTable("customer_invite_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resellerId: varchar("reseller_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  customerType: varchar("customer_type", { length: 20 }).notNull().default("private"),
+  label: varchar("label", { length: 100 }),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at"),
+  usageCount: integer("usage_count").notNull().default(0),
+  maxUsages: integer("max_usages"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertCustomerInviteLinkSchema = createInsertSchema(customerInviteLinks).omit({
+  id: true,
+  usageCount: true,
+  createdAt: true,
+});
+
+export type CustomerInviteLink = typeof customerInviteLinks.$inferSelect;
+export type InsertCustomerInviteLink = z.infer<typeof insertCustomerInviteLinkSchema>;

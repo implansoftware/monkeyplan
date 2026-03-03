@@ -10,8 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload, Link2, Copy, Trash, ToggleLeft, ToggleRight, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -33,6 +36,47 @@ type FilterType = "all" | "active" | "inactive";
 
 export default function ResellerCustomers() {
   const { t } = useTranslation();
+  // Invite links
+  const { data: inviteLinks = [], refetch: refetchLinks } = useQuery<any[]>({
+    queryKey: ["/api/reseller/invite-links"],
+    enabled: inviteLinksOpen,
+  });
+
+  const createLinkMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/reseller/invite-links", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reseller/invite-links"] });
+      setNewLinkLabel("");
+      setNewLinkMaxUsages("");
+      setNewLinkExpiry("");
+    },
+    onError: (e: any) => toast({ title: "Errore", description: e.message, variant: "destructive" }),
+  });
+
+  const toggleLinkMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/reseller/invite-links/${id}`, { isActive });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/reseller/invite-links"] }),
+  });
+
+  const deleteLinkMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/reseller/invite-links/${id}`);
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/reseller/invite-links"] }),
+  });
+
+  const copyInviteLink = (token: string) => {
+    const url = `${window.location.origin}/invite/${token}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: "Copiato!", description: "Link copiato negli appunti" });
+  };
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,6 +85,11 @@ export default function ResellerCustomers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<CustomerWithRepairCenters | null>(null);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [inviteLinksOpen, setInviteLinksOpen] = useState(false);
+  const [newLinkType, setNewLinkType] = useState<"private" | "business">("private");
+  const [newLinkLabel, setNewLinkLabel] = useState("");
+  const [newLinkMaxUsages, setNewLinkMaxUsages] = useState("");
+  const [newLinkExpiry, setNewLinkExpiry] = useState("");
   const [editForm, setEditForm] = useState({
     fullName: "",
     email: "",
@@ -239,6 +288,9 @@ export default function ResellerCustomers() {
           </div>
           <ActionGuard module="customers" action="create">
             <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={() => setInviteLinksOpen(true)} variant="outline" className="bg-white/10 backdrop-blur-sm border border-white/30 text-white" data-testid="button-invite-links">
+                <Link2 className="h-4 w-4 mr-2" />Link Invito
+              </Button>
               <Button onClick={() => setCsvImportOpen(true)} variant="outline" className="bg-white/10 backdrop-blur-sm border border-white/30 text-white" data-testid="button-import-csv">
                 <Upload className="h-4 w-4 mr-2" />{t("csvImport.importCsv")}
               </Button>
@@ -761,6 +813,165 @@ export default function ResellerCustomers() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Invite Links Sheet */}
+      <Sheet open={inviteLinksOpen} onOpenChange={setInviteLinksOpen}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader className="pb-4 border-b">
+            <SheetTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-primary" />
+              Link di Invito Clienti
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-6 pt-4">
+            {/* Create new link */}
+            <div className="space-y-3 p-4 border rounded-md bg-muted/30">
+              <p className="text-sm font-medium">Crea nuovo link</p>
+              <div className="space-y-2">
+                <Label className="text-xs">Tipo cliente</Label>
+                <Select value={newLinkType} onValueChange={(v: any) => setNewLinkType(v)}>
+                  <SelectTrigger data-testid="select-link-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="private">Privato</SelectItem>
+                    <SelectItem value="business">Azienda / P.IVA</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Etichetta (opzionale)</Label>
+                <Input
+                  value={newLinkLabel}
+                  onChange={e => setNewLinkLabel(e.target.value)}
+                  placeholder="Es: Clienti estate 2025"
+                  data-testid="input-link-label"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-2">
+                  <Label className="text-xs">Max utilizzi</Label>
+                  <Input
+                    type="number"
+                    value={newLinkMaxUsages}
+                    onChange={e => setNewLinkMaxUsages(e.target.value)}
+                    placeholder="Illimitato"
+                    min="1"
+                    data-testid="input-link-max-usages"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Scadenza</Label>
+                  <Input
+                    type="date"
+                    value={newLinkExpiry}
+                    onChange={e => setNewLinkExpiry(e.target.value)}
+                    data-testid="input-link-expiry"
+                  />
+                </div>
+              </div>
+              <Button
+                className="w-full"
+                onClick={() => createLinkMutation.mutate({
+                  customerType: newLinkType,
+                  label: newLinkLabel || undefined,
+                  maxUsages: newLinkMaxUsages ? parseInt(newLinkMaxUsages) : undefined,
+                  expiresAt: newLinkExpiry || undefined,
+                })}
+                disabled={createLinkMutation.isPending}
+                data-testid="button-create-link"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {createLinkMutation.isPending ? "Creazione..." : "Crea link"}
+              </Button>
+            </div>
+
+            {/* List of links */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Link attivi</p>
+              {inviteLinks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  Nessun link creato ancora
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {inviteLinks.map((link: any) => {
+                    const url = `${window.location.origin}/invite/${link.token}`;
+                    const expired = link.expiresAt && new Date() > new Date(link.expiresAt);
+                    const exhausted = link.maxUsages && link.usageCount >= link.maxUsages;
+                    return (
+                      <div key={link.id} className="border rounded-md p-3 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium truncate">{link.label || "Link senza etichetta"}</span>
+                              <Badge variant={link.isActive && !expired && !exhausted ? "default" : "secondary"} className="text-xs">
+                                {!link.isActive ? "Disattivo" : expired ? "Scaduto" : exhausted ? "Esaurito" : link.customerType === "business" ? "Azienda" : "Privato"}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1 truncate">{url}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs text-muted-foreground">Utilizzi: {link.usageCount}{link.maxUsages ? `/${link.maxUsages}` : ""}</span>
+                              {link.expiresAt && <span className="text-xs text-muted-foreground">Scade: {new Date(link.expiresAt).toLocaleDateString("it-IT")}</span>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" onClick={() => copyInviteLink(link.token)} data-testid={`button-copy-link-${link.id}`}>
+                                    <Copy className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Copia link</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" onClick={() => window.open(url, "_blank")} data-testid={`button-open-link-${link.id}`}>
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Apri link</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => toggleLinkMutation.mutate({ id: link.id, isActive: !link.isActive })}
+                                    data-testid={`button-toggle-link-${link.id}`}
+                                  >
+                                    {link.isActive ? <ToggleRight className="h-4 w-4 text-primary" /> : <ToggleLeft className="h-4 w-4 text-muted-foreground" />}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{link.isActive ? "Disattiva" : "Attiva"}</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => deleteLinkMutation.mutate(link.id)}
+                                    data-testid={`button-delete-link-${link.id}`}
+                                  >
+                                    <Trash className="h-3.5 w-3.5 text-destructive" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Elimina</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
