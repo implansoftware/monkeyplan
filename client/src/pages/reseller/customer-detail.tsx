@@ -693,7 +693,7 @@ function CustomerEditForm({
             type="password"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            placeholder={t("customers.minChars")}
+            placeholder={t("customers.minChars", { count: 8 })}
             data-testid="input-edit-password"
           />
         </div>

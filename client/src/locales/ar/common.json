@@ -5031,7 +5031,8 @@
   "customers": {
     "title": "العملاء",
     "newCustomer": "عميل جديد",
-    "customerName": "اسم العميل"
+    "customerName": "اسم العميل",
+    "minChars": "{{count}} أحرف على الأقل"
   },
   "common": {
     "save": "حفظ",

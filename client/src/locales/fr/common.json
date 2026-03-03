@@ -2507,7 +2507,7 @@
     "vatNumber": "Numéro de TVA",
     "deleteCustomer": "Supprimer client",
     "fullName": "Nom complet",
-    "minChars": "Minimum{{count}} caractères",
+    "minChars": "Minimum {{count}} caractères",
     "noCustomerFound": "Aucun client trouvé",
     "startAddingFirstCustomer": "Démarrer adding votre premier client",
     "streetAddress": "Street adresse"

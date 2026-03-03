@@ -4709,7 +4709,7 @@
     "vatNumber": "VAT Number",
     "deleteCustomer": "Delete customer",
     "fullName": "Full name",
-    "minChars": "Minimum {{count}} characters",
+    "minChars": "最少 {{count}} 个字符",
     "noCustomerFound": "No customer found",
     "startAddingFirstCustomer": "Start adding your first customer",
     "streetAddress": "Street address"

@@ -5630,7 +5630,8 @@
   "customers": {
     "title": "Kunden",
     "newCustomer": "Neuer Kunde",
-    "customerName": "Kundenname"
+    "customerName": "Kundenname",
+    "minChars": "Mindestens {{count}} Zeichen"
   },
   "hr": {
     "activeSickLeaves": "Aktive Krankheitsbefreiungen",

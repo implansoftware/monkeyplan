@@ -1066,7 +1066,7 @@ export default function ResellerCustomers() {
                 type="password"
                 value={resetPasswordValue}
                 onChange={(e) => setResetPasswordValue(e.target.value)}
-                placeholder={t("team.minChars") || "Minimo 4 caratteri"}
+                placeholder={t("customers.minChars", { count: 4 })}
                 data-testid="input-new-customer-password"
               />
             </div>

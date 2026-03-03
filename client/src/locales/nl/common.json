@@ -4581,7 +4581,8 @@
     "repairHistory": "Reparatiegeschiedenis",
     "purchaseHistory": "Aankoopgeschiedenis",
     "warranties": "Garanties",
-    "loyaltyPoints": "Loyaliteitspunten"
+    "loyaltyPoints": "Loyaliteitspunten",
+    "minChars": "Minimaal {{count}} tekens"
   },
   "priceLists": {
     "listinoNonTrovato": "Prijslijst niet gevonden",
