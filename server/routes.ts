@@ -15867,7 +15867,7 @@ export function registerRoutes(app: Express): Server {
               status: "draft",
               createdBy: req.user!.id,
             });
-            await storage.updateRepairOrder(order.id, { status: "preventivo" });
+            await storage.updateRepairOrder(order.id, { status: "preventivo_emesso" });
           } catch (e) {
             console.error("[IntakeWizard] Failed to create quote:", e);
           }
@@ -15959,7 +15959,7 @@ export function registerRoutes(app: Express): Server {
               status: "draft",
               createdBy: req.user!.id,
             });
-            await storage.updateRepairOrder(order.id, { status: "preventivo" });
+            await storage.updateRepairOrder(order.id, { status: "preventivo_emesso" });
           } catch (e) {
             console.error("[IntakeWizard] Failed to create quote:", e);
           }
