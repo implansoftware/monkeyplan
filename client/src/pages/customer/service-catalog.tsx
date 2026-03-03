@@ -137,24 +137,56 @@ export default function CustomerServiceCatalog() {
 
   const handleOrderService = (service: ServiceItemWithPrice) => {
     setSelectedService(service);
+    // Auto-populate device info from service compatibility settings
+    const autoDeviceType = service.deviceTypeId
+      ? (deviceTypes?.find(t => t.id === service.deviceTypeId)?.name || "")
+      : "";
+    const autoBrand = service.brandId
+      ? (deviceBrands?.find(b => b.id === service.brandId)?.name || "")
+      : "";
+    setOrderForm(prev => ({
+      ...prev,
+      deviceType: autoDeviceType,
+      brandId: service.brandId || "",
+      brand: autoBrand,
+      model: service.modelId || "",
+      imei: "",
+      serial: "",
+      issueDescription: "",
+      customerNotes: "",
+    }));
     setIsOrderDialogOpen(true);
+  };
+
+  // Build compatibility label for display in the dialog
+  const getCompatibilityLabel = (service: ServiceItemWithPrice) => {
+    const parts: string[] = [];
+    if (service.deviceTypeId) {
+      const dt = deviceTypes?.find(t => t.id === service.deviceTypeId);
+      if (dt) parts.push(dt.name);
+    }
+    if (service.brandId) {
+      const br = deviceBrands?.find(b => b.id === service.brandId);
+      if (br) parts.push(br.name);
+    }
+    if (service.modelId) {
+      const mo = deviceModels?.find(m => m.id === service.modelId);
+      if (mo) parts.push(mo.modelName);
+    }
+    return parts.join(" · ");
   };
 
   const handleSubmitOrder = () => {
     if (!selectedService) return;
-    
-    const selectedBrand = deviceBrands?.find(b => b.id === orderForm.brandId);
-    const selectedModel = filteredModels?.find(m => m.id === orderForm.model);
-    
+    const resolvedBrand = orderForm.brand || (deviceBrands?.find(b => b.id === orderForm.brandId)?.name);
+    const resolvedModel = deviceModels?.find(m => m.id === orderForm.model)?.modelName;
     createOrderMutation.mutate({
       serviceItemId: selectedService.id,
       priceCents: selectedService.effectivePriceCents,
       deviceType: orderForm.deviceType || undefined,
-      brand: selectedBrand?.name || undefined,
-      model: selectedModel?.modelName || undefined,
+      brand: resolvedBrand || undefined,
+      model: resolvedModel || undefined,
       deviceModelId: orderForm.model || undefined,
-      imei: orderForm.imei || undefined,
-      serial: orderForm.serial || undefined,
       issueDescription: orderForm.issueDescription || undefined,
       customerNotes: orderForm.customerNotes || undefined,
       paymentMethod: orderForm.paymentMethod,
@@ -257,84 +289,13 @@ export default function CustomerServiceCatalog() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>{t("repairs.deviceType")}</Label>
-              <Select
-                value={orderForm.deviceType}
-                onValueChange={(value) => setOrderForm({ ...orderForm, deviceType: value })}
-              >
-                <SelectTrigger data-testid="select-device-type">
-                  <SelectValue placeholder={t("customerPages.selezionaTipo")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {deviceTypes?.map((type) => (
-                    <SelectItem key={type.id} value={type.name}>
-                      {type.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("repairs.deviceBrand")}</Label>
-              <Select
-                value={orderForm.brandId}
-                onValueChange={(value) => setOrderForm({ ...orderForm, brandId: value, model: "" })}
-              >
-                <SelectTrigger data-testid="select-brand">
-                  <SelectValue placeholder={t("customerPages.selezionaMarca")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {deviceBrands?.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("repairs.deviceModel")}</Label>
-              <Select
-                value={orderForm.model}
-                onValueChange={(value) => setOrderForm({ ...orderForm, model: value })}
-                disabled={!orderForm.brandId}
-              >
-                <SelectTrigger data-testid="select-model">
-                  <SelectValue placeholder={t("products.selectModel")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredModels?.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.modelName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t("customerPages.imeiOptional")}</Label>
-                <Input
-                  value={orderForm.imei}
-                  onChange={(e) => setOrderForm({ ...orderForm, imei: e.target.value })}
-                  placeholder={t("repairs.imei")}
-                  data-testid="input-imei"
-                />
+            {/* Compatibility info banner - shown when the service has device restrictions */}
+            {selectedService && getCompatibilityLabel(selectedService) && (
+              <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                <Wrench className="h-4 w-4 shrink-0 text-primary" />
+                <span>{getCompatibilityLabel(selectedService)}</span>
               </div>
-              <div className="space-y-2">
-                <Label>{t("customerPages.serialOptional")}</Label>
-                <Input
-                  value={orderForm.serial}
-                  onChange={(e) => setOrderForm({ ...orderForm, serial: e.target.value })}
-                  placeholder={t("customerPages.serialNumber")}
-                  data-testid="input-serial"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label>{t("customerPages.issueDescription")}</Label>
