@@ -15,7 +15,7 @@ import QRCode from "qrcode";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload, Link2, Copy, Trash, ToggleLeft, ToggleRight, ExternalLink, QrCode, Download } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload, Link2, Copy, Trash, ToggleLeft, ToggleRight, ExternalLink, QrCode, Download, Key } from "lucide-react";
 import { Link } from "wouter";
 import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -110,6 +110,8 @@ export default function ResellerCustomers() {
   const [isEditing, setIsEditing] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<CustomerWithRepairCenters | null>(null);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     fullName: "",
@@ -189,6 +191,20 @@ export default function ResellerCustomers() {
         }
       }
       toast({ title: t("common.error"), description: errorMsg, variant: "destructive" });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async ({ id, newPassword }: { id: string; newPassword: string }) => {
+      return apiRequest("POST", `/api/reseller/customers/${id}/reset-password`, { newPassword });
+    },
+    onSuccess: () => {
+      setResetPasswordDialogOpen(false);
+      setResetPasswordValue("");
+      toast({ title: t("team.passwordUpdated"), description: t("team.passwordUpdatedDesc") });
+    },
+    onError: (error: any) => {
+      toast({ title: t("common.error"), description: error.message || t("team.cannotResetPassword"), variant: "destructive" });
     },
   });
 
@@ -596,10 +612,17 @@ export default function ResellerCustomers() {
               <div className="flex items-center justify-between gap-4">
                 <DialogTitle>{selectedCustomer.fullName}</DialogTitle>
                 {!isEditing && (
-                  <ActionGuard module="customers" action="update">
-                    <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
-                      <Pencil className="h-4 w-4 mr-1" />{t("common.edit")}</Button>
-                  </ActionGuard>
+                  <div className="flex items-center gap-2">
+                    <ActionGuard module="customers" action="update">
+                      <Button variant="outline" size="icon" onClick={() => { setResetPasswordDialogOpen(true); setResetPasswordValue(""); }} title={t("team.resetPassword")} data-testid="button-reset-customer-password">
+                        <Key className="h-4 w-4" />
+                      </Button>
+                    </ActionGuard>
+                    <ActionGuard module="customers" action="update">
+                      <Button variant="outline" size="sm" onClick={() => startEditing(selectedCustomer)} data-testid="button-edit-customer">
+                        <Pencil className="h-4 w-4 mr-1" />{t("common.edit")}</Button>
+                    </ActionGuard>
+                  </div>
                 )}
               </div>
             </DialogHeader>
@@ -1025,6 +1048,44 @@ export default function ResellerCustomers() {
           </div>
         </SheetContent>
       </Sheet>
+    {/* Reset Password Dialog */}
+    {selectedCustomer && (
+      <Dialog open={resetPasswordDialogOpen} onOpenChange={(open) => { setResetPasswordDialogOpen(open); if (!open) setResetPasswordValue(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("team.resetPassword")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              {t("team.resetPasswordDesc") || `Imposta una nuova password per ${selectedCustomer.fullName}`}
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="new-customer-password">{t("team.newPassword")}</Label>
+              <Input
+                id="new-customer-password"
+                type="password"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                placeholder={t("team.minChars") || "Minimo 4 caratteri"}
+                data-testid="input-new-customer-password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => resetPasswordMutation.mutate({ id: selectedCustomer.id, newPassword: resetPasswordValue })}
+              disabled={resetPasswordMutation.isPending || resetPasswordValue.length < 4}
+              data-testid="button-confirm-reset-password"
+            >
+              {resetPasswordMutation.isPending ? t("common.processing") : t("team.resetPassword")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )}
     </div>
   );
 }

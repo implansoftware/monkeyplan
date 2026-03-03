@@ -6762,6 +6762,35 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+
+  // Reset password for a customer
+  app.post("/api/reseller/customers/:id/reset-password", requireRole("reseller", "reseller_staff"), requireModulePermission("customers", "update"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Non autorizzato");
+      const effectiveResellerId = getResellerId(req);
+      const customerId = req.params.id;
+      const { newPassword } = req.body;
+
+      if (!newPassword || newPassword.length < 4) {
+        return res.status(400).send("La password deve contenere almeno 4 caratteri");
+      }
+
+      const customer = await storage.getUser(customerId);
+      if (!customer || customer.role !== "customer" || customer.resellerId !== effectiveResellerId) {
+        return res.status(404).send("Cliente non trovato");
+      }
+
+      const hashedPassword = await hashPassword(newPassword);
+      await storage.updateUser(customerId, { password: hashedPassword });
+
+      setActivityEntity(res, { type: 'users', id: customerId });
+      res.json({ message: "Password aggiornata con successo" });
+    } catch (error: any) {
+      console.error("Error resetting customer password:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // ============================================================================
   // Reseller Staff Team Management
   // ============================================================================
