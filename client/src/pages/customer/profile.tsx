@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { CustomerBranchManager } from "@/components/CustomerBranchManager";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, User, Mail, Phone, Building2, MapPin, FileText, Save, X, Pencil } from "lucide-react";
+import { Loader2, User, Mail, Phone, Building2, MapPin, FileText, Save, X, Pencil , Users } from "lucide-react";
 import type { User as UserType, BillingData } from "@shared/schema";
 
 interface ProfileResponse extends UserType {
@@ -456,6 +457,24 @@ export default function CustomerProfile() {
           )}
         </CardContent>
       </Card>
+      {/* Sezione "I miei clienti" — visibile solo per clienti con partita IVA */}
+      {(user?.partitaIva || billingData?.vatNumber) && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <Users className="h-4 w-4 text-primary" />
+            <h2 className="text-base font-semibold">I miei clienti</h2>
+          </div>
+          <p className="text-sm text-muted-foreground px-1">
+            Aggiungi qui i tuoi clienti finali per associarli alle richieste di riparazione remota.
+          </p>
+          {user?.id && (
+            <CustomerBranchManager
+              customerId={user.id}
+              customerName={user.fullName}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

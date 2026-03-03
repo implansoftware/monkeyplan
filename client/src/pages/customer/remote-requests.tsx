@@ -27,6 +27,8 @@ type EnrichedRequest = RemoteRepairRequest & {
   centerCap?: string | null;
   centerProvince?: string | null;
   centerPhone?: string | null;
+  branchName?: string | null;
+  branchContactName?: string | null;
 };
 
 
@@ -148,6 +150,12 @@ function RequestCard({
                 <span>{format(new Date(request.createdAt), "d MMM yyyy", { locale: it })}</span>
                 <span>·</span>
                 <span>{deviceCount === 1 ? t("remote.deviceCountLabel", { count: deviceCount }) : t("remote.deviceCountLabelPlural", { count: deviceCount })}{totalQty > deviceCount ? ` (${t("remote.unitsCount", { qty: totalQty })})` : ""}</span>
+                {request.branchName && (
+                  <>
+                    <span>·</span>
+                    <span className="font-medium text-foreground">{request.branchName}</span>
+                  </>
+                )}
                 {request.quoteAmount && request.status !== 'quote_declined' && (
                   <>
                     <span>·</span>

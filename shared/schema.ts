@@ -1643,6 +1643,7 @@ export const remoteRepairRequests = pgTable("remote_repair_requests", {
   rejectionReason: text("rejection_reason"),
   forwardedFrom: varchar("forwarded_from").references(() => users.id),
   forwardReason: text("forward_reason"),
+  branchId: varchar("branch_id").references(() => customerBranches.id, { onDelete: "set null" }),
 
   customerAddress: text("customer_address"),
   customerCity: text("customer_city"),

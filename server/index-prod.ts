@@ -140,6 +140,10 @@ export async function serveStatic(app: Express, _server: Server) {
     );
   `);
 
+  await runMigration("remote_repair_requests branchId column", `
+    ALTER TABLE remote_repair_requests ADD COLUMN IF NOT EXISTS branch_id varchar REFERENCES customer_branches(id) ON DELETE SET NULL;
+  `);
+
   await runMigration("standalone_quotes FK to repair_orders", `
     DO $$
     BEGIN

@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Send, Upload, Image, Trash2, Check, Search, ArrowLeft } from "lucide-react";
+import { Loader2, Plus, Send, Upload, Image, Trash2, Check, Search, ArrowLeft, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { CustomerBranch } from "@shared/schema";
 import { useLocation } from "wouter";
 import type { DeviceType, DeviceBrand } from "@shared/schema";
 
@@ -322,6 +324,7 @@ export default function NewRemoteRequest() {
 
   const [devices, setDevices] = useState<DeviceEntry[]>([emptyDevice()]);
   const [customerNotes, setCustomerNotes] = useState("");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("none");
   const [requestedCenterId, setRequestedCenterId] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
@@ -331,6 +334,12 @@ export default function NewRemoteRequest() {
 
   const { data: deviceBrands } = useQuery<DeviceBrand[]>({
     queryKey: ["/api/device-brands"],
+  });
+
+  const isBusinessCustomer = !!(user?.partitaIva);
+  const { data: myBranches = [] } = useQuery<CustomerBranch[]>({
+    queryKey: ["/api/customers", user?.id, "branches"],
+    enabled: isBusinessCustomer && !!user?.id,
   });
 
   const updateDevice = (index: number, updates: Partial<DeviceEntry>) => {
@@ -446,6 +455,7 @@ export default function NewRemoteRequest() {
         resellerId: user?.resellerId || "",
         requestedCenterId: requestedCenterId === "none" || requestedCenterId === "" ? null : requestedCenterId,
         customerNotes: customerNotes || undefined,
+        branchId: selectedBranchId !== "none" ? selectedBranchId : undefined,
         devices: devicesData,
       });
     } catch (error: any) {
@@ -477,6 +487,32 @@ export default function NewRemoteRequest() {
       </div>
 
       <form onSubmit={handleCreateRequest} className="space-y-4">
+        {/* Sub-client selector — visible only for business customers with registered clients */}
+        {isBusinessCustomer && myBranches.length > 0 && (
+          <div className="border rounded-md p-4 space-y-2 bg-muted/20">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-primary" />
+              <Label className="text-sm font-medium">Per quale tuo cliente è questa richiesta?</Label>
+            </div>
+            <Select value={selectedBranchId} onValueChange={setSelectedBranchId}>
+              <SelectTrigger data-testid="select-branch-id">
+                <SelectValue placeholder="Seleziona cliente finale (opzionale)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— Per me stesso —</SelectItem>
+                {myBranches.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    {branch.branchName}{branch.contactName ? ` — ${branch.contactName}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Puoi gestire i tuoi clienti dalla sezione "I miei clienti" nel profilo
+            </p>
+          </div>
+        )}
+
         {devices.map((device, idx) => (
           <DeviceFormCard
             key={idx}

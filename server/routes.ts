@@ -11376,6 +11376,22 @@ export function registerRoutes(app: Express): Server {
           }
         }
         
+        // Enrich with branch/sub-client info
+        let branchName: string | null = null;
+        let branchContactName: string | null = null;
+        if (r.branchId) {
+          try {
+            const { customerBranches } = await import("@shared/schema");
+            const { eq } = await import("drizzle-orm");
+            const { db } = await import("./db");
+            const [branch] = await db.select().from(customerBranches).where(eq(customerBranches.id, r.branchId));
+            if (branch) {
+              branchName = branch.branchName;
+              branchContactName = branch.contactName || null;
+            }
+          } catch {}
+        }
+
         return {
           ...r,
           devices: enrichedDevices,
@@ -11384,7 +11400,9 @@ export function registerRoutes(app: Express): Server {
           centerCity: centerData?.city || null,
           centerCap: centerData?.cap || null,
           centerProvince: centerData?.provincia || null,
-          centerPhone: centerData?.phone || null
+          centerPhone: centerData?.phone || null,
+          branchName,
+          branchContactName,
         };
       }));
       
@@ -12798,12 +12816,28 @@ export function registerRoutes(app: Express): Server {
           return { ...d, photos: photoUrls };
         }));
         const customer = r.customerId ? await storage.getUser(r.customerId) : null;
+        let branchName: string | null = null;
+        let branchContactName: string | null = null;
+        if (r.branchId) {
+          try {
+            const { customerBranches } = await import("@shared/schema");
+            const { eq } = await import("drizzle-orm");
+            const { db } = await import("./db");
+            const [branch] = await db.select().from(customerBranches).where(eq(customerBranches.id, r.branchId));
+            if (branch) {
+              branchName = branch.branchName;
+              branchContactName = branch.contactName || null;
+            }
+          } catch {}
+        }
         return {
           ...r,
           devices: enrichedDevices,
           customerName: customer?.fullName || customer?.username || null,
           customerEmail: customer?.email || null,
           customerPhone: customer?.phone || null,
+          branchName,
+          branchContactName,
         };
       }));
       
