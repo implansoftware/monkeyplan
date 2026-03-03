@@ -9988,7 +9988,9 @@
     "testingRepair": "Verifying correct operation",
     "imeiCode": "IMEI Code",
     "recentActivity": "النشاط الأخير",
-    "noRecentActivity": "لا يوجد نشاط حديث. ابدأ بطلب خدمة."
+    "noRecentActivity": "لا يوجد نشاط حديث. ابدأ بطلب خدمة.",
+    "cantFindServiceTitle": "لا تجد الخدمة التي تبحث عنها؟",
+    "cantFindServiceDesc": "يمكنك دائماً إرسال طلب صيانة عن بُعد لأي عمل غير مدرج في الكتالوج."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "التشخيصات المتاحة للإصلاح",

@@ -8624,7 +8624,9 @@
     "testingRepair": "Vérification du fonctionnement correct",
     "imeiCode": "Code IMEI",
     "recentActivity": "Activité Récente",
-    "noRecentActivity": "Aucune activité récente. Commencez par demander un service."
+    "noRecentActivity": "Aucune activité récente. Commencez par demander un service.",
+    "cantFindServiceTitle": "Vous ne trouvez pas le service recherché ?",
+    "cantFindServiceDesc": "Vous pouvez toujours envoyer une demande de devis à distance pour tout travail absent du catalogue."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses disponible pour le réparation",

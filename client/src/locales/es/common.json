@@ -8624,7 +8624,9 @@
     "testingRepair": "Verifying correcto operation",
     "imeiCode": "IMEI Código",
     "recentActivity": "Actividad Reciente",
-    "noRecentActivity": "Sin actividad reciente. Empieza solicitando un servicio."
+    "noRecentActivity": "Sin actividad reciente. Empieza solicitando un servicio.",
+    "cantFindServiceTitle": "¿No encuentras el servicio que buscas?",
+    "cantFindServiceDesc": "Siempre puedes enviar una solicitud remota de presupuesto para cualquier trabajo que no esté en el catálogo."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses disponible para el reparación",

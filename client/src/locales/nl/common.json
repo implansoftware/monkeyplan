@@ -10040,7 +10040,9 @@
     "testingRepair": "Verifiëren van juiste werking",
     "imeiCode": "IMEI-code",
     "recentActivity": "Recente Activiteit",
-    "noRecentActivity": "Geen recente activiteit. Begin met een serviceaanvraag."
+    "noRecentActivity": "Geen recente activiteit. Begin met een serviceaanvraag.",
+    "cantFindServiceTitle": "Kunt u de service niet vinden die u zoekt?",
+    "cantFindServiceDesc": "U kunt altijd een externe reparatieaanvraag indienen voor werkzaamheden die niet in de catalogus staan."
   },
   "returns": {
     "refundProcessed": "De terugbetaling van {{amount}} is verwerkt.",

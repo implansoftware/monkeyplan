@@ -4082,7 +4082,9 @@
     "testingRepair": "Verifying correct operation",
     "imeiCode": "IMEI Code",
     "recentActivity": "最近动态",
-    "noRecentActivity": "暂无最近活动。从请求服务开始。"
+    "noRecentActivity": "暂无最近活动。从请求服务开始。",
+    "cantFindServiceTitle": "找不到您需要的服务？",
+    "cantFindServiceDesc": "您可以随时提交远程维修请求，针对目录中未列出的任何工作。"
   },
   "repairs": {
     "title": "修理",

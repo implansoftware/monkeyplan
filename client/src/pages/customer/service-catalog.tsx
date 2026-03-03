@@ -12,7 +12,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ShoppingCart, Search, Wrench, Clock, Banknote, Building, CreditCard, Wallet } from "lucide-react";
+import { Loader2, ShoppingCart, Search, Wrench, Clock, Banknote, Building, CreditCard, Wallet, Send, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { StripeB2BCheckout } from "@/components/StripeB2BCheckout";
 import PayPalButton from "@/components/PayPalButton";
@@ -274,6 +275,23 @@ export default function CustomerServiceCatalog() {
           ))}
         </div>
       )}
+
+      {/* Disclaimer — remote repair request */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 rounded-md border border-border bg-muted/40 px-5 py-4" data-testid="callout-remote-request">
+        <div className="h-10 w-10 rounded-md bg-violet-500/10 flex items-center justify-center shrink-0">
+          <Send className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">{t("customerPages.cantFindServiceTitle")}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("customerPages.cantFindServiceDesc")}</p>
+        </div>
+        <Link href="/customer/remote-requests">
+          <Button variant="outline" size="sm" className="shrink-0" data-testid="button-go-remote-request">
+            {t("customerPages.richiediRiparazione")}
+            <ArrowRight className="h-3.5 w-3.5 ml-2" />
+          </Button>
+        </Link>
+      </div>
 
       <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
         <DialogContent className="max-w-lg">

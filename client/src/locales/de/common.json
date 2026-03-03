@@ -10365,7 +10365,9 @@
     "testingRepair": "Überprüfung des korrekten Betriebs",
     "imeiCode": "IMEI Code",
     "recentActivity": "Letzte Aktivität",
-    "noRecentActivity": "Keine neuere Aktivität. Starte mit einer Service-Anfrage."
+    "noRecentActivity": "Keine neuere Aktivität. Starte mit einer Service-Anfrage.",
+    "cantFindServiceTitle": "Den gesuchten Service nicht gefunden?",
+    "cantFindServiceDesc": "Du kannst jederzeit eine Remote-Anfrage für Arbeiten stellen, die nicht im Katalog aufgeführt sind."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnosen für die Reparatur verfügbar",

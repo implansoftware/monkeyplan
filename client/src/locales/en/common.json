@@ -8667,7 +8667,9 @@
     "testingRepair": "Verifying correct operation",
     "imeiCode": "IMEI Code",
     "recentActivity": "Recent Activity",
-    "noRecentActivity": "No recent activity. Start by requesting a service."
+    "noRecentActivity": "No recent activity. Start by requesting a service.",
+    "cantFindServiceTitle": "Can't find the service you're looking for?",
+    "cantFindServiceDesc": "You can always submit a remote repair request for any work not listed in the catalog."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses available for the repair",

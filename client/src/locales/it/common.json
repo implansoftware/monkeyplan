@@ -8681,7 +8681,9 @@
     "noRepairs": "Nessuna riparazione",
     "noWarranties": "Nessuna garanzia",
     "recentActivity": "Attività Recente",
-    "noRecentActivity": "Nessuna attività recente. Inizia richiedendo un servizio."
+    "noRecentActivity": "Nessuna attività recente. Inizia richiedendo un servizio.",
+    "cantFindServiceTitle": "Non trovi il servizio che cerchi?",
+    "cantFindServiceDesc": "Puoi sempre inviare una richiesta remota di preventivo per qualsiasi lavorazione non presente nel catalogo."
   },
   "returns": {
     "refundProcessed": "Il rimborso di {{amount}} è stato effettuato.",
