@@ -15864,7 +15864,7 @@ export function registerRoutes(app: Express): Server {
               laborCost,
               totalAmount,
               notes: q.notes || null,
-              status: "pending",
+              status: "draft",
               createdBy: req.user!.id,
             });
             await storage.updateRepairOrder(order.id, { status: "preventivo" });
@@ -15956,7 +15956,7 @@ export function registerRoutes(app: Express): Server {
               laborCost,
               totalAmount,
               notes: q.notes || null,
-              status: "pending",
+              status: "draft",
               createdBy: req.user!.id,
             });
             await storage.updateRepairOrder(order.id, { status: "preventivo" });
