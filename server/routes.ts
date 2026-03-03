@@ -15817,6 +15817,62 @@ export function registerRoutes(app: Express): Server {
         if (orderData.customerId && orderData.repairCenterId) {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
+
+        // Create diagnosis if requested during intake
+        if (req.body.diagnosis?.createDiagnosis) {
+          try {
+            const d = req.body.diagnosis;
+            await storage.createRepairDiagnostics({
+              repairOrderId: order.id,
+              technicalDiagnosis: d.technicalDiagnosis || "",
+              diagnosisOutcome: d.diagnosisOutcome || "riparabile",
+              estimatedRepairTime: d.estimatedRepairTime ?? null,
+              diagnosisNotes: d.diagnosisNotes || null,
+              requiresExternalParts: d.requiresExternalParts || false,
+              customerDataImportant: d.customerDataImportant || false,
+              dataRecoveryRequested: d.dataRecoveryRequested || false,
+              findingIds: d.findingIds || [],
+              componentIds: d.componentIds || [],
+              estimatedRepairTimeId: d.estimatedRepairTimeId || null,
+              skipPhotos: d.skipPhotos ?? true,
+              unrepairableReasonId: d.unrepairableReasonId || null,
+              suggestedPromotionIds: d.suggestedPromotionIds || [],
+              damagedComponents: [],
+              photos: [],
+              diagnosedBy: req.user!.id,
+            });
+            await storage.updateRepairOrder(order.id, { status: "in_diagnosi" });
+          } catch (e) {
+            console.error("[IntakeWizard] Failed to create diagnosis:", e);
+          }
+        }
+
+        // Create quote if requested during intake
+        if (req.body.quote?.createQuote) {
+          try {
+            const q = req.body.quote;
+            const partsData: Array<{ name: string; quantity: number; unitPrice: number }> = q.parts || [];
+            const partsTotal = partsData.reduce((sum: number, p: any) => sum + (p.quantity * p.unitPrice), 0);
+            const laborCost = q.laborCost || 0;
+            const totalAmount = partsTotal + laborCost;
+            const qCount = await db.execute(sql`SELECT COUNT(*) as count FROM repair_quotes`);
+            const quoteNumber = `QUOTE-${Date.now()}-${parseInt((qCount.rows[0] as any).count) + 1}`;
+            await storage.createRepairQuote({
+              repairOrderId: order.id,
+              quoteNumber,
+              parts: partsData,
+              laborCost,
+              totalAmount,
+              notes: q.notes || null,
+              status: "pending",
+              createdBy: req.user!.id,
+            });
+            await storage.updateRepairOrder(order.id, { status: "preventivo" });
+          } catch (e) {
+            console.error("[IntakeWizard] Failed to create quote:", e);
+          }
+        }
+
         setActivityEntity(res, { type: 'repair_order', id: order.id });
         res.json({ order, acceptance });
       } else {
@@ -15853,6 +15909,62 @@ export function registerRoutes(app: Express): Server {
         if (orderData.customerId && orderData.repairCenterId) {
           await storage.ensureCustomerRepairCenterAssociation(orderData.customerId, orderData.repairCenterId);
         }
+
+        // Create diagnosis if requested during intake
+        if (req.body.diagnosis?.createDiagnosis) {
+          try {
+            const d = req.body.diagnosis;
+            await storage.createRepairDiagnostics({
+              repairOrderId: order.id,
+              technicalDiagnosis: d.technicalDiagnosis || "",
+              diagnosisOutcome: d.diagnosisOutcome || "riparabile",
+              estimatedRepairTime: d.estimatedRepairTime ?? null,
+              diagnosisNotes: d.diagnosisNotes || null,
+              requiresExternalParts: d.requiresExternalParts || false,
+              customerDataImportant: d.customerDataImportant || false,
+              dataRecoveryRequested: d.dataRecoveryRequested || false,
+              findingIds: d.findingIds || [],
+              componentIds: d.componentIds || [],
+              estimatedRepairTimeId: d.estimatedRepairTimeId || null,
+              skipPhotos: d.skipPhotos ?? true,
+              unrepairableReasonId: d.unrepairableReasonId || null,
+              suggestedPromotionIds: d.suggestedPromotionIds || [],
+              damagedComponents: [],
+              photos: [],
+              diagnosedBy: req.user!.id,
+            });
+            await storage.updateRepairOrder(order.id, { status: "in_diagnosi" });
+          } catch (e) {
+            console.error("[IntakeWizard] Failed to create diagnosis:", e);
+          }
+        }
+
+        // Create quote if requested during intake
+        if (req.body.quote?.createQuote) {
+          try {
+            const q = req.body.quote;
+            const partsData: Array<{ name: string; quantity: number; unitPrice: number }> = q.parts || [];
+            const partsTotal = partsData.reduce((sum: number, p: any) => sum + (p.quantity * p.unitPrice), 0);
+            const laborCost = q.laborCost || 0;
+            const totalAmount = partsTotal + laborCost;
+            const qCount = await db.execute(sql`SELECT COUNT(*) as count FROM repair_quotes`);
+            const quoteNumber = `QUOTE-${Date.now()}-${parseInt((qCount.rows[0] as any).count) + 1}`;
+            await storage.createRepairQuote({
+              repairOrderId: order.id,
+              quoteNumber,
+              parts: partsData,
+              laborCost,
+              totalAmount,
+              notes: q.notes || null,
+              status: "pending",
+              createdBy: req.user!.id,
+            });
+            await storage.updateRepairOrder(order.id, { status: "preventivo" });
+          } catch (e) {
+            console.error("[IntakeWizard] Failed to create quote:", e);
+          }
+        }
+
         setActivityEntity(res, { type: 'repair_order', id: order.id });
         notifyRepairCreated(order).catch(e => console.error("[Email]", e));
         res.json(order);
