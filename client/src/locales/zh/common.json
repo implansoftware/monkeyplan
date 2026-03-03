@@ -4081,7 +4081,8 @@
     "waitingParts": "Waiting for necessary components",
     "testingRepair": "Verifying correct operation",
     "imeiCode": "IMEI Code",
-    "recentActivity": "最近动态"
+    "recentActivity": "最近动态",
+    "noRecentActivity": "暂无最近活动。从请求服务开始。"
   },
   "repairs": {
     "title": "修理",

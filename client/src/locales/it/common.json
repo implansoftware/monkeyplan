@@ -8680,7 +8680,8 @@
     "imeiCode": "Codice IMEI",
     "noRepairs": "Nessuna riparazione",
     "noWarranties": "Nessuna garanzia",
-    "recentActivity": "Attività Recente"
+    "recentActivity": "Attività Recente",
+    "noRecentActivity": "Nessuna attività recente. Inizia richiedendo un servizio."
   },
   "returns": {
     "refundProcessed": "Il rimborso di {{amount}} è stato effettuato.",

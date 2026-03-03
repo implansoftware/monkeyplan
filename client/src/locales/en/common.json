@@ -8666,7 +8666,8 @@
     "waitingParts": "Waiting for necessary components",
     "testingRepair": "Verifying correct operation",
     "imeiCode": "IMEI Code",
-    "recentActivity": "Recent Activity"
+    "recentActivity": "Recent Activity",
+    "noRecentActivity": "No recent activity. Start by requesting a service."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses available for the repair",

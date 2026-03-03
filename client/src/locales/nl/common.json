@@ -10039,7 +10039,8 @@
     "waitingParts": "Wachten op noodzakelijke onderdelen",
     "testingRepair": "Verifiëren van juiste werking",
     "imeiCode": "IMEI-code",
-    "recentActivity": "Recente Activiteit"
+    "recentActivity": "Recente Activiteit",
+    "noRecentActivity": "Geen recente activiteit. Begin met een serviceaanvraag."
   },
   "returns": {
     "refundProcessed": "De terugbetaling van {{amount}} is verwerkt.",

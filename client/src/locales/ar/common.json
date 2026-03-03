@@ -9987,7 +9987,8 @@
     "waitingParts": "Waiting for necessary components",
     "testingRepair": "Verifying correct operation",
     "imeiCode": "IMEI Code",
-    "recentActivity": "النشاط الأخير"
+    "recentActivity": "النشاط الأخير",
+    "noRecentActivity": "لا يوجد نشاط حديث. ابدأ بطلب خدمة."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "التشخيصات المتاحة للإصلاح",

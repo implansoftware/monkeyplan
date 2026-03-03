@@ -10364,7 +10364,8 @@
     "waitingParts": "Warten auf notwendige Komponenten",
     "testingRepair": "Überprüfung des korrekten Betriebs",
     "imeiCode": "IMEI Code",
-    "recentActivity": "Letzte Aktivität"
+    "recentActivity": "Letzte Aktivität",
+    "noRecentActivity": "Keine neuere Aktivität. Starte mit einer Service-Anfrage."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnosen für die Reparatur verfügbar",

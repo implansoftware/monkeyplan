@@ -8623,7 +8623,8 @@
     "waitingParts": "Waiting para necessary componentes",
     "testingRepair": "Verifying correcto operation",
     "imeiCode": "IMEI Código",
-    "recentActivity": "Actividad Reciente"
+    "recentActivity": "Actividad Reciente",
+    "noRecentActivity": "Sin actividad reciente. Empieza solicitando un servicio."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses disponible para el reparación",

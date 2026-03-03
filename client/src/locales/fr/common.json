@@ -8623,7 +8623,8 @@
     "waitingParts": "Waiting pour necessary components",
     "testingRepair": "Vérification du fonctionnement correct",
     "imeiCode": "Code IMEI",
-    "recentActivity": "Activité Récente"
+    "recentActivity": "Activité Récente",
+    "noRecentActivity": "Aucune activité récente. Commencez par demander un service."
   },
   "diagnostics": {
     "diagnosiDisponibiliPerLaRiparazione": "Diagnoses disponible pour le réparation",
