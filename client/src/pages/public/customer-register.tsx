@@ -27,6 +27,7 @@ export default function CustomerRegisterPage() {
   usePageTitle("Registrazione Cliente");
 
   const [showPassword, setShowPassword] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -137,8 +138,13 @@ export default function CustomerRegisterPage() {
     <div className="min-h-screen bg-background">
       <div className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {linkInfo.resellerLogo ? (
-            <img src={linkInfo.resellerLogo} alt={linkInfo.resellerName} className="h-8 w-auto object-contain" />
+          {linkInfo.resellerLogo && !logoError ? (
+            <img
+              src={linkInfo.resellerLogo}
+              alt={linkInfo.resellerName}
+              className="h-8 w-auto object-contain"
+              onError={() => setLogoError(true)}
+            />
           ) : (
             <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center">
               <Store className="h-4 w-4 text-primary-foreground" />
