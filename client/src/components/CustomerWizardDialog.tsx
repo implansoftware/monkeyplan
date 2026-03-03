@@ -104,6 +104,13 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
       showIban: false,
       showFiscalCode: false,
       notes: "",
+      // Company fields
+      companyName: "",
+      vatNumber: "",
+      fiscalCode: "",
+      pec: "",
+      codiceUnivoco: "",
+      iban: "",
     },
   });
 
@@ -114,6 +121,18 @@ export function CustomerWizardDialog({ open, onOpenChange, onSuccess }: Customer
   const createCustomerMutation = useMutation({
     mutationFn: async (data: InsertCustomerWizard) => {
       let payload: any = { ...data };
+
+      // For company customers: map companyName → fullName so backend can store the name
+      if (payload.customerType === "company") {
+        if (!payload.fullName && payload.companyName) {
+          payload.fullName = payload.companyName;
+        }
+        // Also map frontend field names to backend field names
+        if (payload.vatNumber) payload.partitaIva = payload.vatNumber;
+        if (payload.fiscalCode) payload.codiceFiscale = payload.fiscalCode;
+        if (payload.companyName) payload.ragioneSociale = payload.companyName;
+      }
+
       if (isAdmin && selectedResellerId) {
         payload.resellerId = selectedResellerId;
         if (selectedSubResellerId) {

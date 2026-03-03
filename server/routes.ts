@@ -6215,14 +6215,39 @@ export function registerRoutes(app: Express): Server {
         repairCenterIds: z.array(z.string()).optional(),
         username: z.string().optional(),
         password: z.string().optional(),
+        fullName: z.string().optional(),
         notes: z.string().optional(),
+        // Company / P.IVA fields
+        customerType: z.enum(["private", "company"]).optional(),
+        companyName: z.string().optional(),
+        vatNumber: z.string().optional(),
+        fiscalCode: z.string().optional(),
+        pec: z.string().optional(),
+        codiceUnivoco: z.string().optional(),
+        ragioneSociale: z.string().optional(),
+        partitaIva: z.string().optional(),
+        codiceFiscale: z.string().optional(),
+        // Address fields
+        address: z.string().optional(),
+        city: z.string().optional(),
+        zipCode: z.string().optional(),
+        indirizzo: z.string().optional(),
+        cap: z.string().optional(),
+        citta: z.string().optional(),
+        provincia: z.string().optional(),
       });
       const validatedData = baseSchema.parse(req.body);
-      
+
+      // For company customers fullName may come as companyName/ragioneSociale
+      const effectiveFullName = validatedData.fullName || validatedData.companyName || validatedData.ragioneSociale || "";
+      if (!effectiveFullName) {
+        return res.status(400).send("Nome o ragione sociale obbligatoria");
+      }
+
       // Auto-generate username if not provided
       let username = validatedData.username;
-      if (!username && validatedData.fullName) {
-        let baseUsername = validatedData.fullName
+      if (!username) {
+        let baseUsername = effectiveFullName
           .toLowerCase()
           .replace(/[^a-z0-9]/g, '')
           .substring(0, 20);
@@ -6259,13 +6284,24 @@ export function registerRoutes(app: Express): Server {
         username: username,
         password: hashedPassword,
         email: validatedData.email,
-        fullName: validatedData.fullName,
+        fullName: effectiveFullName,
         phone: validatedData.phone,
         isActive: validatedData.isActive,
-        role: "customer", // Force customer role
-        resellerId: effectiveResellerId, // Associate with the reseller (or staff's reseller)
-        repairCenterId: repairCenterIds[0] || null, // Keep first one for backward compatibility
+        role: "customer",
+        resellerId: effectiveResellerId,
+        repairCenterId: repairCenterIds[0] || null,
         notes: validatedData.notes || null,
+        // Company fields
+        ragioneSociale: validatedData.companyName || validatedData.ragioneSociale || null,
+        partitaIva: validatedData.vatNumber || validatedData.partitaIva || null,
+        codiceFiscale: validatedData.fiscalCode || validatedData.codiceFiscale || null,
+        pec: validatedData.pec || null,
+        codiceUnivoco: validatedData.codiceUnivoco || null,
+        // Address fields
+        indirizzo: validatedData.address || validatedData.indirizzo || null,
+        cap: validatedData.zipCode || validatedData.cap || null,
+        citta: validatedData.city || validatedData.citta || null,
+        provincia: validatedData.provincia || null,
       });
       
       // Set all repair center associations
