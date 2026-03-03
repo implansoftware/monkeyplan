@@ -10,6 +10,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -368,9 +369,10 @@ export function DeliveryDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col min-h-0 flex-1">
+        <ScrollArea className="flex-1 pr-4">
+        <div className="space-y-4 pb-2">
             <FormField
               control={form.control}
               name="deliveredTo"
@@ -545,7 +547,9 @@ export function DeliveryDialog({
               />
             </div>
 
-            <div className="flex justify-end gap-3">
+        </div>
+        </ScrollArea>
+        <DialogFooter className="pt-4 border-t mt-2">
               <Button
                 type="button"
                 variant="outline"
@@ -561,10 +565,9 @@ export function DeliveryDialog({
               >
                 {deliverMutation.isPending ? t("common.processing") : t("delivery.completeDelivery")}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </Form>
-        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
