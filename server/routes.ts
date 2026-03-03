@@ -20675,7 +20675,8 @@ export function registerRoutes(app: Express): Server {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="consegna-${repairOrder.orderNumber}.pdf"`);
+      const isDownload = req.query.download === 'true';
+      res.setHeader('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="consegna-${repairOrder.orderNumber}.pdf"`);
       
       doc.pipe(res);
       
@@ -20887,7 +20888,8 @@ export function registerRoutes(app: Express): Server {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="accettazione-${repairOrder.orderNumber}.pdf"`);
+      const isDownload = req.query.download === 'true';
+      res.setHeader('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="accettazione-${repairOrder.orderNumber}.pdf"`);
       
       doc.pipe(res);
       
@@ -21133,7 +21135,8 @@ export function registerRoutes(app: Express): Server {
       const doc = new PDFDocument({ margin: 20, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="etichette-${repairOrder.orderNumber}.pdf"`);
+      const isDownload = req.query.download === 'true';
+      res.setHeader('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="etichette-${repairOrder.orderNumber}.pdf"`);
       
       doc.pipe(res);
       
@@ -21352,7 +21355,8 @@ export function registerRoutes(app: Express): Server {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="diagnosi-${repairOrder.orderNumber}.pdf"`);
+      const isDownload = req.query.download === 'true';
+      res.setHeader('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="diagnosi-${repairOrder.orderNumber}.pdf"`);
       
       doc.pipe(res);
       
@@ -21567,7 +21571,8 @@ export function registerRoutes(app: Express): Server {
       const doc = new PDFDocument({ margin: 50, size: 'A4' });
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="preventivo-${quote.quoteNumber}.pdf"`);
+      const isDownload = req.query.download === 'true';
+      res.setHeader('Content-Disposition', `${isDownload ? 'attachment' : 'inline'}; filename="preventivo-${quote.quoteNumber}.pdf"`);
       
       doc.pipe(res);
       

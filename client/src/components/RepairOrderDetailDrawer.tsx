@@ -35,7 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
-  Download, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
+  Download, Eye, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck
 } from "lucide-react";
 import { format } from "date-fns";
@@ -978,51 +978,107 @@ export function RepairOrderDetailDrawer({
                   <div className="space-y-2">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("common.documents")}</span>
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
-                        className="gap-1 text-xs"
-                        data-testid="button-intake-document"
-                      >
-                        <Download className="h-3 w-3" />
-                        {t("repair.acceptance")}
-                      </Button>
+                      {/* Accettazione */}
+                      <div className="flex items-center rounded-md border border-border overflow-hidden">
+                        <span className="px-2 text-xs text-muted-foreground border-r border-border py-1.5">{t("repair.acceptance")}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document`, '_blank')}
+                          className="rounded-none h-auto py-1.5 px-2"
+                          title="Visualizza"
+                          data-testid="button-intake-document-view"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(`/api/repair-orders/${repair.id}/intake-document?download=true`, '_blank')}
+                          className="rounded-none h-auto py-1.5 px-2 border-l border-border"
+                          title="Scarica"
+                          data-testid="button-intake-document-download"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                      {/* Diagnosi */}
                       {!['ingressato'].includes(repair.status) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
-                          className="gap-1 text-xs"
-                          data-testid="button-diagnosis-document"
-                        >
-                          <Download className="h-3 w-3" />
-                          {t("repair.diagnosis")}
-                        </Button>
+                        <div className="flex items-center rounded-md border border-border overflow-hidden">
+                          <span className="px-2 text-xs text-muted-foreground border-r border-border py-1.5">{t("repair.diagnosis")}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document`, '_blank')}
+                            className="rounded-none h-auto py-1.5 px-2"
+                            title="Visualizza"
+                            data-testid="button-diagnosis-document-view"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/repair-orders/${repair.id}/diagnosis-document?download=true`, '_blank')}
+                            className="rounded-none h-auto py-1.5 px-2 border-l border-border"
+                            title="Scarica"
+                            data-testid="button-diagnosis-document-download"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       )}
+                      {/* Preventivo */}
                       {!['ingressato', 'in_diagnosi'].includes(repair.status) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
-                          className="gap-1 text-xs"
-                          data-testid="button-quote-document"
-                        >
-                          <Download className="h-3 w-3" />
-                          {t("repair.quote")}
-                        </Button>
+                        <div className="flex items-center rounded-md border border-border overflow-hidden">
+                          <span className="px-2 text-xs text-muted-foreground border-r border-border py-1.5">{t("repair.quote")}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document`, '_blank')}
+                            className="rounded-none h-auto py-1.5 px-2"
+                            title="Visualizza"
+                            data-testid="button-quote-document-view"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/repair-orders/${repair.id}/quote-document?download=true`, '_blank')}
+                            className="rounded-none h-auto py-1.5 px-2 border-l border-border"
+                            title="Scarica"
+                            data-testid="button-quote-document-download"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       )}
+                      {/* Consegna */}
                       {repair.status === 'consegnato' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
-                          className="gap-1 text-xs"
-                          data-testid="button-delivery-document"
-                        >
-                          <Download className="h-3 w-3" />
-                          {t("delivery.delivery")}
-                        </Button>
+                        <div className="flex items-center rounded-md border border-border overflow-hidden">
+                          <span className="px-2 text-xs text-muted-foreground border-r border-border py-1.5">{t("delivery.delivery")}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document`, '_blank')}
+                            className="rounded-none h-auto py-1.5 px-2"
+                            title="Visualizza"
+                            data-testid="button-delivery-document-view"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/repair-orders/${repair.id}/delivery-document?download=true`, '_blank')}
+                            className="rounded-none h-auto py-1.5 px-2 border-l border-border"
+                            title="Scarica"
+                            data-testid="button-delivery-document-download"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
