@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Send, Upload, Image, Trash2, Check, Search, ArrowLeft, Users } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CustomerBranch } from "@shared/schema";
 import { useLocation } from "wouter";
@@ -23,6 +24,7 @@ interface DeviceModelResult {
   brandId?: string | null;
   typeId?: string | null;
   deviceClass?: string | null;
+  photoUrl?: string | null;
 }
 
 interface DeviceEntry {
@@ -37,6 +39,7 @@ interface DeviceEntry {
   issueDescription: string;
   photos: File[];
   photoPreviewUrls: string[];
+  modelPhotoUrl: string | null;
 }
 
 const emptyDevice = (): DeviceEntry => ({
@@ -51,6 +54,7 @@ const emptyDevice = (): DeviceEntry => ({
   issueDescription: "",
   photos: [],
   photoPreviewUrls: [],
+  modelPhotoUrl: null,
 });
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -112,6 +116,7 @@ function DeviceModelAutocomplete({
       brand: brandName,
       model: model.modelName,
       productSearch: displayText,
+      modelPhotoUrl: model.photoUrl || null,
     });
     setIsOpen(false);
   };
@@ -120,9 +125,9 @@ function DeviceModelAutocomplete({
     setSearch(val);
     setSelectedId(null);
     if (!val) {
-      onChange({ deviceType: "", brandId: "", brand: "", model: "", productSearch: "" });
+      onChange({ deviceType: "", brandId: "", brand: "", model: "", productSearch: "", modelPhotoUrl: null });
     } else {
-      onChange({ deviceType: "", brandId: "", brand: "", model: "", productSearch: val });
+      onChange({ deviceType: "", brandId: "", brand: "", model: "", productSearch: val, modelPhotoUrl: null });
     }
   };
 
@@ -211,7 +216,7 @@ function DeviceFormCard({
           <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-primary">{index + 1}</span>
           </div>
-          <span className="text-sm font-medium">{t("customerPages.deviceLabel")} {index + 1}</span>
+          <span className="text-sm font-medium">{t("customerPages.deviceLabel", { number: index + 1 })}</span>
         </div>
         {total > 1 && (
           <Button
@@ -235,11 +240,18 @@ function DeviceFormCard({
           deviceBrands={deviceBrands}
         />
         {device.brand && device.model && (
-          <div className="flex items-center gap-1.5 mt-1">
-            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center gap-2.5 mt-1.5">
+            {device.modelPhotoUrl ? (
+              <Avatar className="h-8 w-8 rounded-md">
+                <AvatarImage src={device.modelPhotoUrl} alt={`${device.brand} ${device.model}`} className="object-contain" />
+                <AvatarFallback className="rounded-md bg-muted text-xs"><Image className="h-4 w-4 text-muted-foreground" /></AvatarFallback>
+              </Avatar>
+            ) : (
+              <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            )}
             <p className="text-xs text-muted-foreground">
               {device.deviceType && <span>{device.deviceType} — </span>}
-              {device.brand} {device.model}
+              <span className="font-medium text-foreground">{device.brand} {device.model}</span>
             </p>
           </div>
         )}
