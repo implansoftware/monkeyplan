@@ -7965,7 +7965,12 @@
     "serviceName": "Nome servizio",
     "serviceDescription": "Descrizione servizio",
     "servicePrice": "Prezzo servizio",
-    "noServicesFound": "Nessun servizio trovato"
+    "noServicesFound": "Nessun servizio trovato",
+    "compatibilityImportant": "Importante",
+    "compatibilityWhyTitle": "Perché impostare la compatibilità?",
+    "compatibilityUniversalDesc": "• Senza selezione → il servizio è universale e visibile a tutti i clienti, indipendentemente dal dispositivo.",
+    "compatibilitySpecificDesc": "• Con selezione → il servizio appare solo ai clienti con quel tipo/marca/modello, evitando richieste non pertinenti.",
+    "universalTooltip": "Nessuna restrizione dispositivo impostata. Il servizio è visibile a tutti i clienti. Modifica il servizio per aggiungere una compatibilità specifica."
   },
   "devices": {
     "cercaPerNomeSKUOIMEI": "Cerca per nome, SKU o IMEI..."

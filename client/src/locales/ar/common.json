@@ -7721,7 +7721,12 @@
     "serviceDetails": "Service details",
     "deleteCustomPriceConfirm": "Are you sure you want to delete the custom price?",
     "deleteInterventionConfirm": "Are you sure you want to delete this intervention?",
-    "myItemsCount": "My items count"
+    "myItemsCount": "My items count",
+    "compatibilityImportant": "مهم",
+    "compatibilityWhyTitle": "لماذا تحديد التوافق؟",
+    "compatibilityUniversalDesc": "• بدون تحديد → الخدمة عالمية ومرئية لجميع العملاء بغض النظر عن الجهاز.",
+    "compatibilitySpecificDesc": "• مع التحديد → تظهر الخدمة فقط للعملاء الذين لديهم هذا النوع/العلامة/الموديل المحدد، مما يتجنب الطلبات غير ذات الصلة.",
+    "universalTooltip": "لم يتم تعيين قيد الجهاز. الخدمة مرئية لجميع العملاء. عدّل الخدمة لإضافة توافق محدد."
   },
   "operationalTasks": {
     "allDone": "All done!",

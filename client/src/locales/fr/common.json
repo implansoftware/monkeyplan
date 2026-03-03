@@ -7909,7 +7909,12 @@
     "serviceDetails": "Détails du service",
     "deleteCustomPriceConfirm": "Êtes-vous sûr de vouloir supprimer le personnalisé prix?",
     "deleteInterventionConfirm": "Êtes-vous sûr de vouloir supprimer ce intervention?",
-    "myItemsCount": "Mon éléments compter"
+    "myItemsCount": "Mon éléments compter",
+    "compatibilityImportant": "Important",
+    "compatibilityWhyTitle": "Pourquoi définir la compatibilité ?",
+    "compatibilityUniversalDesc": "• Sans sélection → le service est universel et visible par tous les clients, quel que soit l'appareil.",
+    "compatibilitySpecificDesc": "• Avec sélection → le service n'apparaît qu'aux clients ayant ce type/marque/modèle, évitant les demandes non pertinentes.",
+    "universalTooltip": "Aucune restriction d'appareil définie. Le service est visible par tous les clients. Modifiez le service pour ajouter une compatibilité spécifique."
   },
   "devices": {
     "cercaPerNomeSKUOIMEI": "Rechercher par nom, SKU ou IMEI..."

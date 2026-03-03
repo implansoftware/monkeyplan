@@ -8389,7 +8389,12 @@
     "serviceDetails": "Servicedetails",
     "deleteCustomPriceConfirm": "Sind Sie sicher, dass Sie den benutzerdefinierten Preis löschen möchten?",
     "deleteInterventionConfirm": "Sind Sie sicher, dass Sie diesen Eingriff löschen möchten?",
-    "myItemsCount": "Anzahl meiner Artikel"
+    "myItemsCount": "Anzahl meiner Artikel",
+    "compatibilityImportant": "Wichtig",
+    "compatibilityWhyTitle": "Warum Kompatibilität festlegen?",
+    "compatibilityUniversalDesc": "• Ohne Auswahl → der Service ist universell und für alle Kunden sichtbar, unabhängig vom Gerät.",
+    "compatibilitySpecificDesc": "• Mit Auswahl → der Service erscheint nur bei Kunden mit diesem Typ/Marke/Modell, um irrelevante Anfragen zu vermeiden.",
+    "universalTooltip": "Keine Gerätebeschränkung gesetzt. Der Service ist für alle Kunden sichtbar. Bearbeiten Sie den Service, um spezifische Kompatibilität hinzuzufügen."
   },
   "operationalTasks": {
     "allDone": "Alles erledigt!",

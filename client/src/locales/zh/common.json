@@ -8660,7 +8660,12 @@
     "serviceDetails": "服务详情",
     "deleteCustomPriceConfirm": "您确定要删除自定义价格吗?",
     "deleteInterventionConfirm": "您确定要删除此干预吗?",
-    "myItemsCount": "我的项目计数"
+    "myItemsCount": "我的项目计数",
+    "compatibilityImportant": "重要",
+    "compatibilityWhyTitle": "为什么要设置兼容性？",
+    "compatibilityUniversalDesc": "• 不选择 → 服务为通用服务，所有客户均可见，与设备无关。",
+    "compatibilitySpecificDesc": "• 选择后 → 服务仅对拥有特定类型/品牌/型号的客户显示，避免不相关请求。",
+    "universalTooltip": "未设置设备限制。所有客户均可看到此服务。编辑服务以添加特定兼容性。"
   },
   "operationalTasks": {
     "allDone": "全部完成！",

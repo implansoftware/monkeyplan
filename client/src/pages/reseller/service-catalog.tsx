@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { 
   Wrench, Pencil, Euro, Clock, Search, Tag, Building2, X, Check, Plus, Trash2,
-  Globe, User, Users, Smartphone
+  Globe, User, Users, Smartphone, Info, AlertTriangle
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -616,7 +616,17 @@ export default function ResellerServiceCatalog() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-muted-foreground">{t("products.universal")}</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant="outline" className="text-xs gap-1 text-muted-foreground cursor-default">
+                                  <Globe className="h-3 w-3" />
+                                  {t("products.universal")}
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-56 text-center">
+                                {t("services.universalTooltip")}
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
@@ -825,7 +835,17 @@ export default function ResellerServiceCatalog() {
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-muted-foreground">{t("products.universal")}</span>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="text-xs gap-1 text-muted-foreground cursor-default">
+                                      <Globe className="h-3 w-3" />
+                                      {t("products.universal")}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-56 text-center">
+                                    {t("services.universalTooltip")}
+                                  </TooltipContent>
+                                </Tooltip>
                               )}
                             </TableCell>
                             <TableCell>
@@ -1052,10 +1072,23 @@ export default function ResellerServiceCatalog() {
 
             {/* Device compatibility filters */}
             <div className="space-y-2">
-              <Label>{t("services.deviceCompatibility")}</Label>
-              <p className="text-xs text-muted-foreground mb-2">
-                {t("services.deviceCompatibilityDesc")}
-              </p>
+              <div className="flex items-center gap-2">
+                <Label>{t("services.deviceCompatibility")}</Label>
+                <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {t("services.compatibilityImportant")}
+                </span>
+              </div>
+              <div className="rounded-md border border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30 px-3 py-2.5 text-sm">
+                <div className="flex gap-2">
+                  <Info className="h-4 w-4 shrink-0 text-blue-500 mt-0.5" />
+                  <div className="space-y-1 text-muted-foreground">
+                    <p className="font-medium text-foreground">{t("services.compatibilityWhyTitle")}</p>
+                    <p className="text-xs">{t("services.compatibilityUniversalDesc")}</p>
+                    <p className="text-xs">{t("services.compatibilitySpecificDesc")}</p>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Select 
                   value={itemDeviceTypeId} 

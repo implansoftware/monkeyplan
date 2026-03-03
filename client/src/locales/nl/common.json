@@ -9609,7 +9609,12 @@
     "serviceDetails": "Servicedetails",
     "deleteCustomPriceConfirm": "Weet je zeker dat je de aangepaste prijs wilt verwijderen?",
     "deleteInterventionConfirm": "Weet je zeker dat je deze interventie wilt verwijderen?",
-    "myItemsCount": "Aantal mijn items"
+    "myItemsCount": "Aantal mijn items",
+    "compatibilityImportant": "Belangrijk",
+    "compatibilityWhyTitle": "Waarom compatibiliteit instellen?",
+    "compatibilityUniversalDesc": "• Zonder selectie → de service is universeel en zichtbaar voor alle klanten, ongeacht het apparaat.",
+    "compatibilitySpecificDesc": "• Met selectie → de service verschijnt alleen bij klanten met dat specifieke type/merk/model, waardoor irrelevante verzoeken worden vermeden.",
+    "universalTooltip": "Geen apparaatbeperking ingesteld. De service is zichtbaar voor alle klanten. Bewerk de service om specifieke compatibiliteit toe te voegen."
   },
   "devices": {
     "cercaPerNomeSKUOIMEI": "Zoeken op naam, SKU of IMEI..."

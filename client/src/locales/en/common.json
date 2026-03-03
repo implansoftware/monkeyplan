@@ -7952,7 +7952,12 @@
     "serviceDetails": "Service details",
     "deleteCustomPriceConfirm": "Are you sure you want to delete the custom price?",
     "deleteInterventionConfirm": "Are you sure you want to delete this intervention?",
-    "myItemsCount": "My items count"
+    "myItemsCount": "My items count",
+    "compatibilityImportant": "Important",
+    "compatibilityWhyTitle": "Why set compatibility?",
+    "compatibilityUniversalDesc": "• Without selection → the service is universal and visible to all customers, regardless of device.",
+    "compatibilitySpecificDesc": "• With selection → the service only appears to customers with that specific type/brand/model, avoiding irrelevant requests.",
+    "universalTooltip": "No device restriction set. The service is visible to all customers. Edit the service to add specific compatibility."
   },
   "devices": {
     "cercaPerNomeSKUOIMEI": "Search by name, SKU or IMEI..."
