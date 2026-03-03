@@ -11,10 +11,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import QRCode from "qrcode";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
-import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload, Link2, Copy, Trash, ToggleLeft, ToggleRight, ExternalLink } from "lucide-react";
+import { Users, Plus, Search, Mail, Building2, Wrench, Pencil, X, Check, Trash2, Phone, UserCheck, Eye, ChevronRight, TrendingUp, Filter, Upload, Link2, Copy, Trash, ToggleLeft, ToggleRight, ExternalLink, QrCode, Download } from "lucide-react";
 import { Link } from "wouter";
 import { CustomerRelationshipsCard } from "@/components/CustomerRelationshipsCard";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -41,6 +42,9 @@ export default function ResellerCustomers() {
   const [newLinkLabel, setNewLinkLabel] = useState("");
   const [newLinkMaxUsages, setNewLinkMaxUsages] = useState("");
   const [newLinkExpiry, setNewLinkExpiry] = useState("");
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrLinkLabel, setQrLinkLabel] = useState<string>("");
 
   // Invite links
   const { data: inviteLinks = [], refetch: refetchLinks } = useQuery<any[]>({
@@ -81,6 +85,22 @@ export default function ResellerCustomers() {
     const url = `${window.location.origin}/invite/${token}`;
     navigator.clipboard.writeText(url);
     toast({ title: "Copiato!", description: "Link copiato negli appunti" });
+  };
+
+  const openQrDialog = async (token: string, label: string) => {
+    const url = `${window.location.origin}/invite/${token}`;
+    const dataUrl = await QRCode.toDataURL(url, { width: 280, margin: 2 });
+    setQrDataUrl(dataUrl);
+    setQrLinkLabel(label || "Link invito");
+    setQrDialogOpen(true);
+  };
+
+  const downloadQr = () => {
+    if (!qrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `qr-${qrLinkLabel.replace(/\s+/g, "-").toLowerCase()}.png`;
+    a.click();
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -815,6 +835,30 @@ export default function ResellerCustomers() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* QR Code Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-4 w-4 text-primary" />
+              QR Code — {qrLinkLabel}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-2">
+            {qrDataUrl && (
+              <img src={qrDataUrl} alt="QR Code" className="rounded-md border" width={280} height={280} />
+            )}
+            <p className="text-xs text-muted-foreground text-center">
+              Scansiona con la fotocamera per aprire il link di registrazione
+            </p>
+            <Button className="w-full" onClick={downloadQr} data-testid="button-download-qr">
+              <Download className="h-4 w-4 mr-2" />
+              Scarica PNG
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Invite Links Sheet */}
       <Sheet open={inviteLinksOpen} onOpenChange={setInviteLinksOpen}>
         <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
@@ -926,6 +970,14 @@ export default function ResellerCustomers() {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Copia link</TooltipContent>
+                              </Tooltip>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" onClick={() => openQrDialog(link.token, link.label || "")} data-testid={`button-qr-link-${link.id}`}>
+                                    <QrCode className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>QR Code</TooltipContent>
                               </Tooltip>
                               <Tooltip>
                                 <TooltipTrigger asChild>
