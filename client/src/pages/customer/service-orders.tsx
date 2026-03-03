@@ -16,6 +16,20 @@ import type { ServiceOrder } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
+type PaymentMethod = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  details?: {
+    iban?: string;
+    accountHolder?: string;
+    bankName?: string;
+    bic?: string;
+    publishableKey?: string;
+    clientId?: string;
+  };
+};
+
 
 export default function CustomerServiceOrders() {
   const { t } = useTranslation();
@@ -59,6 +73,11 @@ export default function CustomerServiceOrders() {
   }>({
     queryKey: ["/api/customer/my-reseller"],
     enabled: !!user?.resellerId,
+  });
+
+  const { data: paymentMethodsData } = useQuery<{ methods: PaymentMethod[]; configSource: string }>({
+    queryKey: ["/api/customer/payment-methods"],
+    enabled: !!user,
   });
 
   const cancelOrderMutation = useMutation({
@@ -228,23 +247,32 @@ export default function CustomerServiceOrders() {
                   {t("customerPages.amountLabel")} {formatPrice(order.priceCents)}
                 </p>
 
-                {(order as any).paymentMethod === "bank_transfer" && (
-                  <div className="p-3 bg-muted rounded-md text-sm" data-testid={`bank-info-${order.id}`}>
-                    <p className="font-medium mb-1">{t("customerPages.pagamentoConBonifico")}</p>
-                    {myReseller ? (
-                      <>
-                        <p><span className="text-muted-foreground">{t("customerPages.accountHolder")}</span> {myReseller.ragioneSociale || myReseller.fullName}</p>
-                        {myReseller.iban ? (
-                          <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{myReseller.iban}</span></p>
-                        ) : (
-                          <p className="text-amber-600">{t("customerPages.ibanNotConfigured")}</p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-muted-foreground">{t("customerPages.contactResellerBank")}</p>
-                    )}
-                  </div>
-                )}
+                {(order as any).paymentMethod === "bank_transfer" && (() => {
+                  const bankMethod = paymentMethodsData?.methods?.find(m => m.id === "bank_transfer");
+                  const accountHolder = bankMethod?.details?.accountHolder || myReseller?.ragioneSociale || myReseller?.fullName;
+                  const iban = bankMethod?.details?.iban;
+                  const bankName = bankMethod?.details?.bankName;
+                  const bic = bankMethod?.details?.bic;
+                  return (
+                    <div className="p-3 bg-muted rounded-md text-sm" data-testid={`bank-info-${order.id}`}>
+                      <p className="font-medium mb-1">{t("customerPages.pagamentoConBonifico")}</p>
+                      {accountHolder && (
+                        <p><span className="text-muted-foreground">{t("customerPages.accountHolder")}</span> {accountHolder}</p>
+                      )}
+                      {iban ? (
+                        <p><span className="text-muted-foreground">IBAN:</span> <span className="font-mono">{iban}</span></p>
+                      ) : (
+                        <p className="text-amber-600">{t("customerPages.ibanNotConfigured")}</p>
+                      )}
+                      {bankName && (
+                        <p><span className="text-muted-foreground">{t("customerPages.bankName")}:</span> {bankName}</p>
+                      )}
+                      {bic && (
+                        <p><span className="text-muted-foreground">BIC/SWIFT:</span> <span className="font-mono">{bic}</span></p>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {order.scheduledAt && (
                   <p className="text-sm">
