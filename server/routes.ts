@@ -16336,6 +16336,7 @@ export function registerRoutes(app: Express): Server {
         if (req.body.estimatedCost !== undefined) updates.estimatedCost = req.body.estimatedCost;
         if (req.body.finalCost !== undefined) updates.finalCost = req.body.finalCost;
         if (req.body.notes !== undefined) updates.notes = req.body.notes;
+        if (req.body.deviceLeft !== undefined) updates.deviceLeft = req.body.deviceLeft;
         if (req.body.repairCenterId !== undefined) {
           // Validate repair center exists
           if (req.body.repairCenterId) {
@@ -16355,6 +16356,7 @@ export function registerRoutes(app: Express): Server {
         }
         
         if (req.body.notes !== undefined) updates.notes = req.body.notes;
+        if (req.body.deviceLeft !== undefined) updates.deviceLeft = req.body.deviceLeft;
         if (req.body.repairCenterId !== undefined) {
           if (req.body.repairCenterId) {
             const repairCenter = await storage.getRepairCenter(req.body.repairCenterId);
@@ -16389,6 +16391,7 @@ export function registerRoutes(app: Express): Server {
         if (req.body.estimatedCost !== undefined) updates.estimatedCost = req.body.estimatedCost;
         if (req.body.finalCost !== undefined) updates.finalCost = req.body.finalCost;
         if (req.body.notes !== undefined) updates.notes = req.body.notes;
+        if (req.body.deviceLeft !== undefined) updates.deviceLeft = req.body.deviceLeft;
       }
       
       if (Object.keys(updates).length === 0) {

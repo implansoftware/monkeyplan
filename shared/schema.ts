@@ -1416,6 +1416,7 @@ export const repairOrders = pgTable("repair_orders", {
   warrantyProofAttachmentId: varchar("warranty_proof_attachment_id"), // FK a repair_attachments (foto scontrino/ricevuta)
   skipDiagnosis: boolean("skip_diagnosis").notNull().default(false), // Flag: diagnosi saltata
   skipDiagnosisReason: text("skip_diagnosis_reason"), // Motivo salto diagnosi
+  deviceLeft: boolean("device_left").notNull().default(false), // Flag: cliente ha lasciato il dispositivo
   isReturn: boolean("is_return").notNull().default(false), // Flag: rientro dispositivo da lavorazione precedente
   parentRepairOrderId: varchar("parent_repair_order_id"), // FK ordine originale per rientri
   returnReason: text("return_reason"), // Motivo del rientro

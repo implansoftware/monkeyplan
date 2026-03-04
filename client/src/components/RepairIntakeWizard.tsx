@@ -31,6 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -44,7 +45,7 @@ import {
   ChevronRight, ChevronLeft, Loader2, Plus, Search,
   Monitor, Tablet, Laptop, Tv, Gamepad2, Watch, Headphones, Printer,
   AlertCircle, UserPlus, X, Mail, Phone, Building, Store, Download, Tag, PartyPopper, FileText, Calculator,
-  Warehouse, Package, Cpu, Code, Wifi, MoreHorizontal, HelpCircle, MapPin, Building2, FileCheck, ChevronDown, ChevronUp,
+  Warehouse, Package, PackageCheck, Cpu, Code, Wifi, MoreHorizontal, HelpCircle, MapPin, Building2, FileCheck, ChevronDown, ChevronUp,
   Stethoscope
 } from "lucide-react";
 import { 
@@ -104,6 +105,7 @@ function getWizardSchema(t: (key: string) => string) {
     aestheticNotes: z.string().optional(),
     accessories: z.array(z.string()).default([]),
     notes: z.string().optional(),
+    deviceLeft: z.boolean().default(false),
     // Courtesy phone
     courtesyPhoneProductId: z.string().optional(),
     courtesyPhoneNotes: z.string().optional(),
@@ -270,6 +272,7 @@ export function RepairIntakeWizard({
       aestheticNotes: "",
       accessories: [],
       notes: "",
+      deviceLeft: false,
     },
   });
 
@@ -729,6 +732,9 @@ export function RepairIntakeWizard({
       if (data.subResellerId) {
         payload.subResellerId = data.subResellerId;
       }
+
+      // Device left flag
+      payload.deviceLeft = data.deviceLeft ?? false;
 
       // Add courtesy phone if selected
       if (data.courtesyPhoneProductId) {
@@ -2041,6 +2047,52 @@ export function RepairIntakeWizard({
                   )}
                 />
 
+                {/* Device Left */}
+                <FormField
+                  control={form.control}
+                  name="deviceLeft"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Card
+                        className={cn(
+                          "cursor-pointer transition-colors",
+                          field.value && "ring-2 ring-primary"
+                        )}
+                        onClick={() => field.onChange(!field.value)}
+                        data-testid="card-device-left"
+                      >
+                        <CardContent className="p-4 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
+                              field.value ? "bg-green-500/10" : "bg-muted"
+                            )}>
+                              <PackageCheck className={cn(
+                                "h-5 w-5 transition-colors",
+                                field.value ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                              )} />
+                            </div>
+                            <div>
+                              <p className="font-medium">{t("repair.deviceLeft", "Dispositivo lasciato")}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {field.value
+                                  ? t("repair.deviceLeftYes", "Il cliente ha lasciato il dispositivo")
+                                  : t("repair.deviceLeftNo", "Il cliente non ha ancora lasciato il dispositivo")}
+                              </p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid="switch-device-left"
+                          />
+                        </CardContent>
+                      </Card>
+                    </FormItem>
+                  )}
+                />
+
               </div>
             )}
 
@@ -2287,6 +2339,24 @@ export function RepairIntakeWizard({
                         </div>
                       </div>
                     )}
+
+                    {/* Device Left */}
+                    <div className="flex items-center gap-3">
+                      <PackageCheck className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">{t("repair.deviceLeft", "Dispositivo lasciato")}</p>
+                        {form.watch("deviceLeft") ? (
+                          <Badge variant="outline" className="gap-1 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700">
+                            <Check className="h-3 w-3" />
+                            {t("repair.deviceLeftYes", "Sì, lasciato")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="gap-1 text-muted-foreground">
+                            {t("repair.deviceLeftNo", "Non ancora lasciato")}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Condition & Accessories */}
                     {(form.watch("aestheticCondition") || (form.watch("accessories")?.length || 0) > 0) && (

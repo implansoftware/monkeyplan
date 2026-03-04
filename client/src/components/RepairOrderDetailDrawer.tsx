@@ -34,7 +34,7 @@ import { AppointmentBookingDialog } from "@/components/AppointmentBookingDialog"
 import { useToast } from "@/hooks/use-toast";
 import {
   Wrench, Euro, FileText, Paperclip, Calendar, Package, ClipboardList,
-  ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
+  ClipboardCheck, PackageCheck, PackageMinus, Play, CheckCircle, Stethoscope, Receipt,
   Download, Eye, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck
 } from "lucide-react";
@@ -72,6 +72,7 @@ type RepairOrder = {
   imeiNotReadable: boolean;
   imeiNotPresent: boolean;
   serialOnly: boolean;
+  deviceLeft: boolean;
   issueDescription: string;
   status: string;
   priority: string | null;
@@ -402,6 +403,19 @@ export function RepairOrderDetailDrawer({
       queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
       setSkipQuoteDialogOpen(false);
       setSkipQuoteReason(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleDeviceLeftMutation = useMutation({
+    mutationFn: async (deviceLeft: boolean) => {
+      return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}`, { deviceLeft });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -1156,6 +1170,29 @@ export function RepairOrderDetailDrawer({
                     )}
                   </div>
                 )}
+                {/* Device Left Badge */}
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">{t("repair.deviceLeft", "Dispositivo lasciato")}</p>
+                  <button
+                    type="button"
+                    disabled={toggleDeviceLeftMutation.isPending}
+                    onClick={() => toggleDeviceLeftMutation.mutate(!repair.deviceLeft)}
+                    className="cursor-pointer disabled:opacity-60"
+                    data-testid="button-toggle-device-left"
+                  >
+                    {repair.deviceLeft ? (
+                      <Badge variant="outline" className="gap-1 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700" data-testid="badge-device-left">
+                        <PackageCheck className="h-3.5 w-3.5" />
+                        {t("repair.deviceLeftYes", "Sì, lasciato")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1 text-muted-foreground" data-testid="badge-device-not-left">
+                        <PackageMinus className="h-3.5 w-3.5" />
+                        {t("repair.deviceLeftNo", "Non ancora lasciato")}
+                      </Badge>
+                    )}
+                  </button>
+                </div>
                 <div>
                   <p className="text-sm text-muted-foreground">{t("repair.problem")}</p>
                   <p className="text-sm" data-testid="text-issue-description">{repair.issueDescription}</p>
