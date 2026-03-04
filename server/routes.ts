@@ -11366,34 +11366,66 @@ export function registerRoutes(app: Express): Server {
       const { customerProfileUpdateSchema } = await import("@shared/schema");
       const validatedData = customerProfileUpdateSchema.parse(req.body);
       
-      // Build update object only with provided fields
-      const updates: Record<string, any> = {};
-      if (validatedData.fullName !== undefined) updates.fullName = validatedData.fullName;
-      if (validatedData.email !== undefined) updates.email = validatedData.email;
-      if (validatedData.phone !== undefined) updates.phone = validatedData.phone;
-      if (validatedData.ragioneSociale !== undefined) updates.ragioneSociale = validatedData.ragioneSociale;
-      if (validatedData.partitaIva !== undefined) updates.partitaIva = validatedData.partitaIva;
-      if (validatedData.codiceFiscale !== undefined) updates.codiceFiscale = validatedData.codiceFiscale;
-      if (validatedData.indirizzo !== undefined) updates.indirizzo = validatedData.indirizzo;
-      if (validatedData.citta !== undefined) updates.citta = validatedData.citta;
-      if (validatedData.cap !== undefined) updates.cap = validatedData.cap;
-      if (validatedData.provincia !== undefined) updates.provincia = validatedData.provincia;
-      if (validatedData.pec !== undefined) updates.pec = validatedData.pec;
-      if (validatedData.codiceUnivoco !== undefined) updates.codiceUnivoco = validatedData.codiceUnivoco;
-      
-      if (Object.keys(updates).length === 0) {
-        return res.status(400).send("No valid fields to update");
+      // Fields that go to the users table
+      const userUpdates: Record<string, any> = {};
+      if (validatedData.fullName !== undefined) userUpdates.fullName = validatedData.fullName;
+      if (validatedData.email !== undefined) userUpdates.email = validatedData.email;
+      if (validatedData.phone !== undefined) userUpdates.phone = validatedData.phone;
+
+      // Fields that go to the billing_data table (upsert)
+      const hasBillingFields = [
+        validatedData.ragioneSociale, validatedData.partitaIva, validatedData.codiceFiscale,
+        validatedData.indirizzo, validatedData.citta, validatedData.cap,
+        validatedData.pec, validatedData.codiceUnivoco
+      ].some(v => v !== undefined);
+
+      let updatedUser = Object.keys(userUpdates).length > 0
+        ? await storage.updateUser(req.user.id, userUpdates)
+        : await storage.getUser(req.user.id) as any;
+
+      let updatedBillingData = await storage.getBillingDataByUserId(req.user.id);
+
+      if (hasBillingFields) {
+        const billingUpdates: Record<string, any> = {};
+        if (validatedData.ragioneSociale !== undefined) billingUpdates.companyName = validatedData.ragioneSociale;
+        if (validatedData.partitaIva !== undefined) billingUpdates.vatNumber = validatedData.partitaIva;
+        if (validatedData.codiceFiscale !== undefined) billingUpdates.fiscalCode = validatedData.codiceFiscale;
+        if (validatedData.indirizzo !== undefined) billingUpdates.address = validatedData.indirizzo;
+        if (validatedData.citta !== undefined) billingUpdates.city = validatedData.citta;
+        if (validatedData.cap !== undefined) billingUpdates.zipCode = validatedData.cap;
+        if (validatedData.pec !== undefined) billingUpdates.pec = validatedData.pec;
+        if (validatedData.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.codiceUnivoco;
+
+        if (updatedBillingData) {
+          updatedBillingData = await storage.updateBillingData(updatedBillingData.id, billingUpdates);
+        } else {
+          updatedBillingData = await storage.createBillingData({
+            userId: req.user.id,
+            customerType: "business",
+            companyName: billingUpdates.companyName ?? "",
+            vatNumber: billingUpdates.vatNumber ?? null,
+            fiscalCode: billingUpdates.fiscalCode ?? null,
+            pec: billingUpdates.pec ?? null,
+            codiceUnivoco: billingUpdates.codiceUnivoco ?? null,
+            address: billingUpdates.address ?? "",
+            city: billingUpdates.city ?? "",
+            zipCode: billingUpdates.zipCode ?? "",
+            country: "IT",
+          });
+        }
       }
-      
-      const updatedUser = await storage.updateUser(req.user.id, updates);
-      
+
+      if (!updatedUser) {
+        return res.status(404).send("User not found");
+      }
+
       setActivityEntity(res, { type: 'users', id: updatedUser.id });
-      
-      // Return safe profile data (no password)
+
+      // Return safe profile data (no password) with billing data — mirrors GET response
       const { password: _, ...safeUser } = updatedUser;
-      res.json(safeUser);
+      res.json({ ...safeUser, billingData: updatedBillingData ?? null });
     } catch (error: any) {
-      console.error("Service order creation error:", error);
+      console.error("Customer profile update error:", error);
       if (error.name === 'ZodError') {
         return res.status(400).json({ message: "Dati non validi", errors: error.errors });
       }

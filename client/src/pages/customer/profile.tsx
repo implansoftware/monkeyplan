@@ -56,9 +56,12 @@ export default function CustomerProfile() {
       const res = await apiRequest("PATCH", "/api/customer/profile", data);
       return await res.json();
     },
-    onSuccess: (updatedUser: UserType) => {
-      queryClient.setQueryData(["/api/customer/profile"], updatedUser);
-      queryClient.setQueryData(["/api/user"], updatedUser);
+    onSuccess: (updatedProfile: ProfileResponse) => {
+      queryClient.setQueryData(["/api/customer/profile"], updatedProfile);
+      if (updatedProfile) {
+        const { billingData: _bd, ...userOnly } = updatedProfile as any;
+        queryClient.setQueryData(["/api/user"], userOnly);
+      }
       setIsEditingPersonal(false);
       setIsEditingFiscal(false);
       toast({
