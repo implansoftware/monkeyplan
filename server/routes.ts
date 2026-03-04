@@ -11372,12 +11372,18 @@ export function registerRoutes(app: Express): Server {
       if (validatedData.email !== undefined) userUpdates.email = validatedData.email;
       if (validatedData.phone !== undefined) userUpdates.phone = validatedData.phone;
 
-      // Fields that go to the billing_data table (upsert)
-      const hasBillingFields = [
-        validatedData.ragioneSociale, validatedData.partitaIva, validatedData.codiceFiscale,
-        validatedData.indirizzo, validatedData.citta, validatedData.cap,
-        validatedData.pec, validatedData.codiceUnivoco
-      ].some(v => v !== undefined);
+      // Build billing_data updates (map form field names to DB column names)
+      const billingUpdates: Record<string, any> = {};
+      if (validatedData.ragioneSociale !== undefined) billingUpdates.companyName = validatedData.ragioneSociale || null;
+      if (validatedData.partitaIva !== undefined) billingUpdates.vatNumber = validatedData.partitaIva || null;
+      if (validatedData.codiceFiscale !== undefined) billingUpdates.fiscalCode = validatedData.codiceFiscale || null;
+      if (validatedData.indirizzo !== undefined) billingUpdates.address = validatedData.indirizzo || "";
+      if (validatedData.citta !== undefined) billingUpdates.city = validatedData.citta || "";
+      if (validatedData.cap !== undefined) billingUpdates.zipCode = validatedData.cap || "";
+      if (validatedData.pec !== undefined) billingUpdates.pec = validatedData.pec || null;
+      if (validatedData.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.codiceUnivoco || null;
+
+      const hasBillingFields = Object.keys(billingUpdates).length > 0;
 
       let updatedUser = Object.keys(userUpdates).length > 0
         ? await storage.updateUser(req.user.id, userUpdates)
@@ -11386,22 +11392,12 @@ export function registerRoutes(app: Express): Server {
       let updatedBillingData = await storage.getBillingDataByUserId(req.user.id);
 
       if (hasBillingFields) {
-        const billingUpdates: Record<string, any> = {};
-        if (validatedData.ragioneSociale !== undefined) billingUpdates.companyName = validatedData.ragioneSociale;
-        if (validatedData.partitaIva !== undefined) billingUpdates.vatNumber = validatedData.partitaIva;
-        if (validatedData.codiceFiscale !== undefined) billingUpdates.fiscalCode = validatedData.codiceFiscale;
-        if (validatedData.indirizzo !== undefined) billingUpdates.address = validatedData.indirizzo;
-        if (validatedData.citta !== undefined) billingUpdates.city = validatedData.citta;
-        if (validatedData.cap !== undefined) billingUpdates.zipCode = validatedData.cap;
-        if (validatedData.pec !== undefined) billingUpdates.pec = validatedData.pec;
-        if (validatedData.codiceUnivoco !== undefined) billingUpdates.codiceUnivoco = validatedData.codiceUnivoco;
-
         if (updatedBillingData) {
           updatedBillingData = await storage.updateBillingData(updatedBillingData.id, billingUpdates);
         } else {
           updatedBillingData = await storage.createBillingData({
             userId: req.user.id,
-            customerType: "business",
+            customerType: "company",
             companyName: billingUpdates.companyName ?? "",
             vatNumber: billingUpdates.vatNumber ?? null,
             fiscalCode: billingUpdates.fiscalCode ?? null,
