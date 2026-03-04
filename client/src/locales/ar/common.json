@@ -9765,6 +9765,7 @@
     "deviceLabel": "Device {{number}}",
     "whichDeviceToRepair": "Which device do you want to repair?",
     "issueDetailPlaceholder": "What's not working? Describe the defect in detail...",
+    "imeiNotApplicableMultiple": "IMEI/الرقم التسلسلي غير قابل للتطبيق لـ {{count}} وحدة من نفس الطراز",
     "imeiOptional": "IMEI (optional)",
     "imeiPlaceholder": "IMEI code",
     "serialOptional": "Serial (optional)",

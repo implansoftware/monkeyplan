@@ -8401,6 +8401,7 @@
     "deviceLabel": "Dispositivo {{number}}",
     "whichDeviceToRepair": "Which dispositivo do you want hasta reparación?",
     "issueDetailPlaceholder": "What's no laborable? Describe el defect en detalle...",
+    "imeiNotApplicableMultiple": "IMEI/Número de serie no aplicable para {{count}} unidades del mismo modelo",
     "imeiOptional": "IMEI (opcional)",
     "imeiPlaceholder": "IMEI código",
     "serialOptional": "Serial (opcional)",

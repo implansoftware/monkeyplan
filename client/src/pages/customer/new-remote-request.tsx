@@ -269,37 +269,51 @@ function DeviceFormCard({
           />
         </div>
 
-        {/* IMEI / Serial / Quantity row */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">{t("customerPages.imeiOptional")}</Label>
-            <Input
-              value={device.imei}
-              onChange={(e) => onUpdate({ imei: e.target.value })}
-              placeholder="123456789..."
-              data-testid={`input-imei-${index}`}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">{t("customerPages.serialOptional")}</Label>
-            <Input
-              value={device.serial}
-              onChange={(e) => onUpdate({ serial: e.target.value })}
-              placeholder="S/N..."
-              data-testid={`input-serial-${index}`}
-            />
-          </div>
-          <div className="space-y-1.5">
+        {/* Quantity row — always visible */}
+        <div className="flex items-center gap-3">
+          <div className="w-28 space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground">{t("common.quantity")}</Label>
             <Input
               type="number"
               min={1}
               value={device.quantity}
-              onChange={(e) => onUpdate({ quantity: Math.max(1, parseInt(e.target.value) || 1) })}
+              onChange={(e) => {
+                const qty = Math.max(1, parseInt(e.target.value) || 1);
+                onUpdate({ quantity: qty, ...(qty > 1 ? { imei: "", serial: "" } : {}) });
+              }}
               data-testid={`input-quantity-${index}`}
             />
           </div>
+          {device.quantity > 1 && (
+            <div className="flex-1 flex items-center gap-2 mt-5 px-3 py-2 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400">
+              <span className="text-xs">{t("customerPages.imeiNotApplicableMultiple", { count: device.quantity })}</span>
+            </div>
+          )}
         </div>
+
+        {/* IMEI + Serial — only for single units */}
+        {device.quantity === 1 && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">{t("customerPages.imeiOptional")}</Label>
+              <Input
+                value={device.imei}
+                onChange={(e) => onUpdate({ imei: e.target.value })}
+                placeholder="123456789..."
+                data-testid={`input-imei-${index}`}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">{t("customerPages.serialOptional")}</Label>
+              <Input
+                value={device.serial}
+                onChange={(e) => onUpdate({ serial: e.target.value })}
+                placeholder="S/N..."
+                data-testid={`input-serial-${index}`}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Photo upload */}
         <div className="space-y-2">

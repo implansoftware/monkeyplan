@@ -3859,6 +3859,7 @@
     "deviceLabel": "Device {{number}}",
     "whichDeviceToRepair": "Which device do you want to repair?",
     "issueDetailPlaceholder": "What's not working? Describe the defect in detail...",
+    "imeiNotApplicableMultiple": "IMEI/序列号不适用于同一型号的 {{count}} 台设备",
     "imeiOptional": "IMEI (optional)",
     "imeiPlaceholder": "IMEI code",
     "serialOptional": "Serial (optional)",

@@ -8444,6 +8444,7 @@
     "deviceLabel": "Device {{number}}",
     "whichDeviceToRepair": "Which device do you want to repair?",
     "issueDetailPlaceholder": "What's not working? Describe the defect in detail...",
+    "imeiNotApplicableMultiple": "IMEI/Serial not applicable for {{count}} units of the same model",
     "imeiOptional": "IMEI (optional)",
     "imeiPlaceholder": "IMEI code",
     "serialOptional": "Serial (optional)",

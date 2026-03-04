@@ -8456,6 +8456,7 @@
     "deviceLabel": "Dispositivo {{number}}",
     "whichDeviceToRepair": "Quale dispositivo vuoi riparare?",
     "issueDetailPlaceholder": "Cosa non funziona? Descrivi il difetto in dettaglio...",
+    "imeiNotApplicableMultiple": "IMEI/Seriale non applicabile per {{count}} unità dello stesso modello",
     "imeiOptional": "IMEI (opzionale)",
     "imeiPlaceholder": "Codice IMEI",
     "serialOptional": "Seriale (opzionale)",

@@ -10142,6 +10142,7 @@
     "deviceLabel": "Gerät {{number}}",
     "whichDeviceToRepair": "Welches Gerät möchten Sie reparieren?",
     "issueDetailPlaceholder": "Was funktioniert nicht? Beschreiben Sie den Defekt im Detail...",
+    "imeiNotApplicableMultiple": "IMEI/Seriennummer nicht anwendbar für {{count}} Einheiten desselben Modells",
     "imeiOptional": "IMEI (optional)",
     "imeiPlaceholder": "IMEI-Code",
     "serialOptional": "Seriennummer (optional)",
