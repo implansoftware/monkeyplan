@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building2, Plus, Edit2, Trash2, MapPin, Phone, Mail } from "lucide-react";
+import { Building2, Plus, Edit2, Trash2, MapPin, Phone, Mail, Search } from "lucide-react";
 import type { CustomerBranch } from "@shared/schema";
 import { AddressAutocomplete } from "@/components/address-autocomplete";
 
@@ -48,6 +48,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     egCode: isSubclientMode ? t("customer.egSubClientCode") : t("customer.egBranchCode"),
     egName: isSubclientMode ? t("customer.egSubClientName") : t("customer.egBranchName"),
   };
+  const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editBranch, setEditBranch] = useState<CustomerBranch | null>(null);
   const [selectedAddress, setSelectedAddress] = useState("");
@@ -64,6 +65,19 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
   const { data: branches = [], isLoading } = useQuery<CustomerBranch[]>({
     queryKey: branchesQueryKey,
   });
+
+  const filteredBranches = (() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return branches;
+    return branches.filter(b =>
+      b.branchCode?.toLowerCase().includes(q) ||
+      b.branchName?.toLowerCase().includes(q) ||
+      b.city?.toLowerCase().includes(q) ||
+      b.address?.toLowerCase().includes(q) ||
+      b.contactName?.toLowerCase().includes(q) ||
+      b.contactEmail?.toLowerCase().includes(q)
+    );
+  })();
 
   const createBranchMutation = useMutation({
     mutationFn: async (data: Partial<CustomerBranch>) => {
@@ -345,7 +359,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
           </Dialog>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         {branches.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -355,6 +369,24 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
             )}
           </div>
         ) : (
+          <>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder={isSubclientMode ? t("customer.searchSubClients", "Cerca per nome, codice, città, referente...") : t("customer.searchBranches", "Cerca per nome, codice, città, referente...")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-branches"
+              />
+            </div>
+            {filteredBranches.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                <Search className="h-8 w-8 mb-2 opacity-40" />
+                <p className="text-sm font-medium">{t("common.noResults", "Nessun risultato")}</p>
+                <p className="text-xs mt-1">{t("common.tryDifferentSearch", "Prova con un termine diverso.")}</p>
+              </div>
+            ) : (
           <Table>
             <TableHeader>
               <TableRow>
@@ -367,7 +399,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
               </TableRow>
             </TableHeader>
             <TableBody>
-              {branches.map((branch) => (
+              {filteredBranches.map((branch) => (
                 <TableRow key={branch.id} data-testid={`row-branch-${branch.id}`}>
                   <TableCell className="font-mono font-medium" data-testid={`text-branch-code-${branch.id}`}>
                     {branch.branchCode}
@@ -463,6 +495,8 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
               ))}
             </TableBody>
           </Table>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
