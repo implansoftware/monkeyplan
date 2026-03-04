@@ -21040,6 +21040,7 @@ export function registerRoutes(app: Express): Server {
       if (repairOrder.imeiNotPresent) {
         doc.text('IMEI: Non presente sul dispositivo');
       }
+      doc.text(`Dispositivo lasciato: ${repairOrder.deviceLeft ? 'Sì' : 'No'}`);
       doc.moveDown();
       
       // Problem description
