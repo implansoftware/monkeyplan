@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Smartphone, Euro, CreditCard, Store, Download, ChevronRight, AlertCircle, User, Users } from "lucide-react";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Smartphone, Euro, CreditCard, Store, Download, ChevronRight, AlertCircle, User, Users, Search } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Link } from "wouter";
@@ -486,8 +486,24 @@ export default function CustomerRemoteRequests() {
     trackingNumber: "",
   });
 
+  const [searchQuery, setSearchQuery] = useState("");
+
   const { data: requests, isLoading } = useQuery<EnrichedRequest[]>({
     queryKey: ["/api/customer/remote-requests"],
+  });
+
+  const filteredRequests = (requests ?? []).filter((r) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    if (r.requestNumber?.toLowerCase().includes(q)) return true;
+    if (r.branchName?.toLowerCase().includes(q)) return true;
+    if (r.centerName?.toLowerCase().includes(q)) return true;
+    if (r.devices?.some(d =>
+      d.brand?.toLowerCase().includes(q) ||
+      d.model?.toLowerCase().includes(q) ||
+      d.deviceType?.toLowerCase().includes(q)
+    )) return true;
+    return false;
   });
 
   const shippingMutation = useMutation({
@@ -695,6 +711,19 @@ export default function CustomerRemoteRequests() {
         </div>
       )}
 
+      {requests && requests.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder={t("customerPages.searchRequests", "Cerca per numero, dispositivo, sotto-cliente...")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+            data-testid="input-search-requests"
+          />
+        </div>
+      )}
+
       {requests && requests.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -711,9 +740,17 @@ export default function CustomerRemoteRequests() {
             </Button>
           </Link>
         </div>
+      ) : filteredRequests.length === 0 && searchQuery.trim() ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <Search className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <p className="font-medium text-sm" data-testid="text-no-search-results">{t("customerPages.noSearchResults", "Nessuna richiesta trovata")}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("customerPages.noSearchResultsDesc", "Prova con un termine diverso.")}</p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {requests?.map((request) => (
+          {filteredRequests.map((request) => (
             <RequestCard
               key={request.id}
               request={request}
