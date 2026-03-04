@@ -7492,6 +7492,7 @@ export const licensePlans = pgTable("license_plans", {
   sortOrder: integer("sort_order").notNull().default(0),
   stripeProductId: varchar("stripe_product_id"),
   stripePriceId: varchar("stripe_price_id"),
+  paypalPlanId: varchar("paypal_plan_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -7515,6 +7516,7 @@ export const licenses = pgTable("licenses", {
   paymentMethod: licensePaymentMethodEnum("payment_method").notNull().default("manual"),
   paymentId: varchar("payment_id"),
   stripeSubscriptionId: varchar("stripe_subscription_id"),
+  paypalSubscriptionId: varchar("paypal_subscription_id"),
   autoRenew: boolean("auto_renew").notNull().default(false),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   notes: text("notes"),

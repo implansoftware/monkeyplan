@@ -196,7 +196,7 @@ import { calculateRepairPriority } from "./helpers/priorityCalculation";
 import { db } from "./db";
 import { sql, eq, and, desc, inArray, gt, isNotNull, isNull } from "drizzle-orm";
 import { salesOrderPayments, salesOrders, salesOrderShipments, users, repairOrders, products, warehouseStock, repairAcceptance, standaloneQuotes } from "@shared/schema";
-import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus } from "./paypal";
+import { encryptSecret, decryptSecret, getPayPalClientToken, createPayPalOrderHandler, capturePayPalOrderHandler, getPayPalOrderStatus, createPayPalProduct, createPayPalBillingPlan, createPayPalSubscription, getPayPalSubscription, suspendPayPalSubscription, activatePayPalSubscription, durationMonthsToPayPalInterval } from "./paypal";
 import Stripe from 'stripe';
 
 const scryptAsync = promisify(scrypt);
@@ -886,6 +886,8 @@ export function registerRoutes(app: Express): Server {
     '/api/login',
     '/api/logout',
     '/api/register',
+    '/api/stripe/license-webhook',
+    '/api/paypal/license-webhook',
   ];
   app.use((req: Request, res: Response, next: Function) => {
     const path = req.path;
@@ -49450,53 +49452,28 @@ export function registerRoutes(app: Express): Server {
         const clientId = adminConfig.paypalClientId;
         const clientSecret = decryptSecret(adminConfig.paypalClientSecret);
         const amountInEur = (plan.priceCents / 100).toFixed(2);
-        const tokenResponse = await fetch("https://api-m.sandbox.paypal.com/v1/oauth2/token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Authorization": `Basic ${Buffer.from(clientId + ':' + clientSecret).toString("base64")}`
-          },
-          body: "grant_type=client_credentials"
-        });
-        const tokenData = await tokenResponse.json() as any;
-        if (!tokenData.access_token) {
-          await storage.updateLicense(license.id, { status: "cancelled" });
-          return res.status(500).json({ error: "Errore autenticazione PayPal" });
+        const origin = req.headers.origin || req.protocol + '://' + req.headers.host;
+
+        // Ensure the plan has a PayPal billing plan (create on-the-fly and cache if missing)
+        let paypalPlanId = (plan as any).paypalPlanId as string | undefined;
+        if (!paypalPlanId) {
+          const productId = await createPayPalProduct(clientId, clientSecret, `MonkeyPlan - ${plan.name}`, plan.description || `Piano licenza MonkeyPlan: ${plan.name}`);
+          const { intervalUnit, intervalCount } = durationMonthsToPayPalInterval(plan.durationMonths);
+          paypalPlanId = await createPayPalBillingPlan(clientId, clientSecret, productId, plan.name, amountInEur, intervalUnit, intervalCount);
+          await storage.updateLicensePlan(plan.id, { paypalPlanId } as any);
         }
-        const orderResponse = await fetch("https://api-m.sandbox.paypal.com/v2/checkout/orders", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${tokenData.access_token}`
-          },
-          body: JSON.stringify({
-            intent: "CAPTURE",
-            purchase_units: [{
-              reference_id: license.id,
-              description: `Licenza MonkeyPlan - ${plan.name}`,
-              amount: { currency_code: "EUR", value: amountInEur }
-            }],
-            payment_source: {
-              paypal: {
-                experience_context: {
-                  payment_method_preference: "IMMEDIATE_PAYMENT_REQUIRED",
-                  user_action: "PAY_NOW",
-                  return_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/my-license?license_id=${license.id}&payment_success=true&payment_method=paypal`,
-                  cancel_url: `${req.headers.origin || req.protocol + '://' + req.headers.host}/my-license?payment_cancelled=true`,
-                  brand_name: "MonkeyPlan"
-                }
-              }
-            }
-          })
-        });
-        const orderData = await orderResponse.json() as any;
-        if (!orderData.id) {
-          await storage.updateLicense(license.id, { status: "cancelled" });
-          return res.status(500).json({ error: "Errore creazione ordine PayPal" });
-        }
-        await storage.updateLicense(license.id, { paymentId: orderData.id });
-        const approveLink = orderData.links?.find((l: any) => l.rel === 'payer-action' || l.rel === 'approve');
-        return res.status(201).json({ license, approveUrl: approveLink?.href, orderID: orderData.id, paymentMethod: 'paypal' });
+
+        const { subscriptionId, approveUrl } = await createPayPalSubscription(
+          clientId,
+          clientSecret,
+          paypalPlanId,
+          `${origin}/my-license?license_id=${license.id}&payment_success=true&payment_method=paypal_subscription`,
+          `${origin}/my-license?payment_cancelled=true`,
+          req.user.email
+        );
+
+        await storage.updateLicense(license.id, { paymentId: subscriptionId });
+        return res.status(201).json({ license, approveUrl, subscriptionId, paymentMethod: 'paypal_subscription' });
       }
 
       return res.status(400).send("Metodo di pagamento non supportato");
@@ -49629,6 +49606,54 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // POST /api/licenses/confirm-paypal-subscription - Confirm PayPal subscription approval and activate license
+  app.post("/api/licenses/confirm-paypal-subscription", requireRole("reseller"), async (req, res) => {
+    try {
+      if (!req.user) return res.status(401).send("Unauthorized");
+      const { licenseId, subscriptionId } = req.body;
+      if (!licenseId || !subscriptionId) return res.status(400).send("Dati mancanti");
+      const license = await storage.getLicense(licenseId);
+      if (!license) return res.status(404).send("Licenza non trovata");
+      if (license.resellerId !== req.user.id) return res.status(403).send("Accesso non autorizzato");
+      if (license.status === 'active') return res.json({ license, alreadyActive: true });
+      if (license.status !== 'pending') return res.status(400).send("Licenza non in attesa di pagamento");
+
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.paypalClientId || !adminConfig?.paypalClientSecret) {
+        return res.status(500).json({ error: "PayPal non configurato" });
+      }
+
+      const clientId = adminConfig.paypalClientId;
+      const clientSecret = decryptSecret(adminConfig.paypalClientSecret);
+      const sub = await getPayPalSubscription(clientId, clientSecret, subscriptionId);
+      console.log("[PayPal Subscription] Status:", sub.status, "ID:", subscriptionId);
+
+      const isApproved = ['ACTIVE', 'APPROVED'].includes(sub.status);
+      if (isApproved) {
+        const existingActive = await storage.getActiveLicenseForReseller(req.user.id);
+        if (existingActive && existingActive.id !== license.id) {
+          await storage.updateLicense(existingActive.id, { status: "cancelled" });
+        }
+        await storage.updateLicense(license.id, {
+          status: "active",
+          paymentId: subscriptionId,
+          paypalSubscriptionId: subscriptionId,
+          autoRenew: true,
+        });
+        const updated = await storage.getLicense(license.id);
+        return res.json({ license: updated, confirmed: true });
+      } else {
+        return res.json({ license, confirmed: false, subscriptionStatus: sub.status });
+      }
+    } catch (error: any) {
+      console.error("License confirm-paypal-subscription error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/licenses/payment-methods - Get available payment methods for license purchase
   app.get("/api/licenses/payment-methods", requireRole("reseller", "reseller_staff"), async (req, res) => {
     try {
@@ -49711,6 +49736,44 @@ export function registerRoutes(app: Express): Server {
       res.json({ success: true, plan: updated, stripeProductId: productId, stripePriceId: price.id });
     } catch (error: any) {
       console.error("Stripe sync error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/admin/license-plans/:id/sync-paypal - Sync plan with PayPal (create Product + Billing Plan)
+  app.post("/api/admin/license-plans/:id/sync-paypal", requireRole("admin"), async (req, res) => {
+    try {
+      const plan = await storage.getLicensePlan(req.params.id);
+      if (!plan) return res.status(404).send("Piano non trovato");
+      if (plan.priceCents === 0) return res.status(400).send("I piani gratuiti non necessitano di sincronizzazione PayPal");
+
+      const allUsers = await storage.listUsers();
+      const admin = allUsers.find(u => u.role === 'admin');
+      if (!admin) return res.status(500).json({ error: "Admin non trovato" });
+      const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
+      if (!adminConfig?.paypalEnabled || !adminConfig?.paypalClientId || !adminConfig?.paypalClientSecret) {
+        return res.status(400).json({ error: "PayPal non configurato. Configura PayPal nelle impostazioni." });
+      }
+
+      const clientId = adminConfig.paypalClientId;
+      const clientSecret = decryptSecret(adminConfig.paypalClientSecret);
+      const amountInEur = (plan.priceCents / 100).toFixed(2);
+
+      const productId = await createPayPalProduct(
+        clientId, clientSecret,
+        `MonkeyPlan - ${plan.name}`,
+        plan.description || `Piano licenza MonkeyPlan: ${plan.name}`
+      );
+      const { intervalUnit, intervalCount } = durationMonthsToPayPalInterval(plan.durationMonths);
+      const paypalPlanId = await createPayPalBillingPlan(
+        clientId, clientSecret, productId, plan.name, amountInEur, intervalUnit, intervalCount
+      );
+
+      await storage.updateLicensePlan(plan.id, { paypalPlanId } as any);
+      const updated = await storage.getLicensePlan(plan.id);
+      res.json({ success: true, plan: updated, paypalPlanId });
+    } catch (error: any) {
+      console.error("PayPal sync error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -49821,26 +49884,101 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // POST /api/licenses/cancel-subscription - Cancel recurring subscription
+  // POST /api/paypal/license-webhook - Handle PayPal Billing Subscription events
+  app.post("/api/paypal/license-webhook", async (req, res) => {
+    try {
+      const event = req.body;
+      const eventType = event?.event_type as string;
+      const resource = event?.resource;
+      console.log(`[PayPal Webhook] Event: ${eventType}`);
+
+      switch (eventType) {
+        case 'BILLING.SUBSCRIPTION.ACTIVATED': {
+          const subscriptionId = resource?.id;
+          if (!subscriptionId) break;
+          const license = await storage.getLicenseByPaypalSubscriptionId(subscriptionId);
+          if (!license) { console.log(`[PayPal Webhook] No license for subscription ${subscriptionId}`); break; }
+          await storage.updateLicense(license.id, { status: 'active', autoRenew: true });
+          console.log(`[PayPal Webhook] License ${license.id} activated`);
+          break;
+        }
+
+        case 'PAYMENT.SALE.COMPLETED': {
+          // Fired on each recurring billing cycle payment
+          const billingAgreementId = resource?.billing_agreement_id;
+          if (!billingAgreementId) break;
+          const license = await storage.getLicenseByPaypalSubscriptionId(billingAgreementId);
+          if (!license) break;
+          const plan = await storage.getLicensePlan(license.licensePlanId);
+          if (!plan) break;
+          const newEndDate = new Date(license.endDate);
+          newEndDate.setMonth(newEndDate.getMonth() + plan.durationMonths);
+          await storage.updateLicense(license.id, { status: 'active', endDate: newEndDate, autoRenew: true, cancelAtPeriodEnd: false });
+          console.log(`[PayPal Webhook] License ${license.id} renewed until ${newEndDate.toISOString()}`);
+          break;
+        }
+
+        case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED': {
+          const subscriptionId = resource?.id;
+          if (!subscriptionId) break;
+          const license = await storage.getLicenseByPaypalSubscriptionId(subscriptionId);
+          if (!license) break;
+          console.log(`[PayPal Webhook] Payment failed for license ${license.id}`);
+          break;
+        }
+
+        case 'BILLING.SUBSCRIPTION.CANCELLED':
+        case 'BILLING.SUBSCRIPTION.EXPIRED': {
+          const subscriptionId = resource?.id;
+          if (!subscriptionId) break;
+          const license = await storage.getLicenseByPaypalSubscriptionId(subscriptionId);
+          if (!license) break;
+          await storage.updateLicense(license.id, { status: 'expired', autoRenew: false, cancelAtPeriodEnd: false });
+          console.log(`[PayPal Webhook] License ${license.id} expired (subscription ${eventType})`);
+          break;
+        }
+
+        case 'BILLING.SUBSCRIPTION.SUSPENDED': {
+          const subscriptionId = resource?.id;
+          if (!subscriptionId) break;
+          const license = await storage.getLicenseByPaypalSubscriptionId(subscriptionId);
+          if (!license) break;
+          await storage.updateLicense(license.id, { cancelAtPeriodEnd: true, autoRenew: false });
+          console.log(`[PayPal Webhook] License ${license.id} subscription suspended`);
+          break;
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error("[PayPal Webhook] Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // POST /api/licenses/cancel-subscription - Cancel recurring subscription (Stripe or PayPal)
   app.post("/api/licenses/cancel-subscription", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       const license = await storage.getActiveLicenseForReseller(req.user.id);
       if (!license) return res.status(404).send("Nessuna licenza attiva trovata");
-      if (!license.stripeSubscriptionId) return res.status(400).send("Questa licenza non è un abbonamento ricorrente");
+      if (!license.stripeSubscriptionId && !license.paypalSubscriptionId) return res.status(400).send("Questa licenza non è un abbonamento ricorrente");
 
       const allUsers = await storage.listUsers();
       const admin = allUsers.find(u => u.role === 'admin');
       if (!admin) return res.status(500).json({ error: "Admin non trovato" });
       const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
-      if (!adminConfig?.stripeSecretKey) return res.status(500).json({ error: "Stripe non configurato" });
 
-      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
-      const stripe = new Stripe(stripeSecretDecrypted);
-
-      await stripe.subscriptions.update(license.stripeSubscriptionId, {
-        cancel_at_period_end: true,
-      });
+      if (license.stripeSubscriptionId) {
+        if (!adminConfig?.stripeSecretKey) return res.status(500).json({ error: "Stripe non configurato" });
+        const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+        const stripe = new Stripe(stripeSecretDecrypted);
+        await stripe.subscriptions.update(license.stripeSubscriptionId, { cancel_at_period_end: true });
+      } else if (license.paypalSubscriptionId) {
+        if (!adminConfig?.paypalClientId || !adminConfig?.paypalClientSecret) return res.status(500).json({ error: "PayPal non configurato" });
+        const clientSecret = decryptSecret(adminConfig.paypalClientSecret);
+        await suspendPayPalSubscription(adminConfig.paypalClientId, clientSecret, license.paypalSubscriptionId);
+      }
 
       await storage.updateLicense(license.id, {
         cancelAtPeriodEnd: true,
@@ -49855,27 +49993,30 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // POST /api/licenses/reactivate-subscription - Reactivate a cancelled subscription before period end
+  // POST /api/licenses/reactivate-subscription - Reactivate a cancelled subscription (Stripe or PayPal)
   app.post("/api/licenses/reactivate-subscription", requireRole("reseller"), async (req, res) => {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       const license = await storage.getActiveLicenseForReseller(req.user.id);
       if (!license) return res.status(404).send("Nessuna licenza attiva trovata");
-      if (!license.stripeSubscriptionId) return res.status(400).send("Questa licenza non è un abbonamento ricorrente");
+      if (!license.stripeSubscriptionId && !license.paypalSubscriptionId) return res.status(400).send("Questa licenza non è un abbonamento ricorrente");
       if (!license.cancelAtPeriodEnd) return res.status(400).send("L'abbonamento non è in fase di cancellazione");
 
       const allUsers = await storage.listUsers();
       const admin = allUsers.find(u => u.role === 'admin');
       if (!admin) return res.status(500).json({ error: "Admin non trovato" });
       const adminConfig = await storage.getPaymentConfiguration("admin", admin.id);
-      if (!adminConfig?.stripeSecretKey) return res.status(500).json({ error: "Stripe non configurato" });
 
-      const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
-      const stripe = new Stripe(stripeSecretDecrypted);
-
-      await stripe.subscriptions.update(license.stripeSubscriptionId, {
-        cancel_at_period_end: false,
-      });
+      if (license.stripeSubscriptionId) {
+        if (!adminConfig?.stripeSecretKey) return res.status(500).json({ error: "Stripe non configurato" });
+        const stripeSecretDecrypted = decryptSecret(adminConfig.stripeSecretKey);
+        const stripe = new Stripe(stripeSecretDecrypted);
+        await stripe.subscriptions.update(license.stripeSubscriptionId, { cancel_at_period_end: false });
+      } else if (license.paypalSubscriptionId) {
+        if (!adminConfig?.paypalClientId || !adminConfig?.paypalClientSecret) return res.status(500).json({ error: "PayPal non configurato" });
+        const clientSecret = decryptSecret(adminConfig.paypalClientSecret);
+        await activatePayPalSubscription(adminConfig.paypalClientId, clientSecret, license.paypalSubscriptionId);
+      }
 
       await storage.updateLicense(license.id, {
         cancelAtPeriodEnd: false,

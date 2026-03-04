@@ -11,7 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Shield, Calendar, User, Gift, Search, Filter } from "lucide-react";
+import { Shield, Calendar, User, Gift, Search, Filter, RefreshCw, Loader2 } from "lucide-react";
+import { SiPaypal } from "react-icons/si";
 import type { LicensePlan } from "@shared/schema";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -114,6 +115,24 @@ export default function AdminLicenses() {
       toast({ title: t("license.licenseUpdated") });
     },
     onError: (err: any) => {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    },
+  });
+
+  const [syncPaypalPlanId, setSyncPaypalPlanId] = useState<string | null>(null);
+  const syncPaypalMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      setSyncPaypalPlanId(planId);
+      const res = await apiRequest("POST", `/api/admin/license-plans/${planId}/sync-paypal`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setSyncPaypalPlanId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/license-plans"] });
+      toast({ title: "PayPal sincronizzato", description: `Piano ID PayPal: ${data.paypalPlanId}` });
+    },
+    onError: (err: any) => {
+      setSyncPaypalPlanId(null);
       toast({ title: t("common.error"), description: err.message, variant: "destructive" });
     },
   });
@@ -281,6 +300,42 @@ export default function AdminLicenses() {
           </SelectContent>
         </Select>
       </div>
+
+      {(plans || []).filter(p => p.priceCents > 0).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Integrazione PayPal — Piani</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {(plans || []).filter(p => p.priceCents > 0).map(plan => (
+              <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 py-2 border-b last:border-0">
+                <div>
+                  <p className="font-medium text-sm">{plan.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(plan.priceCents / 100).toFixed(2)} EUR / {plan.durationMonths} mesi
+                    {(plan as any).paypalPlanId && (
+                      <span className="ml-2 text-emerald-600">• PayPal ID: {(plan as any).paypalPlanId}</span>
+                    )}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => syncPaypalMutation.mutate(plan.id)}
+                  disabled={syncPaypalMutation.isPending && syncPaypalPlanId === plan.id}
+                  data-testid={`button-sync-paypal-${plan.id}`}
+                >
+                  {syncPaypalMutation.isPending && syncPaypalPlanId === plan.id ? (
+                    <><Loader2 className="w-3 h-3 mr-2 animate-spin" />Sync...</>
+                  ) : (
+                    <><SiPaypal className="w-3 h-3 mr-2" />{(plan as any).paypalPlanId ? "Risincronizza PayPal" : "Sincronizza PayPal"}</>
+                  )}
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {filtered.length === 0 ? (
         <Card>

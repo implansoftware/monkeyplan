@@ -1266,6 +1266,7 @@ export interface IStorage {
   listLicenses(filters?: { resellerId?: string; status?: string }): Promise<License[]>;
   getLicense(id: string): Promise<License | undefined>;
   getLicenseByStripeSubscriptionId(subscriptionId: string): Promise<License | undefined>;
+  getLicenseByPaypalSubscriptionId(subscriptionId: string): Promise<License | undefined>;
   getActiveLicenseForReseller(resellerId: string): Promise<License | undefined>;
   createLicense(data: InsertLicense): Promise<License>;
   updateLicense(id: string, updates: Partial<InsertLicense>): Promise<License>;
@@ -13641,6 +13642,11 @@ export class DatabaseStorage implements IStorage {
 
   async getLicenseByStripeSubscriptionId(subscriptionId: string): Promise<License | undefined> {
     const [license] = await db.select().from(licenses).where(eq(licenses.stripeSubscriptionId, subscriptionId));
+    return license;
+  }
+
+  async getLicenseByPaypalSubscriptionId(subscriptionId: string): Promise<License | undefined> {
+    const [license] = await db.select().from(licenses).where(eq(licenses.paypalSubscriptionId, subscriptionId));
     return license;
   }
 

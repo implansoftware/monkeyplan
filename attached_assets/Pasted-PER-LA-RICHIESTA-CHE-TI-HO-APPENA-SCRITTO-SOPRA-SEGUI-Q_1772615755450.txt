@@ -1,0 +1,451 @@
+PER LA RICHIESTA CHE TI HO APPENA SCRITTO SOPRA SEGUI QUESTE REGOLE OBBLIGATORIE.
+
+Lavora sempre in due fasi separate:
+
+ANALISI COMPLETA (NESSUN CODICE)
+
+IMPLEMENTAZIONE SOLO DOPO MIA CONFERMA
+
+Non saltare nessuna sezione.
+
+0) MAPPA DELL'ARCHITETTURA DEL PROGETTO (PRIMA DI TUTTO)
+
+Prima di analizzare la richiesta, analizza l'intero progetto e costruisci una mappa dell’architettura del sistema.
+
+Non scrivere codice.
+
+Descrivi:
+
+struttura delle cartelle backend
+
+struttura delle cartelle frontend
+
+routes principali
+
+controllers
+
+services
+
+middlewares
+
+modelli o ORM
+
+sistema di routing frontend
+
+componenti principali
+
+API client
+
+tabelle database e relazioni
+
+flussi principali del sistema
+
+sistema di autenticazione
+
+sistema ruoli e permessi
+
+convenzioni architetturali del progetto
+
+Identifica anche:
+
+logica duplicata
+
+parti fragili
+
+dipendenze importanti tra moduli
+
+1) VERIFICA ESISTENTE (NON INVENTARE)
+
+Prima di proporre qualsiasi soluzione devi verificare se la funzionalità richiesta:
+
+esiste già
+
+esiste parzialmente
+
+esiste con un nome diverso
+
+è implementata ma non collegata
+
+Devi indicare ESATTAMENTE dove hai cercato nel progetto.
+
+Specifica:
+
+cartelle analizzate
+
+file analizzati
+
+parole chiave usate nella ricerca
+
+Se trovi codice correlato devi indicare:
+
+file coinvolti
+
+cosa fa attualmente
+
+cosa manca
+
+cosa può essere riutilizzato
+
+Se non trovi nulla devi dirlo esplicitamente.
+
+Non inventare codice che non esiste.
+
+2) ANALISI DELLE CONVENZIONI DEL PROGETTO
+
+Prima di proporre modifiche devi identificare le convenzioni tecniche già usate nel progetto.
+
+Backend
+
+Individua e descrivi:
+
+framework backend
+
+ORM o query builder
+
+struttura architetturale (routes, controllers, services, repositories)
+
+sistema di validazione
+
+gestione errori
+
+sistema autenticazione
+
+gestione ruoli e permessi
+
+Frontend
+
+Individua e descrivi:
+
+sistema di routing
+
+client API
+
+state management
+
+gestione form
+
+sistema di validazione
+
+organizzazione componenti
+
+Regola obbligatoria:
+
+Tutte le modifiche devono rispettare lo stile e le convenzioni già presenti nel progetto.
+
+Non introdurre nuovi pattern se non strettamente necessario.
+
+3) ROLE MAP (MULTI PROSPETTIVA)
+
+Identifica tutte le prospettive o ruoli presenti nel sistema.
+
+Poi indica quali sono impattate dalla richiesta.
+
+Per ogni ruolo impattato descrivi:
+
+cosa vede
+
+cosa può fare
+
+cosa cambia con questa modifica
+
+quali permessi devono essere rispettati
+
+4) ANALISI IMPATTO TECNICO
+
+Analizza solo le parti realmente coinvolte.
+
+Database
+
+Indica:
+
+tabelle coinvolte
+
+colonne coinvolte
+
+nuove colonne necessarie
+
+nuove tabelle necessarie
+
+indici necessari
+
+vincoli
+
+Se serve migrazione database indica:
+
+strategia non distruttiva
+
+eventuale aggiornamento dati esistenti
+
+possibilità di rollback
+
+Backend
+
+Analizza:
+
+routes
+
+controllers
+
+services
+
+middlewares
+
+validazione
+
+autenticazione
+
+ruoli e permessi
+
+Indica:
+
+file da modificare
+
+file da creare
+
+Regola:
+
+Non duplicare logica già esistente.
+
+API
+
+Per ogni endpoint coinvolto indica:
+
+metodo HTTP
+
+endpoint
+
+struttura richiesta
+
+struttura risposta
+
+status code
+
+Verifica sempre:
+
+compatibilità con il frontend
+
+eventuale standard delle risposte API
+
+retrocompatibilità
+
+Frontend
+
+Indica:
+
+pagine coinvolte
+
+componenti coinvolti
+
+moduli form
+
+gestione stato
+
+chiamate API
+
+Specifica:
+
+file da modificare
+
+file da creare
+
+5) CROSS CHECK OBBLIGATORIO
+
+Per ogni modifica proposta indica:
+
+descrizione modifica
+
+ruoli impattati
+
+interfacce coinvolte
+
+endpoint coinvolti
+
+regole di accesso
+
+possibili edge case
+
+criterio di completamento
+
+Se una modifica impatta più ruoli non può essere considerata completa finché non copre tutti i ruoli.
+
+6) SIMMETRIA TRA PROSPETTIVE
+
+Se una funzionalità esiste per un ruolo devi verificare se esiste anche per gli altri ruoli del sistema.
+
+Se esiste:
+
+deve essere aggiornata.
+
+Se non esiste:
+
+devi indicare se va creata oppure se non deve esistere.
+
+7) CONTRACT TEST (ANTI BREAKING CHANGE)
+
+Prima di implementare devi elencare i contratti che non devono rompersi.
+
+Analizza:
+
+contratti API esistenti
+
+formato delle risposte
+
+status code utilizzati
+
+flussi utente principali
+
+operazioni critiche del sistema
+
+Se prevedi breaking changes devi segnalarlo e proporre alternativa compatibile.
+
+8) SECURITY CHECK
+
+Verifica sempre:
+
+validazione input lato backend
+
+autorizzazione lato server
+
+sanitizzazione dati
+
+protezione endpoint
+
+gestione dati sensibili
+
+Non affidarti mai solo alla sicurezza lato frontend.
+
+9) PIANO DI IMPLEMENTAZIONE STEP BY STEP
+
+Scrivi un piano numerato con gli step di implementazione.
+
+Per ogni step indica:
+
+file coinvolto
+
+modifica da effettuare
+
+motivazione della modifica
+
+come verificare il funzionamento
+
+10) CONTROLLO DELLO SCOPE
+
+Definisci sempre:
+
+Assunzioni
+
+massimo tre.
+
+Acceptance criteria
+
+punti verificabili che definiscono quando la funzionalità è completa.
+
+Non goals
+
+cosa non verrà implementato.
+
+11) OSSERVABILITÀ E DEBUG
+
+Indica:
+
+eventuali log da aggiungere
+
+punti critici da monitorare
+
+come verificare in locale
+
+eventuali strumenti di debug
+
+12) STRATEGIA DI TEST
+
+Definisci:
+
+test manuali
+
+flusso principale
+
+casi limite
+
+verifiche autorizzazioni
+
+test automatici
+
+se il progetto ne utilizza.
+
+13) ELENCO FILE COINVOLTI
+
+Fornisci una lista completa dei file che verranno:
+
+modificati
+
+creati
+
+collegati
+
+OUTPUT FINALE DELL'ANALISI
+
+Prima di procedere con il codice devi fornire:
+
+Ruoli coperti
+File toccati per ruolo
+Checklist per ruolo
+
+con punti verificabili.
+
+STOP OBBLIGATORIO
+
+Dopo l’analisi devi fermarti e chiedere:
+
+Confermi di procedere con l’implementazione?
+
+Non scrivere codice prima della conferma.
+
+FASE 2 — IMPLEMENTAZIONE
+
+Solo dopo conferma:
+
+implementa seguendo il piano
+
+fornisci solo i file modificati o creati
+
+non duplicare logica esistente
+
+riusa servizi esistenti
+
+mantieni lo stile del progetto
+
+CHECK FINALE
+
+Alla fine devi fornire:
+
+checklist backend
+
+checklist frontend
+
+casi di test manuali
+
+REGOLA ANTI ALLUCINAZIONE
+
+Se nel progetto non trovi informazioni sufficienti:
+
+non inventare codice
+
+fermati
+
+spiegami cosa non hai trovato
+
+indicami dove hai cercato
+
+DEFINIZIONE DI FEATURE COMPLETA
+
+Una feature è completa solo se:
+
+tutti i ruoli impattati sono coperti
+
+autorizzazioni e permessi funzionano
+
+API e UI sono coerenti
+
+non esistono breaking changes
+
+esiste almeno un test manuale per ruolo

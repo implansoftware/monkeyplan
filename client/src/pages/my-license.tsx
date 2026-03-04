@@ -128,6 +128,25 @@ export default function MyLicense() {
     },
   });
 
+  const confirmPaypalSubscriptionMutation = useMutation({
+    mutationFn: async (data: { licenseId: string; subscriptionId: string }) => {
+      const res = await apiRequest("POST", "/api/licenses/confirm-paypal-subscription", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.confirmed || data.alreadyActive) {
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/my"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/licenses/history"] });
+        toast({ title: t("license.paypalPaymentConfirmed"), description: t("license.licenseNowActive") });
+      } else {
+        toast({ title: t("license.paymentProcessing"), description: t("license.paypalPaymentNotConfirmed"), variant: "destructive" });
+      }
+    },
+    onError: (err: any) => {
+      toast({ title: t("license.error"), description: err.message, variant: "destructive" });
+    },
+  });
+
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", "/api/licenses/cancel-subscription");
@@ -195,6 +214,16 @@ export default function MyLicense() {
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
+
+    if (paymentSuccess && licenseId && paymentMethod === "paypal_subscription") {
+      const storedSubscriptionId = localStorage.getItem("monkeyplan_paypal_subscription_id");
+      if (storedSubscriptionId) {
+        localStorage.removeItem("monkeyplan_paypal_subscription_id");
+        confirmPaypalSubscriptionMutation.mutate({ licenseId, subscriptionId: storedSubscriptionId });
+      }
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
   }, []);
 
   const handleActivatePlan = (plan: LicensePlan) => {
@@ -226,6 +255,12 @@ export default function MyLicense() {
 
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      if (data.approveUrl && data.subscriptionId) {
+        localStorage.setItem("monkeyplan_paypal_subscription_id", data.subscriptionId);
+        window.location.href = data.approveUrl;
         return;
       }
 
@@ -334,22 +369,36 @@ export default function MyLicense() {
                 </div>
               </div>
             )}
-            {currentLicense.license.stripeSubscriptionId && (
+            {(currentLicense.license.stripeSubscriptionId || (currentLicense.license as any).paypalSubscriptionId) && (
               <div className="mt-4 pt-4 border-t">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-xs text-muted-foreground mb-1">{t("license.subscriptionStatus")}</p>
-                    {currentLicense.license.cancelAtPeriodEnd ? (
-                      <Badge variant="secondary" data-testid="badge-subscription-cancelling">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        {t("license.cancellingAtPeriodEnd")}
-                      </Badge>
-                    ) : (
-                      <Badge variant="default" data-testid="badge-subscription-active">
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        {t("license.autoRenewActive")}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {(currentLicense.license as any).paypalSubscriptionId && (
+                        <Badge variant="outline" className="gap-1">
+                          <SiPaypal className="w-3 h-3" />
+                          PayPal
+                        </Badge>
+                      )}
+                      {currentLicense.license.stripeSubscriptionId && (
+                        <Badge variant="outline" className="gap-1">
+                          <SiStripe className="w-3 h-3" />
+                          Stripe
+                        </Badge>
+                      )}
+                      {currentLicense.license.cancelAtPeriodEnd ? (
+                        <Badge variant="secondary" data-testid="badge-subscription-cancelling">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          {t("license.cancellingAtPeriodEnd")}
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" data-testid="badge-subscription-active">
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          {t("license.autoRenewActive")}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div>
                     {currentLicense.license.cancelAtPeriodEnd ? (
