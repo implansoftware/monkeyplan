@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList, BarChart3, PieChart as PieChartIcon, CreditCard } from "lucide-react";
+import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList, BarChart3, PieChart as PieChartIcon, CreditCard, Smartphone } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -141,12 +141,18 @@ export default function ResellerDashboard() {
     enabled: isOwnerReseller,
   });
 
+  const { data: myDeviceModels, isLoading: isLoadingDeviceModels } = useQuery<any[]>({
+    queryKey: ["/api/reseller/device-models"],
+    enabled: isOwnerReseller,
+  });
+
   const isPaymentConfigured = !isLoadingPaymentConfig && paymentConfig != null &&
     (paymentConfig.cashEnabled || paymentConfig.bankTransferEnabled || paymentConfig.stripeEnabled || paymentConfig.paypalEnabled);
   const isServicesConfigured = !isLoadingServiceItems && (myServiceItems?.length ?? 0) > 0;
+  const isDeviceCatalogConfigured = !isLoadingDeviceModels && (myDeviceModels?.length ?? 0) > 0;
 
-  const showSetupBanner = isOwnerReseller && !isLoadingPaymentConfig && !isLoadingServiceItems &&
-    (!isPaymentConfigured || !isServicesConfigured);
+  const showSetupBanner = isOwnerReseller && !isLoadingPaymentConfig && !isLoadingServiceItems && !isLoadingDeviceModels &&
+    (!isPaymentConfigured || !isServicesConfigured || !isDeviceCatalogConfigured);
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("it-IT", {
@@ -380,6 +386,20 @@ export default function ResellerDashboard() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground">{t("dashboard.setupServices", "Configura i tuoi servizi")}</p>
                     <p className="text-xs text-muted-foreground">{t("dashboard.setupServicesDesc", "Aggiungi i servizi che offri ai clienti con i relativi prezzi.")}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
+              </Link>
+            )}
+            {!isDeviceCatalogConfigured && (
+              <Link href="/reseller/device-catalog" data-testid="link-setup-devices">
+                <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-white/5 border border-amber-200/60 dark:border-amber-700/40 hover-elevate cursor-pointer">
+                  <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                    <Smartphone className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{t("dashboard.setupDevices", "Aggiungi i tuoi dispositivi")}</p>
+                    <p className="text-xs text-muted-foreground">{t("dashboard.setupDevicesDesc", "Crea il catalogo dei dispositivi che ripari per velocizzare la presa in carico.")}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                 </div>
