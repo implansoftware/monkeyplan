@@ -22,10 +22,32 @@ interface CustomerBranchManagerProps {
   customerId: string;
   customerName?: string;
   readOnly?: boolean;
+  mode?: "branches" | "subclients";
 }
 
-export function CustomerBranchManager({ customerId, customerName, readOnly = false }: CustomerBranchManagerProps) {
+export function CustomerBranchManager({ customerId, customerName, readOnly = false, mode = "branches" }: CustomerBranchManagerProps) {
   const { t } = useTranslation();
+  const isSubclientMode = mode === "subclients";
+
+  const lbl = {
+    title: isSubclientMode ? t("customer.subClients") : t("customer.branches"),
+    addBtn: isSubclientMode ? t("customer.addSubClient") : t("customer.addBranch"),
+    dialogNew: isSubclientMode ? t("customer.newSubClient") : t("customer.newBranch"),
+    dialogEdit: isSubclientMode ? t("customer.editSubClient") : t("customer.editBranch"),
+    codeLbl: isSubclientMode ? t("customer.subClientCode") : t("customer.branchCode"),
+    nameLbl: isSubclientMode ? t("customer.subClientName") : t("customer.branchName"),
+    notesPlaceholder: isSubclientMode ? t("customer.subClientAdditionalNotes") : t("customer.branchAdditionalNotes"),
+    noItems: isSubclientMode ? t("customer.noSubClientRegistered") : t("customer.noBranchRegistered"),
+    clickAdd: isSubclientMode ? t("customer.clickAddSubClient") : t("customer.clickAddBranch"),
+    deleteTitle: isSubclientMode ? t("customer.deleteSubClient") : t("customer.deleteBranch"),
+    deleteDesc: isSubclientMode ? t("customer.deleteSubClientDescription") : t("customer.deleteBranchDescription"),
+    codeRequired: isSubclientMode ? t("customer.subClientCodeNameRequired") : t("customer.branchCodeNameRequired"),
+    created: isSubclientMode ? t("customer.subClientCreated") : t("customer.branchCreated"),
+    deleted: isSubclientMode ? t("customer.subClientDeleted") : t("customer.branchDeleted"),
+    updated: isSubclientMode ? t("customer.subClientUpdated") : t("customer.branchUpdated"),
+    egCode: isSubclientMode ? t("customer.egSubClientCode") : t("customer.egBranchCode"),
+    egName: isSubclientMode ? t("customer.egSubClientName") : t("customer.egBranchName"),
+  };
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editBranch, setEditBranch] = useState<CustomerBranch | null>(null);
   const [selectedAddress, setSelectedAddress] = useState("");
@@ -51,7 +73,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       setDialogOpen(false);
-      toast({ title: t("customer.branchCreated") });
+      toast({ title: lbl.created });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -66,7 +88,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesQueryKey });
       setEditBranch(null);
-      toast({ title: t("customer.branchUpdated") });
+      toast({ title: lbl.updated });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -79,7 +101,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: branchesQueryKey });
-      toast({ title: t("customer.branchDeleted") });
+      toast({ title: lbl.deleted });
     },
     onError: (error: Error) => {
       toast({ title: t("common.error"), description: error.message, variant: "destructive" });
@@ -104,7 +126,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
     };
 
     if (!data.branchCode || !data.branchName) {
-      toast({ title: t("common.error"), description: t("customer.branchCodeNameRequired"), variant: "destructive" });
+      toast({ title: t("common.error"), description: lbl.codeRequired, variant: "destructive" });
       return;
     }
 
@@ -141,7 +163,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <Building2 className="h-5 w-5" />
-            {t("customer.branches")}
+            {lbl.title}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -160,7 +182,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
         <CardTitle className="flex flex-wrap items-center gap-2">
           <Building2 className="h-5 w-5" />
-          {t("customer.branches")} {customerName && `${t("common.of")} ${customerName}`}
+          {lbl.title} {customerName && `${t("common.of")} ${customerName}`}
           <Badge variant="secondary">{branches.length}</Badge>
         </CardTitle>
         {!readOnly && (
@@ -168,35 +190,35 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
             <DialogTrigger asChild>
               <Button size="sm" data-testid="button-add-branch">
                 <Plus className="h-4 w-4 mr-1" />
-                {t("customer.addBranch")}
+                {lbl.addBtn}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>
-                  {editBranch ? t("customer.editBranch") : t("customer.newBranch")}
+                  {editBranch ? lbl.dialogEdit : lbl.dialogNew}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="branchCode">{t("customer.branchCode")} *</Label>
+                    <Label htmlFor="branchCode">{lbl.codeLbl} *</Label>
                     <Input
                       id="branchCode"
                       name="branchCode"
                       required
-                      placeholder={t("customer.egBranchCode")}
+                      placeholder={lbl.egCode}
                       defaultValue={editBranch?.branchCode || ""}
                       data-testid="input-branch-code"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="branchName">{t("customer.branchName")} *</Label>
+                    <Label htmlFor="branchName">{lbl.nameLbl} *</Label>
                     <Input
                       id="branchName"
                       name="branchName"
                       required
-                      placeholder={t("customer.egBranchName")}
+                      placeholder={lbl.egName}
                       defaultValue={editBranch?.branchName || ""}
                       data-testid="input-branch-name"
                     />
@@ -300,7 +322,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                   <Textarea
                     id="notes"
                     name="notes"
-                    placeholder={t("customer.branchAdditionalNotes")}
+                    placeholder={lbl.notesPlaceholder}
                     defaultValue={editBranch?.notes || ""}
                     data-testid="input-branch-notes"
                   />
@@ -327,9 +349,9 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
         {branches.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Building2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>{t("customer.noBranchRegistered")}</p>
+            <p>{lbl.noItems}</p>
             {!readOnly && (
-              <p className="text-sm">{t("customer.clickAddBranch")}</p>
+              <p className="text-sm">{lbl.clickAdd}</p>
             )}
           </div>
         ) : (
@@ -337,7 +359,7 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
             <TableHeader>
               <TableRow>
                 <TableHead>{t("common.code")}</TableHead>
-                <TableHead>{t("customer.branchName")}</TableHead>
+                <TableHead>{lbl.nameLbl}</TableHead>
                 <TableHead>{t("common.addressLabel")}</TableHead>
                 <TableHead>{t("customer.referent")}</TableHead>
                 <TableHead>{t("common.status")}</TableHead>
@@ -418,9 +440,9 @@ export function CustomerBranchManager({ customerId, customerName, readOnly = fal
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>{t("customer.deleteBranch")}</AlertDialogTitle>
+                              <AlertDialogTitle>{lbl.deleteTitle}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                {t("customer.deleteBranchDescription", { name: branch.branchName, code: branch.branchCode })}
+                                {lbl.deleteDesc}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

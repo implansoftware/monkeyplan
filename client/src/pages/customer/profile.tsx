@@ -474,6 +474,7 @@ export default function CustomerProfile() {
             <CustomerBranchManager
               customerId={user.id}
               customerName={user.fullName}
+              mode="subclients"
             />
           )}
         </div>
