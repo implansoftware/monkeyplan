@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Smartphone, Euro, CreditCard, Store, Download, ChevronRight, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Package, Truck, Check, X, Clock, Send, MapPin, Smartphone, Euro, CreditCard, Store, Download, ChevronRight, AlertCircle, User, Users } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { Link } from "wouter";
@@ -146,21 +146,28 @@ function RequestCard({
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground flex-wrap">
                 <span>{format(new Date(request.createdAt), "d MMM yyyy", { locale: it })}</span>
                 <span>·</span>
                 <span>{deviceCount === 1 ? t("remote.deviceCountLabel", { count: deviceCount }) : t("remote.deviceCountLabelPlural", { count: deviceCount })}{totalQty > deviceCount ? ` (${t("remote.unitsCount", { qty: totalQty })})` : ""}</span>
-                {request.branchName && (
-                  <>
-                    <span>·</span>
-                    <span className="font-medium text-foreground">{request.branchName}</span>
-                  </>
-                )}
                 {request.quoteAmount && request.status !== 'quote_declined' && (
                   <>
                     <span>·</span>
                     <span className="font-medium text-foreground">{(request.quoteAmount / 100).toFixed(2)} EUR</span>
                   </>
+                )}
+              </div>
+              <div className="mt-1.5">
+                {request.branchName ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700/50" data-testid={`badge-subclient-${request.id}`}>
+                    <Users className="h-3 w-3" />
+                    {t("customerPages.forSubClient", "Per: {{name}}", { name: request.branchName })}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/50" data-testid={`badge-personal-${request.id}`}>
+                    <User className="h-3 w-3" />
+                    {t("customerPages.forMyself", "Personale")}
+                  </span>
                 )}
               </div>
             </div>
