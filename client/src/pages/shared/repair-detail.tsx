@@ -42,7 +42,7 @@ import {
   ClipboardCheck, PackageCheck, Play, CheckCircle, Stethoscope, Receipt,
   Download, Eye, User, ArrowRight, Circle, CheckCircle2, AlertCircle, AlertTriangle, Gift, Shield, SkipForward,
   HardDrive, Building2, Clock, Truck, Loader2, XCircle, CalendarCheck, ArrowLeft, ShoppingBag, Smartphone, Tag,
-  Upload, ChevronDown, ChevronUp, Printer, Info, RotateCcw, ExternalLink, Phone, Search
+  Upload, ChevronDown, ChevronUp, Printer, Info, RotateCcw, ExternalLink, Phone, Search, PackageMinus
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -101,6 +101,7 @@ type RepairOrder = {
   courtesyPhoneAssignedAt: string | null;
   courtesyPhoneReturnedAt: string | null;
   courtesyPhoneNotes: string | null;
+  deviceLeft: boolean;
   createdAt: string;
   updatedAt: string;
   customer?: Customer | null;
@@ -450,6 +451,18 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
     },
     onError: (error: Error) => {
       toast({ title: t("repair.courtesyPhoneReturnError"), description: error.message, variant: "destructive" });
+    },
+  });
+
+  const toggleDeviceLeftMutation = useMutation({
+    mutationFn: async (deviceLeft: boolean) => {
+      return await apiRequest("PATCH", `/api/repair-orders/${repairOrderId}`, { deviceLeft });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/repair-orders", repairOrderId] });
+    },
+    onError: (error: Error) => {
+      toast({ title: t("common.error"), description: error.message, variant: "destructive" });
     },
   });
 
@@ -2221,6 +2234,45 @@ export default function RepairDetailPage({ routePattern, backPath }: RepairDetai
                   )}
                 </div>
               )}
+              {/* Device Left status */}
+              <div className="bg-muted/30 rounded-lg p-3">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("repair.deviceLeft", "Dispositivo lasciato")}</span>
+                <div className="mt-2">
+                  {user?.role !== 'customer' ? (
+                    <button
+                      type="button"
+                      disabled={toggleDeviceLeftMutation.isPending}
+                      onClick={() => toggleDeviceLeftMutation.mutate(!repair.deviceLeft)}
+                      className="cursor-pointer disabled:opacity-60"
+                      data-testid="button-toggle-device-left"
+                    >
+                      {repair.deviceLeft ? (
+                        <Badge variant="outline" className="gap-1.5 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700" data-testid="badge-device-left-yes">
+                          <PackageCheck className="h-3.5 w-3.5" />
+                          {t("repair.deviceLeftYes", "Sì, lasciato")}
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="gap-1.5 text-muted-foreground" data-testid="badge-device-left-no">
+                          <PackageMinus className="h-3.5 w-3.5" />
+                          {t("repair.deviceLeftNo", "Non ancora lasciato")}
+                        </Badge>
+                      )}
+                    </button>
+                  ) : (
+                    repair.deviceLeft ? (
+                      <Badge variant="outline" className="gap-1.5 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700" data-testid="badge-device-left-yes">
+                        <PackageCheck className="h-3.5 w-3.5" />
+                        {t("repair.deviceLeftYes", "Sì, lasciato")}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1.5 text-muted-foreground" data-testid="badge-device-left-no">
+                        <PackageMinus className="h-3.5 w-3.5" />
+                        {t("repair.deviceLeftNo", "Non ancora lasciato")}
+                      </Badge>
+                    )
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
