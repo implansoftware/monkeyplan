@@ -31,7 +31,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -2053,15 +2052,18 @@ export function RepairIntakeWizard({
                   name="deviceLeft"
                   render={({ field }) => (
                     <FormItem>
-                      <Card
+                      <button
+                        type="button"
                         className={cn(
-                          "cursor-pointer transition-colors",
-                          field.value && "ring-2 ring-primary"
+                          "w-full text-left rounded-md border transition-colors hover-elevate",
+                          field.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-card"
                         )}
                         onClick={() => field.onChange(!field.value)}
-                        data-testid="card-device-left"
+                        data-testid="button-device-left"
                       >
-                        <CardContent className="p-4 flex items-center justify-between gap-3">
+                        <div className="p-4 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <div className={cn(
                               "h-10 w-10 rounded-xl flex items-center justify-center transition-colors",
@@ -2081,14 +2083,14 @@ export function RepairIntakeWizard({
                               </p>
                             </div>
                           </div>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            onClick={(e) => e.stopPropagation()}
-                            data-testid="switch-device-left"
-                          />
-                        </CardContent>
-                      </Card>
+                          <div className={cn(
+                            "h-5 w-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors",
+                            field.value ? "border-primary bg-primary" : "border-muted-foreground"
+                          )}>
+                            {field.value && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                        </div>
+                      </button>
                     </FormItem>
                   )}
                 />
