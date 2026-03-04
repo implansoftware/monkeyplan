@@ -470,6 +470,8 @@
     "smartphoneCatalog": "智能手机目录",
     "smartphoneCatalogDesc": "管理智能手机目录",
     "smartphoneCreated": "智能手机已创建",
+    "imeiPerUnit": "每台设备的 IMEI（共 {{count}} 台）",
+    "imeiPerUnitDesc": "为库存中每台物理设备输入一个 IMEI。如果暂不可用，可以留空。",
     "smartphoneCreationError": "智能手机创建错误",
     "smartphoneDeleted": "智能手机已从目录中删除。",
     "smartphoneUpdated": "智能手机已更新",

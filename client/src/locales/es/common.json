@@ -2063,6 +2063,8 @@
     "smartphoneCatalog": "Smartphone Catálogo",
     "smartphoneCatalogDesc": "Gestionar smartphone catálogo",
     "smartphoneCreated": "Smartphone creado",
+    "imeiPerUnit": "IMEI por cada una de las {{count}} unidades",
+    "imeiPerUnitDesc": "Introduce un IMEI por cada unidad física en stock. Puedes dejar algunos vacíos si aún no están disponibles.",
     "smartphoneCreationError": "Smartphone creación error",
     "smartphoneDeleted": "Smartphone tiene been removed desde catálogo.",
     "smartphoneUpdated": "Smartphone actualizado",

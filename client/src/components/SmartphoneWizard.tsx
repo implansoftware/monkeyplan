@@ -64,6 +64,7 @@ function getWizardSchema(t: (key: string) => string) {
     networkLock: z.string().default("unlocked"),
     imei: z.string().optional(),
     imei2: z.string().optional(),
+    imeis: z.array(z.string()).default([]),
     serialNumber: z.string().optional(),
     originalBox: z.boolean().default(false),
     accessories: z.array(z.string()).default([]),
@@ -232,6 +233,7 @@ export function SmartphoneWizard({
       networkLock: "unlocked",
       imei: "",
       imei2: "",
+      imeis: [],
       serialNumber: "",
       originalBox: false,
       accessories: [],
@@ -379,11 +381,14 @@ export function SmartphoneWizard({
       if (specsConfig.networkLock) {
         specsData.networkLock = data.networkLock;
       }
-      if (specsConfig.imei && data.imei) {
-        specsData.imei = data.imei;
-      }
-      if (data.imei2) {
-        specsData.imei2 = data.imei2;
+      const totalQty = (data.initialStock || []).reduce((sum: number, s: any) => sum + (s.quantity || 0), 0);
+      if (specsConfig.imei) {
+        if (totalQty > 1 && data.imeis && data.imeis.length > 0) {
+          specsData.imeis = data.imeis.filter((v: string) => v.trim() !== "");
+        } else if (data.imei) {
+          specsData.imei = data.imei;
+          if (data.imei2) specsData.imei2 = data.imei2;
+        }
       }
       if (specsConfig.serialNumber && data.serialNumber) {
         specsData.serialNumber = data.serialNumber;
@@ -1102,6 +1107,40 @@ export function SmartphoneWizard({
                     </Card>
                   ))}
                 </div>
+
+                {/* IMEI multipli per lotti > 1 unità */}
+                {(() => {
+                  const stepSpecsConfig = getSpecsConfig(values.category);
+                  const totalQty = values.initialStock.reduce((sum: number, s: any) => sum + (s.quantity || 0), 0);
+                  if (!stepSpecsConfig.imei || totalQty <= 1) return null;
+                  const currentImeis: string[] = values.imeis || [];
+                  return (
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="h-4 w-4 text-primary" />
+                        <Label className="text-sm font-medium">{t("products.imeiPerUnit", { count: totalQty })}</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{t("products.imeiPerUnitDesc")}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {Array.from({ length: totalQty }).map((_, i) => (
+                          <div key={i} className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">IMEI {t("common.unit")} {i + 1}</Label>
+                            <Input
+                              value={currentImeis[i] ?? ""}
+                              onChange={(e) => {
+                                const updated = [...currentImeis];
+                                updated[i] = e.target.value;
+                                form.setValue("imeis", updated);
+                              }}
+                              placeholder={`IMEI unità ${i + 1}`}
+                              data-testid={`input-imei-unit-${i}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

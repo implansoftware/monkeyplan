@@ -470,6 +470,8 @@
     "smartphoneCatalog": "Smartphone-Katalog",
     "smartphoneCatalogDesc": "Smartphone-Katalog verwalten",
     "smartphoneCreated": "Smartphone erstellt",
+    "imeiPerUnit": "IMEI für jede der {{count}} Einheiten",
+    "imeiPerUnitDesc": "Geben Sie für jede physische Einheit im Lager eine IMEI ein. Sie können einige leer lassen, wenn noch nicht verfügbar.",
     "smartphoneCreationError": "Fehler beim Erstellen des Smartphones",
     "smartphoneDeleted": "Smartphone wurde aus dem Katalog entfernt.",
     "smartphoneUpdated": "Smartphone aktualisiert",

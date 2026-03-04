@@ -886,6 +886,7 @@ export const smartphoneSpecs = pgTable("smartphone_specs", {
   // Identificativi
   imei: text("imei"),
   imei2: text("imei2"), // Secondo IMEI per dual SIM
+  imeis: text("imeis").array(), // Array IMEI per lotti > 1 unità
   serialNumber: text("serial_number"),
   
   // Info aggiuntive

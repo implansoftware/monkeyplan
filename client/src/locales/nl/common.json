@@ -470,6 +470,8 @@
     "smartphoneCatalog": "Smartphonecatalogus",
     "smartphoneCatalogDesc": "Smartphonecatalogus beheren",
     "smartphoneCreated": "Smartphone gemaakt",
+    "imeiPerUnit": "IMEI voor elk van de {{count}} eenheden",
+    "imeiPerUnitDesc": "Voer een IMEI in voor elke fysieke eenheid in voorraad. U kunt enkele leeg laten als ze nog niet beschikbaar zijn.",
     "smartphoneCreationError": "Fout bij het maken van smartphone",
     "smartphoneDeleted": "Smartphone is verwijderd uit de catalogus.",
     "smartphoneUpdated": "Smartphone bijgewerkt",

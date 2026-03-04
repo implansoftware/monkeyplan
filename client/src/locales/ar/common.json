@@ -470,6 +470,8 @@
     "smartphoneCatalog": "كتالوج الهاتف الذكي",
     "smartphoneCatalogDesc": "إدارة كتالوج الهاتف الذكي",
     "smartphoneCreated": "تم إنشاء الهاتف الذكي",
+    "imeiPerUnit": "IMEI لكل وحدة من {{count}} وحدات",
+    "imeiPerUnitDesc": "أدخل IMEI لكل وحدة فعلية في المخزون. يمكنك ترك بعضها فارغة إذا لم تكن متاحة بعد.",
     "smartphoneCreationError": "خطأ في إنشاء الهاتف الذكي",
     "smartphoneDeleted": "تم إزالة الهاتف الذكي من الكتالوج.",
     "smartphoneUpdated": "تم تحديث الهاتف الذكي",
