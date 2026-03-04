@@ -114,6 +114,13 @@ export default function ResellerSettings() {
   const [hourlyRateEuros, setHourlyRateEuros] = useState<string>("");
   const [slaThresholds, setSlaThresholds] = useState<SLAThresholdsResponse>(defaultSLAThresholds);
 
+  const validTabs = ["tariffe", "sla", "pagamenti", "shipping", "fiscal", "ai"];
+  const initialTab = (() => {
+    const param = new URLSearchParams(window.location.search).get("tab");
+    return param && validTabs.includes(param) ? param : "tariffe";
+  })();
+  const [activeTab, setActiveTab] = useState(initialTab);
+
   const { data: paymentConfig, isLoading: isLoadingPayment } = useQuery<(PaymentConfiguration & { hasPaypalSecret?: boolean; hasStripeSecret?: boolean }) | null>({
     queryKey: ['/api/reseller/payment-config'],
   });
@@ -373,7 +380,7 @@ export default function ResellerSettings() {
         </div>
       </div>
 
-      <Tabs defaultValue="tariffe" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="tariffe" className="gap-2" data-testid="tab-tariffe">
             <Clock className="h-4 w-4" />{t("settings.tabs.rates")}</TabsTrigger>

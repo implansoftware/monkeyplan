@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList, BarChart3, PieChart as PieChartIcon } from "lucide-react";
+import { ShoppingCart, Users, TrendingUp, FileText, Package, AlertCircle, Zap, ArrowRightLeft, Network, ChevronRight, ExternalLink, LayoutDashboard, Store, Briefcase, Euro, Clock, Stethoscope, AlertTriangle, PackageX, ClipboardList, BarChart3, PieChart as PieChartIcon, CreditCard } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +128,25 @@ export default function ResellerDashboard() {
   }>({
     queryKey: ["/api/reseller/sales"],
   });
+
+  const isOwnerReseller = user?.role === 'reseller';
+
+  const { data: paymentConfig, isLoading: isLoadingPaymentConfig } = useQuery<Record<string, any> | null>({
+    queryKey: ["/api/reseller/payment-config"],
+    enabled: isOwnerReseller,
+  });
+
+  const { data: myServiceItems, isLoading: isLoadingServiceItems } = useQuery<any[]>({
+    queryKey: ["/api/reseller/service-items"],
+    enabled: isOwnerReseller,
+  });
+
+  const isPaymentConfigured = !isLoadingPaymentConfig && paymentConfig != null &&
+    (paymentConfig.cashEnabled || paymentConfig.bankTransferEnabled || paymentConfig.stripeEnabled || paymentConfig.paypalEnabled);
+  const isServicesConfigured = !isLoadingServiceItems && (myServiceItems?.length ?? 0) > 0;
+
+  const showSetupBanner = isOwnerReseller && !isLoadingPaymentConfig && !isLoadingServiceItems &&
+    (!isPaymentConfigured || !isServicesConfigured);
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("it-IT", {
@@ -324,6 +343,51 @@ export default function ResellerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Setup Reminder Banner */}
+      {showSetupBanner && (
+        <div className="rounded-xl border border-amber-200/70 dark:border-amber-800/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 p-4" data-testid="card-setup-reminder">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <div className="h-7 w-7 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm text-amber-900 dark:text-amber-200">{t("dashboard.setupReminderTitle", "Completa la configurazione")}</p>
+              <p className="text-xs text-amber-700/80 dark:text-amber-400/70">{t("dashboard.setupReminderDesc", "Alcuni passaggi iniziali sono ancora da completare per usare la piattaforma al massimo.")}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {!isPaymentConfigured && (
+              <Link href="/reseller/settings?tab=pagamenti" data-testid="link-setup-payments">
+                <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-white/5 border border-amber-200/60 dark:border-amber-700/40 hover-elevate cursor-pointer">
+                  <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                    <CreditCard className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{t("dashboard.setupPayments", "Configura i pagamenti")}</p>
+                    <p className="text-xs text-muted-foreground">{t("dashboard.setupPaymentsDesc", "Abilita Stripe, PayPal, contanti o bonifico per ricevere pagamenti dai clienti.")}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
+              </Link>
+            )}
+            {!isServicesConfigured && (
+              <Link href="/reseller/service-catalog" data-testid="link-setup-services">
+                <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-white/60 dark:bg-white/5 border border-amber-200/60 dark:border-amber-700/40 hover-elevate cursor-pointer">
+                  <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                    <Briefcase className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">{t("dashboard.setupServices", "Configura i tuoi servizi")}</p>
+                    <p className="text-xs text-muted-foreground">{t("dashboard.setupServicesDesc", "Aggiungi i servizi che offri ai clienti con i relativi prezzi.")}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Parent Reseller Banner */}
       {parentReseller && (
