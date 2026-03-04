@@ -22767,11 +22767,16 @@ export function registerRoutes(app: Express): Server {
       
       const { customerId } = req.params;
       
-      // Only admin, reseller (for their customers), repair_center (for their customers) can create branches
-      if (!['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
+      // Customer can manage their own branches; admin/reseller/repair_center can manage their customers' branches
+      if (!['admin', 'reseller', 'repair_center', 'customer'].includes(req.user.role)) {
         return res.status(403).send("Forbidden");
       }
       
+      // Customer can only create branches for themselves
+      if (req.user.role === 'customer' && req.user.id !== customerId) {
+        return res.status(403).send("Forbidden");
+      }
+
       // Check reseller/repair_center access to customer
       if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
         const customer = await storage.getUser(customerId);
@@ -22825,8 +22830,8 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin, reseller (for their customers), repair_center (for their customers) can update branches
-      if (!['admin', 'reseller', 'repair_center'].includes(req.user.role)) {
+      // Customer can update their own branches; admin/reseller/repair_center can update their customers' branches
+      if (!['admin', 'reseller', 'repair_center', 'customer'].includes(req.user.role)) {
         return res.status(403).send("Forbidden");
       }
       
@@ -22835,6 +22840,11 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).send("Branch not found");
       }
       
+      // Customer can only update their own branches
+      if (req.user.role === 'customer' && req.user.id !== branch.parentCustomerId) {
+        return res.status(403).send("Forbidden");
+      }
+
       // Check access
       if (req.user.role === 'reseller' || req.user.role === 'repair_center') {
         const customer = await storage.getUser(branch.parentCustomerId);
@@ -22886,14 +22896,19 @@ export function registerRoutes(app: Express): Server {
     try {
       if (!req.user) return res.status(401).send("Unauthorized");
       
-      // Only admin, reseller (for their customers) can delete branches
-      if (!['admin', 'reseller', 'reseller_staff', 'repair_center'].includes(req.user.role)) {
+      // Customer can delete their own branches; admin/reseller/repair_center can delete their customers' branches
+      if (!['admin', 'reseller', 'reseller_staff', 'repair_center', 'customer'].includes(req.user.role)) {
         return res.status(403).send("Forbidden");
       }
       
       const branch = await storage.getCustomerBranch(req.params.branchId);
       if (!branch) {
         return res.status(404).send("Branch not found");
+      }
+
+      // Customer can only delete their own branches
+      if (req.user.role === 'customer' && req.user.id !== branch.parentCustomerId) {
+        return res.status(403).send("Forbidden");
       }
       
       // Check access
