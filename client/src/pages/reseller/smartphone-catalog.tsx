@@ -208,6 +208,7 @@ export default function SmartphoneCatalog() {
     networkLock: "unlocked",
     imei: "",
     imei2: "",
+    imeis: [] as string[],
     serialNumber: "",
     originalBox: false,
     accessories: [] as string[],
@@ -511,6 +512,7 @@ export default function SmartphoneCatalog() {
       networkLock: "unlocked",
       imei: "",
       imei2: "",
+      imeis: [] as string[],
       serialNumber: "",
       originalBox: false,
       accessories: [],
@@ -542,6 +544,7 @@ export default function SmartphoneCatalog() {
       networkLock: smartphone.specs?.networkLock || "unlocked",
       imei: smartphone.specs?.imei || "",
       imei2: smartphone.specs?.imei2 || "",
+      imeis: (smartphone.specs as any)?.imeis || [],
       serialNumber: smartphone.specs?.serialNumber || "",
       originalBox: smartphone.specs?.originalBox || false,
       accessories: smartphone.specs?.accessories || [],
@@ -619,18 +622,26 @@ export default function SmartphoneCatalog() {
       warrantyMonths: parseInt(formData.warrantyMonths) || 12,
     };
 
-    const specs = {
+    const totalEditQty = editStock.reduce((sum, s) => sum + s.quantity, 0);
+    const specs: Record<string, any> = {
       storage: formData.storage,
       batteryHealth: formData.batteryHealth || null,
       grade: formData.grade,
       networkLock: formData.networkLock,
-      imei: formData.imei || null,
-      imei2: formData.imei2 || null,
       serialNumber: formData.serialNumber || null,
       originalBox: formData.originalBox,
       accessories: formData.accessories.length > 0 ? formData.accessories : null,
       notes: formData.notes || null,
     };
+    if (totalEditQty > 1) {
+      specs.imeis = formData.imeis.filter((v) => v.trim() !== "");
+      specs.imei = null;
+      specs.imei2 = null;
+    } else {
+      specs.imei = formData.imei || null;
+      specs.imei2 = formData.imei2 || null;
+      specs.imeis = null;
+    }
 
     if (editingSmartphone) {
       const productId = editingSmartphone.id;
@@ -1178,9 +1189,38 @@ export default function SmartphoneCatalog() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {specsConfig.imei && (
-                      <>
+                  {specsConfig.imei && (() => {
+                    const totalQty = editStock.reduce((sum, s) => sum + s.quantity, 0);
+                    if (totalQty > 1) {
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="h-4 w-4 text-primary" />
+                            <Label className="text-sm font-medium">{t("products.imeiPerUnit", { count: totalQty })}</Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{t("products.imeiPerUnitDesc")}</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {Array.from({ length: totalQty }).map((_, i) => (
+                              <div key={i} className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">IMEI {t("common.unit")} {i + 1}</Label>
+                                <Input
+                                  value={formData.imeis[i] ?? ""}
+                                  onChange={(e) => {
+                                    const updated = [...formData.imeis];
+                                    updated[i] = e.target.value;
+                                    setFormData({ ...formData, imeis: updated });
+                                  }}
+                                  placeholder={`IMEI ${i + 1}`}
+                                  data-testid={`input-imei-unit-${i}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="imei">{t("repairs.imei")}</Label>
                           <Input
@@ -1201,8 +1241,10 @@ export default function SmartphoneCatalog() {
                             data-testid="input-smartphone-imei2"
                           />
                         </div>
-                      </>
-                    )}
+                      </div>
+                    );
+                  })()}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {specsConfig.serialNumber && (
                       <div className="space-y-2">
                         <Label htmlFor="serialNumber">{t("products.serialNumber")}</Label>
