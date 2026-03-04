@@ -169,7 +169,8 @@
       "catalog": "Catalogue",
       "configuration": "Configuration",
       "integrations": "Intégrations",
-      "guide": "Guides"
+      "guide": "Guides",
+      "myClients": "Mes Clients"
     },
     "groups": {
       "dashboard": "Tableau de bord",
@@ -9114,7 +9115,9 @@
     "subClientDeleted": "Client supprimé avec succès",
     "subClientUpdated": "Client mis à jour avec succès",
     "egSubClientCode": "ex. CLI001",
-    "egSubClientName": "ex. Jean Dupont"
+    "egSubClientName": "ex. Jean Dupont",
+    "myClients": "Mes Clients",
+    "myClientsDesc": "Gérez les clients finaux liés aux demandes de réparation à distance"
   },
   "dataRecovery": {
     "assignedToTechnician": "Données récupération assigné à technicien",

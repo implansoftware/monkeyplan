@@ -169,7 +169,8 @@
       "catalog": "Catalog",
       "configuration": "Configuration",
       "integrations": "Integrations",
-      "guide": "Guides"
+      "guide": "Guides",
+      "myClients": "My Clients"
     },
     "groups": {
       "dashboard": "Dashboard",
@@ -9157,7 +9158,9 @@
     "subClientDeleted": "Client deleted successfully",
     "subClientUpdated": "Client updated successfully",
     "egSubClientCode": "e.g. CLI001",
-    "egSubClientName": "e.g. John Smith"
+    "egSubClientName": "e.g. John Smith",
+    "myClients": "My Clients",
+    "myClientsDesc": "Manage end clients linked to remote repair requests"
   },
   "dataRecovery": {
     "assignedToTechnician": "Data recovery assigned to technician",

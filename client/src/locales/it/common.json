@@ -169,7 +169,8 @@
       "catalog": "Catalogo",
       "configuration": "Configurazione",
       "integrations": "Integrazioni",
-      "guide": "Guide"
+      "guide": "Guide",
+      "myClients": "I miei clienti"
     },
     "groups": {
       "dashboard": "Dashboard",
@@ -9165,7 +9166,9 @@
     "subClientDeleted": "Cliente eliminato con successo",
     "subClientUpdated": "Cliente aggiornato con successo",
     "egSubClientCode": "es. CLI001",
-    "egSubClientName": "es. Mario Rossi"
+    "egSubClientName": "es. Mario Rossi",
+    "myClients": "I miei clienti",
+    "myClientsDesc": "Gestisci i clienti finali associabili alle richieste remote"
   },
   "dataRecovery": {
     "assignedToTechnician": "Il recupero dati è stato assegnato al tecnico",

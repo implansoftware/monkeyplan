@@ -328,6 +328,7 @@ const menuItems = {
     { title: "sidebar.items.dashboard", url: "/customer", icon: LayoutDashboard, group: "sidebar.groups.dashboard" },
     { title: "sidebar.items.repairs", url: "/customer/repairs", icon: Wrench, group: "sidebar.groups.repairs" },
     { title: "sidebar.items.remoteRequests", url: "/customer/remote-requests", icon: Send, group: "sidebar.groups.repairs" },
+    { title: "sidebar.items.myClients", url: "/customer/clients", icon: Users, group: "sidebar.groups.repairs" },
     { title: "sidebar.items.myWarranties", url: "/customer/warranties", icon: Shield, group: "sidebar.groups.services" },
     { title: "sidebar.items.serviceCatalog", url: "/customer/service-catalog", icon: Package, group: "sidebar.groups.services" },
     { title: "sidebar.items.serviceOrders", url: "/customer/service-orders", icon: ClipboardList, group: "sidebar.groups.services" },

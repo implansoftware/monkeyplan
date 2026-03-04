@@ -3209,7 +3209,8 @@
       "catalog": "Katalog",
       "configuration": "Konfiguration",
       "integrations": "Integrationen",
-      "guide": "Leitfäden"
+      "guide": "Leitfäden",
+      "myClients": "Meine Kunden"
     },
     "groups": {
       "dashboard": "Dashboard",
@@ -8194,7 +8195,9 @@
     "subClientDeleted": "Kunde erfolgreich gelöscht",
     "subClientUpdated": "Kunde erfolgreich aktualisiert",
     "egSubClientCode": "z.B. CLI001",
-    "egSubClientName": "z.B. Max Müller"
+    "egSubClientName": "z.B. Max Müller",
+    "myClients": "Meine Kunden",
+    "myClientsDesc": "Verwalten Sie Endkunden für Fernreparaturanfragen"
   },
   "diagnosis": {
     "componentsLoadError": "Fehler beim Laden von Komponenten",

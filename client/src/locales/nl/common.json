@@ -2349,7 +2349,8 @@
       "catalog": "Catalog",
       "configuration": "Configuration",
       "integrations": "Integrations",
-      "guide": "Guides"
+      "guide": "Guides",
+      "myClients": "Mijn Klanten"
     },
     "groups": {
       "dashboard": "Dashboard",
@@ -8023,7 +8024,9 @@
     "subClientDeleted": "Klant succesvol verwijderd",
     "subClientUpdated": "Klant succesvol bijgewerkt",
     "egSubClientCode": "bijv. CLI001",
-    "egSubClientName": "bijv. Jan Jansen"
+    "egSubClientName": "bijv. Jan Jansen",
+    "myClients": "Mijn Klanten",
+    "myClientsDesc": "Beheer eindklanten gekoppeld aan externe reparatieverzoeken"
   },
   "diagnosis": {
     "componentsLoadError": "Fout bij het laden van onderdelen",

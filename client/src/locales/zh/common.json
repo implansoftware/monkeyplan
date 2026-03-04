@@ -2349,7 +2349,8 @@
       "catalog": "目录",
       "configuration": "配置",
       "integrations": "集成",
-      "guide": "指南"
+      "guide": "指南",
+      "myClients": "我的客户"
     },
     "groups": {
       "dashboard": "仪表板",
@@ -8469,7 +8470,9 @@
     "subClientDeleted": "客户删除成功",
     "subClientUpdated": "客户更新成功",
     "egSubClientCode": "例如 CLI001",
-    "egSubClientName": "例如 张三"
+    "egSubClientName": "例如 张三",
+    "myClients": "我的客户",
+    "myClientsDesc": "管理与远程维修请求关联的终端客户"
   },
   "diagnosis": {
     "componentsLoadError": "加载组件时出错",

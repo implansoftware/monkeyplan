@@ -3209,7 +3209,8 @@
       "catalog": "الكتالوج",
       "configuration": "الإعدادات",
       "integrations": "التكاملات",
-      "guide": "الأدلة"
+      "guide": "الأدلة",
+      "myClients": "عملائي"
     },
     "groups": {
       "dashboard": "لوحة التحكم",
@@ -7526,7 +7527,9 @@
     "subClientDeleted": "تم حذف العميل بنجاح",
     "subClientUpdated": "تم تحديث العميل بنجاح",
     "egSubClientCode": "مثل CLI001",
-    "egSubClientName": "مثل محمد علي"
+    "egSubClientName": "مثل محمد علي",
+    "myClients": "عملائي",
+    "myClientsDesc": "إدارة العملاء النهائيين المرتبطين بطلبات الإصلاح عن بعد"
   },
   "diagnosis": {
     "componentsLoadError": "خطأ في تحميل المكونات",

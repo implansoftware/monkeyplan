@@ -169,7 +169,8 @@
       "catalog": "Catálogo",
       "configuration": "Configuración",
       "integrations": "Integraciones",
-      "guide": "Guías"
+      "guide": "Guías",
+      "myClients": "Mis Clientes"
     },
     "groups": {
       "dashboard": "Panel de control",
@@ -9114,7 +9115,9 @@
     "subClientDeleted": "Cliente eliminado correctamente",
     "subClientUpdated": "Cliente actualizado correctamente",
     "egSubClientCode": "p. ej. CLI001",
-    "egSubClientName": "p. ej. Juan García"
+    "egSubClientName": "p. ej. Juan García",
+    "myClients": "Mis Clientes",
+    "myClientsDesc": "Gestiona los clientes finales vinculados a las solicitudes de reparación remota"
   },
   "dataRecovery": {
     "assignedToTechnician": "Datos recovery asignado hasta técnico",

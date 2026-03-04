@@ -284,6 +284,7 @@ import CustomerRemoteRequests from "@/pages/customer/remote-requests";
 import NewRemoteRequest from "@/pages/customer/new-remote-request";
 import CustomerServiceCatalog from "@/pages/customer/service-catalog";
 import CustomerServiceOrders from "@/pages/customer/service-orders";
+import CustomerClientsPage from "@/pages/customer/clients";
 
 // Shop pages (public)
 import ShopCatalog from "@/pages/shop/catalog";
@@ -607,6 +608,7 @@ function Router() {
       <ProtectedRoute path="/customer/remote-requests" component={CustomerRemoteRequests} />
       <ProtectedRoute path="/customer/service-catalog" component={CustomerServiceCatalog} />
       <ProtectedRoute path="/customer/service-orders" component={CustomerServiceOrders} />
+      <ProtectedRoute path="/customer/clients" component={CustomerClientsPage} allowedRoles={["customer"]} />
       
       {/* Shop admin routes */}
       <ProtectedRoute path="/shop/admin/products/:id" component={ShopAdminProductDetail} />
