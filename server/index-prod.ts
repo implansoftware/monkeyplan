@@ -158,8 +158,84 @@ export async function serveStatic(app: Express, _server: Server) {
     END $$;
   `);
 
+  // ---- license_plans: Stripe & PayPal columns ----
+  await runMigration("license_plans.stripe_product_id column", `
+    ALTER TABLE "license_plans" ADD COLUMN IF NOT EXISTS "stripe_product_id" varchar;
+  `);
+  await runMigration("license_plans.stripe_price_id column", `
+    ALTER TABLE "license_plans" ADD COLUMN IF NOT EXISTS "stripe_price_id" varchar;
+  `);
+  await runMigration("license_plans.paypal_plan_id column", `
+    ALTER TABLE "license_plans" ADD COLUMN IF NOT EXISTS "paypal_plan_id" varchar;
+  `);
+  await runMigration("license_plans.created_at column", `
+    ALTER TABLE "license_plans" ADD COLUMN IF NOT EXISTS "created_at" timestamp NOT NULL DEFAULT now();
+  `);
+  await runMigration("license_plans.updated_at column", `
+    ALTER TABLE "license_plans" ADD COLUMN IF NOT EXISTS "updated_at" timestamp NOT NULL DEFAULT now();
+  `);
+
+  // ---- licenses: Stripe & PayPal subscription columns ----
+  await runMigration("licenses.stripe_subscription_id column", `
+    ALTER TABLE "licenses" ADD COLUMN IF NOT EXISTS "stripe_subscription_id" varchar;
+  `);
+  await runMigration("licenses.paypal_subscription_id column", `
+    ALTER TABLE "licenses" ADD COLUMN IF NOT EXISTS "paypal_subscription_id" varchar;
+  `);
+  await runMigration("licenses.cancel_at_period_end column", `
+    ALTER TABLE "licenses" ADD COLUMN IF NOT EXISTS "cancel_at_period_end" boolean NOT NULL DEFAULT false;
+  `);
+
+  // ---- licenses: auto_renew ----
+  await runMigration("licenses.auto_renew column", `
+    ALTER TABLE "licenses" ADD COLUMN IF NOT EXISTS "auto_renew" boolean NOT NULL DEFAULT false;
+  `);
+
+  // ---- users: Stripe customer ID, autonomous invoicing, logo ----
+  await runMigration("users.stripe_customer_id column", `
+    ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "stripe_customer_id" varchar;
+  `);
+  await runMigration("users.has_autonomous_invoicing column", `
+    ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "has_autonomous_invoicing" boolean NOT NULL DEFAULT false;
+  `);
+  await runMigration("users.logo_url column", `
+    ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "logo_url" text;
+  `);
+
+  // ---- repair_orders: diagnosis skip, device left, return flow, courtesy phone ----
+  await runMigration("repair_orders.skip_diagnosis column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "skip_diagnosis" boolean NOT NULL DEFAULT false;
+  `);
+  await runMigration("repair_orders.skip_diagnosis_reason column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "skip_diagnosis_reason" text;
+  `);
+  await runMigration("repair_orders.device_left column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "device_left" boolean NOT NULL DEFAULT false;
+  `);
+  await runMigration("repair_orders.is_return column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "is_return" boolean NOT NULL DEFAULT false;
+  `);
+  await runMigration("repair_orders.parent_repair_order_id column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "parent_repair_order_id" varchar;
+  `);
+  await runMigration("repair_orders.return_reason column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "return_reason" text;
+  `);
+  await runMigration("repair_orders.courtesy_phone_product_id column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "courtesy_phone_product_id" varchar;
+  `);
+  await runMigration("repair_orders.courtesy_phone_assigned_at column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "courtesy_phone_assigned_at" timestamp;
+  `);
+  await runMigration("repair_orders.courtesy_phone_returned_at column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "courtesy_phone_returned_at" timestamp;
+  `);
+  await runMigration("repair_orders.courtesy_phone_notes column", `
+    ALTER TABLE "repair_orders" ADD COLUMN IF NOT EXISTS "courtesy_phone_notes" text;
+  `);
+
   await migrationPool.end();
-  console.log("[Migration] Startup SQL migrations completed");
+  console.log("[Migration] Database schema synced successfully");
 
   await runApp(serveStatic);
 
